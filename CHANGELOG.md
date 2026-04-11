@@ -6,6 +6,35 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [0.5.0] - 2026-04-11
+
+Azure staging readiness: Resend email, PostHog analytics, abuse protection.
+
+### Added
+- **Resend email integration**: demo form submissions send real HTML email via Resend with reply-to set to requester, clean formatting with name/email/company/use case/request ID
+- **PostHog analytics**: real-time tracking of page views, CTA clicks, form starts, form submissions, successes, and errors via PostHog JS SDK
+- **Rate limiting**: in-memory per-IP rate limit (5 requests / 15 minutes) on `/api/demo-request`
+- **Honeypot anti-spam**: hidden form field catches bots without affecting real users
+- **PostHog init guard**: prevents duplicate initialization from React strict mode
+
+### Changed
+- API route rewritten to use Resend as primary backend (removed local file storage dependency)
+- Analytics abstraction updated from no-op stubs to live PostHog capture
+- `.env.example` updated with all staging variables
+
+### Removed
+- Local filesystem storage (`fs` imports) from API route — not reliable on Azure
+
+### Environment variables for staging
+| Variable | Required | Purpose |
+|----------|----------|---------|
+| `RESEND_API_KEY` | Yes | Resend API key for sending demo request emails |
+| `DEMO_REQUEST_TO_EMAIL` | Yes | Email address that receives demo requests |
+| `NEXT_PUBLIC_POSTHOG_KEY` | Yes | PostHog project API key |
+| `NEXT_PUBLIC_POSTHOG_HOST` | No | PostHog API host (defaults to `https://us.i.posthog.com`) |
+
+---
+
 ## [0.4.0] - 2026-04-11
 
 Launch readiness: real form backend, analytics, favicon, OG image, Azure deployment prep.
