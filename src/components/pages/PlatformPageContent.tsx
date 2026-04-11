@@ -145,7 +145,7 @@ export default function PlatformPageContent() {
               </motion.p>
               <motion.div variants={fadeUp} className="mt-10 flex flex-wrap gap-4">
                 <Button variant="primary" size="lg" href="#request-demo">
-                  Talk to the Team
+                  Request a Demo
                 </Button>
                 <Button variant="secondary" size="lg" href="#platform-proof">
                   Explore the Platform
@@ -194,10 +194,10 @@ export default function PlatformPageContent() {
               <p className="text-sm font-semibold uppercase tracking-[0.2em] text-accent/90">Operator view</p>
               <h3 className="mt-4 text-2xl font-semibold text-text-primary">Built for the moment an AI workflow goes wrong</h3>
               <ul className="mt-6 space-y-4 text-sm text-text-secondary">
-                <BulletItem>See the initiating agent, session, and target systems before touching recovery.</BulletItem>
-                <BulletItem>Understand whether identity, data, or downstream apps must be restored first.</BulletItem>
-                <BulletItem>Choose rollback, restore, or compensating actions based on risk and dependency order.</BulletItem>
-                <BulletItem>Return to a trusted state instead of restoring isolated objects without context.</BulletItem>
+                <BulletItem>See the initiating agent, session, and target systems before touching recovery</BulletItem>
+                <BulletItem>Understand whether identity, data, or downstream apps must be restored first</BulletItem>
+                <BulletItem>Choose rollback, restore, or compensating actions based on risk and dependency order</BulletItem>
+                <BulletItem>Return to a trusted state instead of restoring isolated objects without context</BulletItem>
               </ul>
             </div>
           </div>
@@ -217,7 +217,7 @@ export default function PlatformPageContent() {
           >
             <CapabilityCard
               icon={<EyeIcon />}
-              title="Autonomous change visibility"
+              title="Agent-driven change visibility"
               description="Track critical agent-driven actions with the context needed to understand what changed and why."
             />
             <CapabilityCard
@@ -232,7 +232,7 @@ export default function PlatformPageContent() {
             />
             <CapabilityCard
               icon={<CheckCircleIcon />}
-              title="Known-good-state restoration"
+              title="Trusted-state restoration"
               description="Return to a trusted operational state, not just isolated objects."
             />
             <CapabilityCard
@@ -336,7 +336,7 @@ export default function PlatformPageContent() {
                 <BulletItem>Identify harmful changes across Microsoft 365 workloads</BulletItem>
                 <BulletItem>Understand affected content, permissions, and collaboration dependencies</BulletItem>
                 <BulletItem>Coordinate recovery in the right order</BulletItem>
-                <BulletItem>Restore a trusted operating state across collaboration surfaces.</BulletItem>
+                <BulletItem>Restore a trusted operating state across collaboration surfaces</BulletItem>
               </motion.ul>
             </motion.div>
           </div>

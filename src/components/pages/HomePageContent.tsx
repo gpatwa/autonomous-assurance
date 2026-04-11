@@ -118,7 +118,7 @@ export default function HomePageContent() {
                 Deploy AI agents with <span className="text-accent">confidence</span>
               </motion.h1>
               <motion.p variants={fadeUp} className="mt-6 max-w-xl text-lg leading-relaxed text-text-secondary sm:text-xl">
-                KavachIQ Autonomous Assurance helps enterprises understand, contain, and recover from agent-driven changes across identity, access, systems of record, and connected business platforms.
+                KavachIQ Autonomous Assurance helps enterprises understand, contain, and recover from agent-driven changes across identity, access, systems of record, and connected enterprise platforms.
               </motion.p>
               <motion.div variants={fadeUp} className="mt-10 flex flex-wrap gap-4">
                 <Button variant="primary" size="lg" href="#request-demo">
