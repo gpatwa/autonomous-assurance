@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
+import { PostHogProvider } from "@/lib/posthog";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -53,9 +54,11 @@ export default function RootLayout({
       className={`${geistSans.variable} ${geistMono.variable} antialiased`}
     >
       <body className="min-h-screen flex flex-col bg-bg-primary text-text-primary">
-        <Navbar />
-        <main className="flex-1 pt-16">{children}</main>
-        <Footer />
+        <PostHogProvider>
+          <Navbar />
+          <main className="flex-1 pt-16">{children}</main>
+          <Footer />
+        </PostHogProvider>
       </body>
     </html>
   );
