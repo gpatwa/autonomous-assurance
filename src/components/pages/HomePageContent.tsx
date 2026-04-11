@@ -154,10 +154,13 @@ export default function HomePageContent() {
         </div>
       </section>
 
-      {/* ─── 2. What the Product Does (NEW) ──────────────────────────────── */}
-      <section className="relative py-24 sm:py-28">
+      {/* ─── 2. What the Product Does ────────────────────────────────────── */}
+      <section className="relative py-24 sm:py-28 bg-bg-surface/40">
+        {/* Top edge gradient for a clear transition from the hero */}
+        <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-border-primary to-transparent" />
+        <div className="absolute inset-x-0 top-0 h-24 bg-gradient-to-b from-bg-surface/30 to-transparent" />
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="grid items-center gap-12 lg:grid-cols-[0.95fr_1.05fr]">
+          <div className="relative grid items-center gap-12 lg:grid-cols-[0.95fr_1.05fr]">
             <div>
               <SectionHeader
                 label="What the product does"
