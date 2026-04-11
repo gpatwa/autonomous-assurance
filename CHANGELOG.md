@@ -6,6 +6,33 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [0.4.0] - 2026-04-11
+
+Launch readiness: real form backend, analytics, favicon, OG image, Azure deployment prep.
+
+### Added
+- **Server-side demo form**: `/api/demo-request` Route Handler with server-side validation, optional webhook delivery (`DEMO_REQUEST_WEBHOOK_URL`), and local JSON file fallback storage
+- **Form UX states**: loading spinner, success confirmation with checkmark, error messages with field-level validation, disabled button during submission
+- **SVG favicon**: K lettermark in accent blue on dark background
+- **Dynamic OpenGraph image**: 1200x630 branded image via `next/og` edge runtime
+- **Analytics abstraction**: `src/lib/analytics.ts` with provider-agnostic `track()` function; tracks `cta_click`, `form_start`, `form_submit`, `form_success`, `form_error`; ready for Azure App Insights, PostHog, or Plausible
+- **Security headers**: X-Frame-Options, X-Content-Type-Options, Referrer-Policy, Permissions-Policy
+- **Accessibility**: `focus-visible` outline styles, `prefers-reduced-motion` support
+- **Azure deployment**: standalone output mode, `.env.example` with documented variables, React strict mode
+- **Button disabled state**: opacity + cursor styling
+
+### Changed
+- CTABlock rewritten: removed mailto dependency, replaced with `fetch`-based API submission
+- Removed "Copy request details" secondary action (replaced by proper form submission)
+- Button component forwards `onClick` to anchor variant
+
+### Technical
+- API route stores submissions in `.data/demo-requests.json` when no webhook is configured
+- `.data/` added to `.gitignore`
+- `.env.example` allowlisted in `.gitignore`
+
+---
+
 ## [0.3.0] - 2026-04-11
 
 Copy-only update: positioning-aware language across both pages.
