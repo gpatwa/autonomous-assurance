@@ -8,7 +8,7 @@ const footerLinks = {
     { label: "How It Works", href: "/#how-it-works" },
   ],
   Company: [
-    { label: "About", href: "/#why-now" },
+    { label: "Why KavachIQ", href: "/#why-kavachiq" },
     { label: "Request a Demo", href: "#request-demo" },
   ],
 };
@@ -26,9 +26,9 @@ export default function Footer() {
               </span>
             </Link>
             <p className="mt-4 text-sm text-text-secondary leading-relaxed max-w-md">
-              KavachIQ gives enterprises the confidence to deploy AI agents in
-              production by making autonomous changes observable, recoverable,
-              and governable.
+              KavachIQ Autonomous Assurance helps enterprises understand,
+              contain, and recover from harmful autonomous change across
+              identity, access, and systems of record.
             </p>
           </div>
 
@@ -59,7 +59,7 @@ export default function Footer() {
             &copy; {new Date().getFullYear()} KavachIQ. All rights reserved.
           </p>
           <p className="text-xs text-text-muted">
-            Autonomous Assurance for the Enterprise
+            Autonomous Assurance for identity, Microsoft 365, and downstream systems
           </p>
         </div>
       </div>

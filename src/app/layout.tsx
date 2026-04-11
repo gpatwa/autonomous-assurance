@@ -15,9 +15,26 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "KavachIQ Autonomous Assurance",
+  metadataBase: new URL("https://kavachiq.com"),
+  title: {
+    default: "KavachIQ Autonomous Assurance",
+    template: "%s | KavachIQ",
+  },
   description:
     "KavachIQ gives enterprises the confidence to deploy AI agents in production by making autonomous changes observable, recoverable, and governable.",
+  openGraph: {
+    title: "KavachIQ Autonomous Assurance",
+    description:
+      "Assurance for AI-driven enterprise operations across Microsoft Entra, Microsoft 365, and connected systems.",
+    siteName: "KavachIQ",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "KavachIQ Autonomous Assurance",
+    description:
+      "Assurance for AI-driven enterprise operations across Microsoft Entra, Microsoft 365, and connected systems.",
+  },
 };
 
 export default function RootLayout({

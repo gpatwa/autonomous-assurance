@@ -2,18 +2,20 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import Button from "@/components/ui/Button";
 
 const navLinks = [
   { label: "Platform", href: "/platform" },
   { label: "Identity Assurance", href: "/platform#identity-assurance" },
   { label: "Data Assurance", href: "/platform#data-assurance" },
-  { label: "Tour", href: "/#how-it-works" },
-  { label: "About", href: "/#why-now" },
+  { label: "How It Works", href: "/#how-it-works" },
+  { label: "Why KavachIQ", href: "/#why-kavachiq" },
 ];
 
 export default function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false);
+  const pathname = usePathname();
 
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 border-b border-border-primary bg-bg-primary/80 backdrop-blur-xl">
@@ -28,15 +30,20 @@ export default function Navbar() {
 
           {/* Desktop nav */}
           <div className="hidden lg:flex items-center gap-8">
-            {navLinks.map((link) => (
-              <Link
-                key={link.label}
-                href={link.href}
-                className="text-sm text-text-secondary hover:text-text-primary transition-colors duration-200"
-              >
-                {link.label}
-              </Link>
-            ))}
+            {navLinks.map((link) => {
+              const isActive = pathname === "/platform" && link.href === "/platform";
+              return (
+                <Link
+                  key={link.label}
+                  href={link.href}
+                  className={`text-sm transition-colors duration-200 ${
+                    isActive ? "text-text-primary" : "text-text-secondary hover:text-text-primary"
+                  }`}
+                >
+                  {link.label}
+                </Link>
+              );
+            })}
           </div>
 
           {/* Desktop CTA */}
