@@ -6,6 +6,26 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [0.2.1] - 2026-04-11
+
+Polish pass: tighten copy, improve structure, fix navigation.
+
+### Changed
+- Removed all prototype/temporary language from public-facing copy ("This prototype generates...", "wire it to your CRM...")
+- CTA button text changed from "Generate Demo Request" to "Request a Demo" on both pages
+- CTA form header changed from "Start a buyer-ready conversation" to "Tell us about your environment"
+- CTA badge changed from "Opens your email client" to "We respond within one business day"
+- CTA body copy rewritten to remove implementation details
+- Comparison table fields renamed to semantic structure: Layer / What it does / Where it stops
+- Column headers added to comparison table (visible on md+ breakpoints)
+- KavachIQ comparison row description tightened
+
+### Fixed
+- Nav links are now context-aware: "How It Works" resolves to the platform page's own section when navigating from /platform, instead of jumping to the homepage
+- Visual transition between hero and "What the product does" section strengthened with background tint and gradient border
+
+---
+
 ## [0.2.0] - 2026-04-11
 
 Second iteration: product-specific content, stronger differentiation, and a real demo request flow.
