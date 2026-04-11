@@ -6,6 +6,37 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [0.3.0] - 2026-04-11
+
+Copy-only update: positioning-aware language across both pages.
+
+### Changed
+- **Positioning**: Microsoft Entra and Microsoft 365 framed as the first wedge, not the permanent boundary; added "connected business platforms", "downstream systems", and forward-looking extension language
+- **Hero badge**: "Designed for..." → "Built for Microsoft Entra, Microsoft 365, and the systems around them"
+- **Hero subhead**: rewritten to reference "identity, access, systems of record, and connected business platforms"
+- **Hero support cards**: tightened copy for Identity-first, Data-aware, Recovery-led
+- **What the product does**: new title ("Turn agent-driven change into something your team can actually recover from") and subtitle
+- **Challenge section**: body tightened, "KavachIQ" without "Autonomous Assurance" suffix
+- **Value props**: titles and descriptions shortened
+- **Why KavachIQ**: new title ("The missing layer between AI automation and business recovery"), new subtitle, KavachIQ comparison row widened to include "connected business platforms"
+- **Product Pillars**: subtitle updated, pillar descriptions and bullets aligned with provided copy
+- **How It Works**: subtitle shortened, step descriptions tightened
+- **Homepage CTA**: new headline ("Start the conversation about safe production AI") and body
+- **Platform hero body**: rewritten to avoid M365-only framing
+- **Platform overview**: subtitle updated
+- **Product proof section**: proof cards and operator view heading refined
+- **Capabilities**: descriptions tightened
+- **Entra section**: "autonomous" → "agent-driven", "policies" → "policy", "issues" → "risk", bullets aligned
+- **M365 section**: added forward-looking language about extending to adjacent SaaS platforms; "M365" → "Microsoft 365" throughout; bullets tightened
+- **Platform process steps**: "autonomous" → "agent-driven", "known-good" → "trusted"
+- **Audience panel**: "buyers" → "teams", card copy tightened
+- **Platform CTA**: new headline ("Production AI needs a recovery plan") and body
+- **CTABlock helper text**: replaced with "Share your use case and we will follow up with the right conversation"
+- **Footer**: "autonomous change" → "agent-driven change"
+- **Global**: "M365" expanded to "Microsoft 365" in all public-facing text
+
+---
+
 ## [0.2.1] - 2026-04-11
 
 Polish pass: tighten copy, improve structure, fix navigation.
