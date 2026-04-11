@@ -88,7 +88,7 @@ async function sendEmail(request: DemoRequest, id: string): Promise<boolean> {
   const resend = new Resend(apiKey);
 
   const { error } = await resend.emails.send({
-    from: "KavachIQ Demo Requests <onboarding@resend.dev>",
+    from: "KavachIQ Demo Requests <demo@kavachiq.com>",
     to: [toEmail],
     replyTo: request.email,
     subject: `Demo request from ${request.name}${request.company ? ` at ${request.company}` : ""}`,
