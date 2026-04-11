@@ -72,26 +72,26 @@ function NetworkIcon() {
   );
 }
 
-const comparisonRows = [
+const comparisonRows: { layer: string; does: string; stops: string; featured?: boolean }[] = [
   {
-    label: "Observability",
-    description: "Shows what happened after the fact.",
-    gap: "Does not restore business state or coordinate recovery.",
+    layer: "Observability",
+    does: "Shows what happened after the fact.",
+    stops: "Does not restore business state or coordinate recovery.",
   },
   {
-    label: "Backup",
-    description: "Restores individual systems or objects.",
-    gap: "Usually not agent-aware and rarely cross-system.",
+    layer: "Backup",
+    does: "Restores individual systems or objects.",
+    stops: "Usually not agent-aware and rarely cross-system.",
   },
   {
-    label: "Governance",
-    description: "Sets rules, permissions, and approvals.",
-    gap: "Does not unwind harmful autonomous change once it lands.",
+    layer: "Governance",
+    does: "Sets rules, permissions, and approvals.",
+    stops: "Does not unwind harmful autonomous change once it lands.",
   },
   {
-    label: "KavachIQ Autonomous Assurance",
-    description: "Captures change, maps impact, and drives the safest path back.",
-    gap: "Built for identity, access, and systems of record.",
+    layer: "KavachIQ Autonomous Assurance",
+    does: "Captures change, maps blast radius, and orchestrates recovery.",
+    stops: "Built for identity, access, and systems of record.",
     featured: true,
   },
 ];
@@ -249,19 +249,25 @@ export default function HomePageContent() {
               />
             </div>
             <div className="overflow-hidden rounded-[28px] border border-border-primary bg-bg-surface/70 p-4 shadow-[0_0_40px_rgba(8,15,35,0.45)]">
+              {/* Column headers — visible on md+ */}
+              <div className="mb-2 hidden gap-3 px-5 md:grid md:grid-cols-[1.15fr_1fr_1fr]">
+                <p className="text-xs font-semibold uppercase tracking-[0.15em] text-text-muted">Layer</p>
+                <p className="text-xs font-semibold uppercase tracking-[0.15em] text-text-muted">What it does</p>
+                <p className="text-xs font-semibold uppercase tracking-[0.15em] text-text-muted">Where it stops</p>
+              </div>
               <div className="grid gap-3">
                 {comparisonRows.map((row) => (
                   <div
-                    key={row.label}
+                    key={row.layer}
                     className={`grid gap-3 rounded-2xl border px-5 py-5 md:grid-cols-[1.15fr_1fr_1fr] ${
                       row.featured
                         ? "border-accent/30 bg-accent/10 shadow-[0_0_24px_rgba(56,189,248,0.07)]"
                         : "border-border-primary bg-bg-primary/55"
                     }`}
                   >
-                    <p className={`text-sm font-semibold ${row.featured ? "text-accent" : "text-text-primary"}`}>{row.label}</p>
-                    <p className="text-sm leading-relaxed text-text-secondary">{row.description}</p>
-                    <p className={`text-sm leading-relaxed ${row.featured ? "text-text-primary" : "text-text-muted"}`}>{row.gap}</p>
+                    <p className={`text-sm font-semibold ${row.featured ? "text-accent" : "text-text-primary"}`}>{row.layer}</p>
+                    <p className="text-sm leading-relaxed text-text-secondary">{row.does}</p>
+                    <p className={`text-sm leading-relaxed ${row.featured ? "text-text-primary" : "text-text-muted"}`}>{row.stops}</p>
                   </div>
                 ))}
               </div>
