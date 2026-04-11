@@ -81,7 +81,7 @@ export default function CTABlock({ headline, body, ctaText }: CTABlockProps) {
           <div className="mt-8 grid gap-4 sm:grid-cols-2">
             {[
               "Structured incident timeline",
-              "Entra and M365 recovery context",
+              "Entra and Microsoft 365 recovery context",
               "Blast-radius analysis",
               "Rollback and compensating actions",
             ].map((item) => (

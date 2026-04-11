@@ -185,7 +185,7 @@ export default function PlatformPageContent() {
               {proofCards.map((card) => (
                 <div key={card.title} className="rounded-[24px] border border-border-primary bg-bg-primary/65 p-6 shadow-[0_0_24px_rgba(7,14,30,0.35)]">
                   <p className="text-sm font-semibold uppercase tracking-[0.2em] text-accent/85">{card.title}</p>
-                  <p className="mt-4 text-lg font-semibold text-text-primary">{card.title} autonomous change with business context</p>
+                  <p className="mt-4 text-lg font-semibold text-text-primary">{card.title} agent-driven change with business context</p>
                   <p className="mt-3 text-sm leading-relaxed text-text-secondary">{card.body}</p>
                 </div>
               ))}

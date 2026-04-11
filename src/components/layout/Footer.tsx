@@ -27,7 +27,7 @@ export default function Footer() {
             </Link>
             <p className="mt-4 text-sm text-text-secondary leading-relaxed max-w-md">
               KavachIQ Autonomous Assurance helps enterprises understand,
-              contain, and recover from harmful autonomous change across
+              contain, and recover from harmful agent-driven change across
               identity, access, and systems of record.
             </p>
           </div>
