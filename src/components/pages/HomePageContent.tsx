@@ -86,12 +86,12 @@ const comparisonRows: { layer: string; does: string; stops: string; featured?: b
   {
     layer: "Governance",
     does: "Sets rules, permissions, and approvals.",
-    stops: "Does not unwind harmful autonomous change once it lands.",
+    stops: "Does not unwind harmful agent-driven change once it lands.",
   },
   {
     layer: "KavachIQ Autonomous Assurance",
-    does: "Captures change, maps blast radius, and orchestrates recovery.",
-    stops: "Built for identity, access, and systems of record.",
+    does: "Captures change, maps impact, and coordinates safe recovery.",
+    stops: "Built for identity, access, systems of record, and connected business platforms.",
     featured: true,
   },
 ];
@@ -109,7 +109,7 @@ export default function HomePageContent() {
             <motion.div initial="hidden" animate="visible" variants={staggerContainer}>
               <motion.div variants={fadeUp} className="inline-flex items-center gap-3 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm text-text-secondary">
                 <span className="h-2 w-2 rounded-full bg-accent" />
-                Designed for Microsoft Entra, Microsoft 365, and connected systems
+                Built for Microsoft Entra, Microsoft 365, and the systems around them
               </motion.div>
               <motion.h1
                 variants={fadeUp}
@@ -118,7 +118,7 @@ export default function HomePageContent() {
                 Deploy AI agents with <span className="text-accent">confidence</span>
               </motion.h1>
               <motion.p variants={fadeUp} className="mt-6 max-w-xl text-lg leading-relaxed text-text-secondary sm:text-xl">
-                KavachIQ Autonomous Assurance protects identity, access, and systems of record from harmful autonomous change.
+                KavachIQ Autonomous Assurance helps enterprises understand, contain, and recover from agent-driven changes across identity, access, systems of record, and connected business platforms.
               </motion.p>
               <motion.div variants={fadeUp} className="mt-10 flex flex-wrap gap-4">
                 <Button variant="primary" size="lg" href="#request-demo">
@@ -130,8 +130,8 @@ export default function HomePageContent() {
               </motion.div>
               <motion.div variants={fadeUp} className="mt-10 grid max-w-2xl gap-4 sm:grid-cols-3">
                 {[
-                  ["Identity-first", "Entra users, groups, apps, and access changes"],
-                  ["Data-aware", "SharePoint, OneDrive, Exchange, and permissions"],
+                  ["Identity-first", "Entra users, groups, app access, and service principals"],
+                  ["Data-aware", "SharePoint, OneDrive, Exchange, and permission impact"],
                   ["Recovery-led", "Rollback, restoration, and compensating actions"],
                 ].map(([title, body]) => (
                   <div key={title} className="rounded-2xl border border-border-primary bg-bg-surface/70 p-4">
@@ -165,15 +165,15 @@ export default function HomePageContent() {
               <SectionHeader
                 label="What the product does"
                 align="left"
-                title="Make autonomous change specific enough to understand and safe enough to recover."
-                subtitle="KavachIQ links agent actions to the identity and data changes they trigger. Teams can trace the original workflow, see the blast radius, and execute the safest recovery path instead of guessing through logs and app-by-app restores."
+                title="Turn agent-driven change into something your team can actually recover from"
+                subtitle="KavachIQ links agent actions to the identity and data changes they trigger. Teams can trace the originating workflow, see the blast radius, and choose the safest recovery path without guessing through logs or restoring systems one by one."
               />
               <div className="grid gap-4 sm:grid-cols-2">
                 {[
-                  ["Capture", "Agent, workflow session, changed object, before/after state"],
-                  ["Assess", "Blast radius across Entra, M365, and downstream systems"],
+                  ["Capture", "Agent, session, target object, and before or after state"],
+                  ["Assess", "Blast radius across Entra, Microsoft 365, and downstream systems"],
                   ["Recover", "Rollback, restore, or compensate in the right order"],
-                  ["Govern", "Keep operators in control for high-risk actions"],
+                  ["Govern", "Keep operators in control of high-risk recovery decisions"],
                 ].map(([title, body]) => (
                   <div key={title} className="rounded-2xl border border-border-primary bg-bg-surface/55 p-5">
                     <p className="text-base font-semibold text-text-primary">{title}</p>
@@ -202,7 +202,7 @@ export default function HomePageContent() {
               viewport={{ once: true, margin: "-80px" }}
               className="text-lg leading-relaxed text-text-secondary"
             >
-              They can create users, change access, modify records, update files, and trigger workflows across critical enterprise systems. KavachIQ Autonomous Assurance helps your team understand what changed, assess impact, and recover safely to a known-good state.
+              They can create users, change access, update records, modify files, and trigger workflows across critical enterprise systems. KavachIQ helps teams see what changed, understand what else was affected, and recover safely to a trusted state.
             </motion.p>
           </div>
         </div>
@@ -222,18 +222,18 @@ export default function HomePageContent() {
           >
             <ValueCard
               icon={<EyeIcon />}
-              title="Recover from harmful autonomous actions"
-              description="See every critical change made by agents across identity, data, and connected business systems."
+              title="Recover from harmful agent actions"
+              description="See critical changes across identity, data, and connected business systems."
             />
             <ValueCard
               icon={<RadiusIcon />}
               title="Understand blast radius before acting"
-              description="Know what was affected, what depends on it, and what the safest recovery path looks like."
+              description="Know what was affected, what depends on it, and what recovery path is safest."
             />
             <ValueCard
               icon={<RestoreIcon />}
               title="Restore with business context"
-              description="Coordinate rollback, restoration, and compensating actions across systems so recovery is accurate, not manual guesswork."
+              description="Coordinate rollback, restoration, and compensating actions across systems."
             />
           </motion.div>
         </div>
@@ -247,8 +247,8 @@ export default function HomePageContent() {
               <SectionHeader
                 label="Why KavachIQ"
                 align="left"
-                title="The missing layer for production autonomy"
-                subtitle="Observability tells you what happened. Backup restores individual systems. Governance sets rules. But when AI agents act across identity, access, and systems of record, enterprises need a way to recover from harmful change across the full chain of impact. KavachIQ Autonomous Assurance is that layer."
+                title="The missing layer between AI automation and business recovery"
+                subtitle="Observability shows what happened. Backup restores individual systems. Governance sets rules and approvals. KavachIQ connects those layers with recovery built for agent-driven change across identity, access, systems of record, and connected enterprise platforms."
               />
             </div>
             <div className="overflow-hidden rounded-[28px] border border-border-primary bg-bg-surface/70 p-4 shadow-[0_0_40px_rgba(8,15,35,0.45)]">
@@ -285,7 +285,7 @@ export default function HomePageContent() {
           <SectionHeader
             label="Product Pillars"
             title="Built for enterprise-critical systems"
-            subtitle="Start where trust breaks first: identity, access, and the systems where business state lives."
+            subtitle="Start where trust breaks first: identity, access, and the systems where business state changes."
           />
           <motion.div
             variants={staggerContainer}
@@ -297,31 +297,31 @@ export default function HomePageContent() {
             <PillarCard
               icon={<ShieldIcon />}
               title="Identity Assurance for Microsoft Entra"
-              description="Recover safely from agent-driven changes to users, groups, app access, service principals, and identity policies."
+              description="Recover safely from agent-driven changes to users, groups, app access, service principals, and identity policy."
               bullets={[
-                "Trace who or what changed users, groups, and applications",
-                "See downstream access and provisioning fallout",
+                "Trace changes across users, groups, applications, and service principals",
+                "See downstream access and provisioning impact",
                 "Recover the control plane before risk spreads",
               ]}
             />
             <PillarCard
               icon={<DatabaseIcon />}
               title="Data Assurance for Microsoft 365"
-              description="Recover safely from harmful autonomous changes across SharePoint, OneDrive, Exchange, and connected collaboration workflows."
+              description="Recover safely from harmful agent-driven changes across SharePoint, OneDrive, Exchange, and collaboration workflows."
               bullets={[
                 "Map file, mailbox, and permission impact",
                 "Restore trusted state across collaboration surfaces",
-                "Coordinate with identity-driven recovery sequences",
+                "Coordinate recovery with identity-first sequencing",
               ]}
             />
             <PillarCard
               icon={<NetworkIcon />}
               title="Cross-System Assurance"
-              description="Trace autonomous change across identity and downstream systems, then coordinate the safest path back to a known-good state."
+              description="Trace agent-driven change across identity and downstream systems, then coordinate the safest path back."
               bullets={[
                 "Connect incident timelines across systems of record",
                 "Guide rollback, restoration, and compensating actions",
-                "Keep operators in control of high-risk recovery decisions",
+                "Keep operators in control of high-risk recovery steps",
               ]}
             />
           </motion.div>
@@ -334,7 +334,7 @@ export default function HomePageContent() {
           <SectionHeader
             label="How It Works"
             title="Capture, assess, and recover"
-            subtitle="The product is designed around an operator-ready incident flow, not just passive monitoring."
+            subtitle="Built for operator-ready incident response, not passive monitoring."
           />
           <motion.div
             variants={staggerContainer}
@@ -345,18 +345,18 @@ export default function HomePageContent() {
           >
             <ProcessStep
               step={1}
-              title="Capture autonomous change"
-              description="Track critical agent-driven actions across enterprise systems with full operational context, including the initiating workflow, changed object, and identity surface involved."
+              title="Capture agent-driven change"
+              description="Track the initiating workflow, changed object, identity surface, and business context."
             />
             <ProcessStep
               step={2}
               title="Analyze impact"
-              description="Map affected identities, systems, permissions, records, and content to understand blast radius and the order in which recovery must happen."
+              description="Map affected identities, permissions, records, and content to understand blast radius."
             />
             <ProcessStep
               step={3}
               title="Recover safely"
-              description="Execute rollback, restoration, or compensating recovery actions in the right sequence so teams can return to a known-good state with confidence."
+              description="Execute rollback, restoration, or compensating actions in the right sequence."
               isLast
             />
           </motion.div>
@@ -365,8 +365,8 @@ export default function HomePageContent() {
 
       {/* ─── 8. Closing CTA ──────────────────────────────────────────────── */}
       <CTABlock
-        headline="Move faster with production confidence"
-        body="Let AI agents operate with the assurance your enterprise needs. Tell us about your environment and we will show you how KavachIQ fits."
+        headline="Start the conversation about safe production AI"
+        body="See how KavachIQ helps teams recover from harmful agent-driven change across identity, Microsoft 365, and connected enterprise systems."
         ctaText="Request a Demo"
       />
     </>
