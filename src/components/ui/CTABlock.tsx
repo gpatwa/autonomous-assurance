@@ -163,7 +163,7 @@ export default function CTABlock({ headline, body, ctaText }: CTABlockProps) {
             </div>
 
             <p className="text-sm leading-relaxed text-text-muted">
-              Your request opens a prefilled email so you can send it directly to our team. We typically respond within one business day.
+              Share your use case and we will follow up with the right conversation.
             </p>
           </form>
         </div>
