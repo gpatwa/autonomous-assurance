@@ -11,6 +11,7 @@ import CTABlock from "@/components/ui/CTABlock";
 import HeroVisual from "@/components/visuals/HeroVisual";
 import GridPattern from "@/components/visuals/GridPattern";
 import RecoveryFlowVisual from "@/components/visuals/RecoveryFlowVisual";
+import { track } from "@/lib/analytics";
 
 function EyeIcon() {
   return (
@@ -121,7 +122,7 @@ export default function HomePageContent() {
                 KavachIQ Autonomous Assurance helps enterprises understand, contain, and recover from agent-driven changes across identity, access, systems of record, and connected enterprise platforms.
               </motion.p>
               <motion.div variants={fadeUp} className="mt-10 flex flex-wrap gap-4">
-                <Button variant="primary" size="lg" href="#request-demo">
+                <Button variant="primary" size="lg" href="#request-demo" onClick={() => track("cta_click", { page: "homepage", label: "Request a Demo" })}>
                   Request a Demo
                 </Button>
                 <Button variant="secondary" size="lg" href="#how-it-works">

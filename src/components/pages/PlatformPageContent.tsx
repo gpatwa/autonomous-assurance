@@ -9,6 +9,7 @@ import ProcessStep from "@/components/ui/ProcessStep";
 import CTABlock from "@/components/ui/CTABlock";
 import GridPattern from "@/components/visuals/GridPattern";
 import RecoveryFlowVisual from "@/components/visuals/RecoveryFlowVisual";
+import { track } from "@/lib/analytics";
 
 function EyeIcon() {
   return (
@@ -144,10 +145,10 @@ export default function PlatformPageContent() {
                 As AI agents begin to change identities, modify access, update data, and trigger business workflows, enterprises need more than visibility. They need a way to understand what changed, contain impact, and recover safely across critical systems. KavachIQ Autonomous Assurance is built for that moment.
               </motion.p>
               <motion.div variants={fadeUp} className="mt-10 flex flex-wrap gap-4">
-                <Button variant="primary" size="lg" href="#request-demo">
+                <Button variant="primary" size="lg" href="#request-demo" onClick={() => track("cta_click", { page: "platform", label: "Request a Demo" })}>
                   Request a Demo
                 </Button>
-                <Button variant="secondary" size="lg" href="#platform-proof">
+                <Button variant="secondary" size="lg" href="#platform-proof" onClick={() => track("cta_click", { page: "platform", label: "Explore the Platform" })}>
                   Explore the Platform
                 </Button>
               </motion.div>

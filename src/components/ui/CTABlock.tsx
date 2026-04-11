@@ -4,6 +4,7 @@ import { FormEvent, useState } from "react";
 import { motion } from "framer-motion";
 import { fadeUp } from "@/lib/animations";
 import Button from "./Button";
+import { track } from "@/lib/analytics";
 
 interface CTABlockProps {
   headline: string;
@@ -32,6 +33,14 @@ export default function CTABlock({ headline, body, ctaText }: CTABlockProps) {
   const [status, setStatus] = useState<FormStatus>("idle");
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [serverMessage, setServerMessage] = useState("");
+  const [formStarted, setFormStarted] = useState(false);
+
+  function handleFormStart() {
+    if (!formStarted) {
+      setFormStarted(true);
+      track("form_start");
+    }
+  }
 
   // Client-side validation
   function validateClient(): boolean {
@@ -56,6 +65,7 @@ export default function CTABlock({ headline, body, ctaText }: CTABlockProps) {
 
     setStatus("submitting");
     setFieldErrors({});
+    track("form_submit");
 
     try {
       const res = await fetch("/api/demo-request", {
@@ -70,16 +80,19 @@ export default function CTABlock({ headline, body, ctaText }: CTABlockProps) {
         setStatus("success");
         setServerMessage(data.message || "Thank you. We will be in touch.");
         setForm(initialState);
+        track("form_success");
       } else {
         setStatus("error");
         if (data.errors) {
           setFieldErrors(data.errors);
         }
         setServerMessage(data.errors?.form || "Something went wrong. Please try again.");
+        track("form_error", { reason: "server" });
       }
     } catch {
       setStatus("error");
       setServerMessage("Unable to submit. Please check your connection and try again.");
+      track("form_error", { reason: "network" });
     }
   }
 
@@ -139,7 +152,7 @@ export default function CTABlock({ headline, body, ctaText }: CTABlockProps) {
                 </div>
               </div>
 
-              <form className="space-y-4" onSubmit={handleSubmit} noValidate>
+              <form className="space-y-4" onSubmit={handleSubmit} onFocus={handleFormStart} noValidate>
                 <div className="grid gap-4 sm:grid-cols-2">
                   <Field
                     label="Name"

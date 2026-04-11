@@ -31,20 +31,25 @@ export default function Button({
   href,
   children,
   className = "",
+  onClick,
   ...props
 }: ButtonProps) {
   const classes = `inline-flex items-center justify-center rounded-lg font-medium transition-all duration-200 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-bg-primary disabled:opacity-50 disabled:cursor-not-allowed ${variantStyles[variant]} ${sizeStyles[size]} ${className}`;
 
   if (href) {
     return (
-      <a href={href} className={classes}>
+      <a
+        href={href}
+        className={classes}
+        onClick={onClick as unknown as React.MouseEventHandler<HTMLAnchorElement>}
+      >
         {children}
       </a>
     );
   }
 
   return (
-    <button className={classes} {...props}>
+    <button className={classes} onClick={onClick} {...props}>
       {children}
     </button>
   );
