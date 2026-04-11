@@ -91,7 +91,7 @@ const comparisonRows: { layer: string; does: string; stops: string; featured?: b
   {
     layer: "KavachIQ Autonomous Assurance",
     does: "Captures change, maps impact, and coordinates safe recovery.",
-    stops: "Built for identity, access, systems of record, and connected business platforms.",
+    stops: "Built for identity, access, systems of record, and connected enterprise platforms.",
     featured: true,
   },
 ];
