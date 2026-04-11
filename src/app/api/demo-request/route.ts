@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { writeFile, readFile, mkdir } from "fs/promises";
-import { join } from "path";
+import { Resend } from "resend";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -11,9 +10,23 @@ interface DemoRequest {
   useCase: string;
 }
 
-interface StoredRequest extends DemoRequest {
-  id: string;
-  submittedAt: string;
+// ─── Rate limiting (in-memory, per-IP) ───────────────────────────────────────
+
+const rateMap = new Map<string, { count: number; resetAt: number }>();
+const RATE_LIMIT = 5; // max requests per window
+const RATE_WINDOW_MS = 15 * 60 * 1000; // 15 minutes
+
+function isRateLimited(ip: string): boolean {
+  const now = Date.now();
+  const entry = rateMap.get(ip);
+
+  if (!entry || now > entry.resetAt) {
+    rateMap.set(ip, { count: 1, resetAt: now + RATE_WINDOW_MS });
+    return false;
+  }
+
+  entry.count++;
+  return entry.count > RATE_LIMIT;
 }
 
 // ─── Validation ──────────────────────────────────────────────────────────────
@@ -42,6 +55,11 @@ function validate(body: unknown): { data?: DemoRequest; errors?: Record<string, 
     errors.useCase = "Use case must be a string";
   }
 
+  // Honeypot check — if a hidden field is filled, it's a bot
+  if ((body as Record<string, unknown>).website) {
+    errors.form = "Something went wrong. Please try again.";
+  }
+
   if (Object.keys(errors).length > 0) {
     return { errors };
   }
@@ -56,53 +74,86 @@ function validate(body: unknown): { data?: DemoRequest; errors?: Record<string, 
   };
 }
 
-// ─── Webhook delivery (optional) ─────────────────────────────────────────────
+// ─── Email via Resend ────────────────────────────────────────────────────────
 
-async function deliverWebhook(request: StoredRequest): Promise<boolean> {
-  const webhookUrl = process.env.DEMO_REQUEST_WEBHOOK_URL;
-  if (!webhookUrl) return false;
+async function sendEmail(request: DemoRequest, id: string): Promise<boolean> {
+  const apiKey = process.env.RESEND_API_KEY;
+  const toEmail = process.env.DEMO_REQUEST_TO_EMAIL;
 
-  try {
-    const res = await fetch(webhookUrl, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(request),
-    });
-    return res.ok;
-  } catch {
-    console.error("[demo-request] Webhook delivery failed");
+  if (!apiKey || !toEmail) {
+    console.warn("[demo-request] RESEND_API_KEY or DEMO_REQUEST_TO_EMAIL not set, skipping email");
     return false;
   }
+
+  const resend = new Resend(apiKey);
+
+  const { error } = await resend.emails.send({
+    from: "KavachIQ Demo Requests <onboarding@resend.dev>",
+    to: [toEmail],
+    replyTo: request.email,
+    subject: `Demo request from ${request.name}${request.company ? ` at ${request.company}` : ""}`,
+    html: `
+      <div style="font-family: system-ui, sans-serif; max-width: 560px;">
+        <h2 style="color: #1e293b; margin-bottom: 24px;">New demo request</h2>
+        <table style="width: 100%; border-collapse: collapse;">
+          <tr>
+            <td style="padding: 10px 0; color: #64748b; font-size: 14px; width: 120px; vertical-align: top;">Name</td>
+            <td style="padding: 10px 0; color: #0f172a; font-size: 14px;">${escapeHtml(request.name)}</td>
+          </tr>
+          <tr>
+            <td style="padding: 10px 0; color: #64748b; font-size: 14px; vertical-align: top;">Email</td>
+            <td style="padding: 10px 0; color: #0f172a; font-size: 14px;">
+              <a href="mailto:${escapeHtml(request.email)}" style="color: #0284c7;">${escapeHtml(request.email)}</a>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding: 10px 0; color: #64748b; font-size: 14px; vertical-align: top;">Company</td>
+            <td style="padding: 10px 0; color: #0f172a; font-size: 14px;">${escapeHtml(request.company) || "—"}</td>
+          </tr>
+          <tr>
+            <td style="padding: 10px 0; color: #64748b; font-size: 14px; vertical-align: top;">Use case</td>
+            <td style="padding: 10px 0; color: #0f172a; font-size: 14px;">${escapeHtml(request.useCase) || "—"}</td>
+          </tr>
+        </table>
+        <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 24px 0;" />
+        <p style="font-size: 12px; color: #94a3b8;">
+          Request ID: ${id}<br/>
+          Submitted: ${new Date().toISOString()}<br/>
+          Reply directly to this email to respond to the requester.
+        </p>
+      </div>
+    `,
+  });
+
+  if (error) {
+    console.error("[demo-request] Resend error:", error);
+    return false;
+  }
+
+  return true;
 }
 
-// ─── Local file storage (fallback) ───────────────────────────────────────────
-
-async function storeLocally(request: StoredRequest): Promise<void> {
-  const dir = join(process.cwd(), ".data");
-  const file = join(dir, "demo-requests.json");
-
-  try {
-    await mkdir(dir, { recursive: true });
-  } catch {
-    // directory already exists
-  }
-
-  let existing: StoredRequest[] = [];
-  try {
-    const raw = await readFile(file, "utf-8");
-    existing = JSON.parse(raw);
-  } catch {
-    // file doesn't exist yet
-  }
-
-  existing.push(request);
-  await writeFile(file, JSON.stringify(existing, null, 2));
+function escapeHtml(str: string): string {
+  return str
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
 }
 
 // ─── Route handler ───────────────────────────────────────────────────────────
 
 export async function POST(req: NextRequest) {
   try {
+    // Rate limiting
+    const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
+    if (isRateLimited(ip)) {
+      return NextResponse.json(
+        { success: false, errors: { form: "Too many requests. Please try again in a few minutes." } },
+        { status: 429 },
+      );
+    }
+
     const body = await req.json();
     const { data, errors } = validate(body);
 
@@ -113,27 +164,23 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const stored: StoredRequest = {
-      ...data!,
-      id: crypto.randomUUID(),
-      submittedAt: new Date().toISOString(),
-    };
+    const id = crypto.randomUUID();
+    const emailSent = await sendEmail(data!, id);
 
-    // Try webhook first, fall back to local storage
-    const webhookDelivered = await deliverWebhook(stored);
-    if (!webhookDelivered) {
-      await storeLocally(stored);
+    if (!emailSent) {
+      console.warn(`[demo-request] Email not sent for ${id}, check RESEND_API_KEY and DEMO_REQUEST_TO_EMAIL`);
     }
 
     return NextResponse.json(
       {
         success: true,
         message: "Thank you. We will be in touch within one business day.",
-        id: stored.id,
+        id,
       },
       { status: 200 },
     );
-  } catch {
+  } catch (err) {
+    console.error("[demo-request] Unexpected error:", err);
     return NextResponse.json(
       { success: false, errors: { form: "Something went wrong. Please try again." } },
       { status: 500 },

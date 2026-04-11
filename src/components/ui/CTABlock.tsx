@@ -34,6 +34,7 @@ export default function CTABlock({ headline, body, ctaText }: CTABlockProps) {
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [serverMessage, setServerMessage] = useState("");
   const [formStarted, setFormStarted] = useState(false);
+  const [honeypot, setHoneypot] = useState("");
 
   function handleFormStart() {
     if (!formStarted) {
@@ -71,7 +72,7 @@ export default function CTABlock({ headline, body, ctaText }: CTABlockProps) {
       const res = await fetch("/api/demo-request", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form),
+        body: JSON.stringify({ ...form, website: honeypot }),
       });
 
       const data = await res.json();
@@ -189,6 +190,21 @@ export default function CTABlock({ headline, body, ctaText }: CTABlockProps) {
                     placeholder="We want assurance for agent-driven identity changes and Microsoft 365 recovery."
                     className="min-h-32 w-full rounded-2xl border border-border-primary bg-bg-surface/80 px-4 py-3 text-sm text-text-primary placeholder:text-text-muted outline-none transition focus:border-accent"
                   />
+                </div>
+
+                {/* Honeypot — hidden from real users, caught by bots */}
+                <div className="absolute opacity-0 pointer-events-none h-0 overflow-hidden" aria-hidden="true" tabIndex={-1}>
+                  <label>
+                    Website
+                    <input
+                      type="text"
+                      name="website"
+                      value={honeypot}
+                      onChange={(e) => setHoneypot(e.target.value)}
+                      tabIndex={-1}
+                      autoComplete="off"
+                    />
+                  </label>
                 </div>
 
                 {status === "error" && serverMessage && (
