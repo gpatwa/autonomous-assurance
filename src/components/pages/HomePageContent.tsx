@@ -357,8 +357,8 @@ export default function HomePageContent() {
       {/* ─── 8. Closing CTA ──────────────────────────────────────────────── */}
       <CTABlock
         headline="Move faster with production confidence"
-        body="Let AI agents operate with the assurance your enterprise needs. Use the form to generate a structured request now, then wire it to your CRM or inbox workflow later."
-        ctaText="Generate Demo Request"
+        body="Let AI agents operate with the assurance your enterprise needs. Tell us about your environment and we will show you how KavachIQ fits."
+        ctaText="Request a Demo"
       />
     </>
   );

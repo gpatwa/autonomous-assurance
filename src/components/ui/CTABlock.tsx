@@ -103,11 +103,11 @@ export default function CTABlock({ headline, body, ctaText }: CTABlockProps) {
                 Request a demo
               </p>
               <h3 className="mt-2 text-2xl font-semibold text-text-primary">
-                Start a buyer-ready conversation.
+                Tell us about your environment.
               </h3>
             </div>
             <div className="hidden rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs text-text-secondary sm:block">
-              Opens your email client with the request prefilled
+              We respond within one business day
             </div>
           </div>
 
@@ -163,7 +163,7 @@ export default function CTABlock({ headline, body, ctaText }: CTABlockProps) {
             </div>
 
             <p className="text-sm leading-relaxed text-text-muted">
-              This prototype generates a structured outbound request so the site has a usable demo flow now, while keeping it easy to connect a real CRM or inbox workflow later.
+              Your request opens a prefilled email so you can send it directly to our team. We typically respond within one business day.
             </p>
           </form>
         </div>

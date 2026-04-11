@@ -425,7 +425,7 @@ export default function PlatformPageContent() {
       <CTABlock
         headline="Autonomy without assurance is a risk multiplier"
         body="KavachIQ Autonomous Assurance gives enterprises the confidence to move from AI experimentation to production deployment with a clear path to recovery when autonomous systems go wrong."
-        ctaText="Generate Demo Request"
+        ctaText="Request a Demo"
       />
     </>
   );
