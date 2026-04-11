@@ -25,15 +25,20 @@ export const metadata: Metadata = {
   openGraph: {
     title: "KavachIQ Autonomous Assurance",
     description:
-      "Assurance for AI-driven enterprise operations across Microsoft Entra, Microsoft 365, and connected systems.",
+      "Assurance for AI-driven enterprise operations across Microsoft Entra, Microsoft 365, and connected enterprise systems.",
     siteName: "KavachIQ",
     type: "website",
+    locale: "en_US",
   },
   twitter: {
     card: "summary_large_image",
     title: "KavachIQ Autonomous Assurance",
     description:
-      "Assurance for AI-driven enterprise operations across Microsoft Entra, Microsoft 365, and connected systems.",
+      "Assurance for AI-driven enterprise operations across Microsoft Entra, Microsoft 365, and connected enterprise systems.",
+  },
+  robots: {
+    index: true,
+    follow: true,
   },
 };
 
