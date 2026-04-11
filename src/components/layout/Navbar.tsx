@@ -5,11 +5,22 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import Button from "@/components/ui/Button";
 
-const navLinks = [
+type NavLink = {
+  label: string;
+  href: string;
+  /** When on the platform page, use this href instead (if provided) */
+  platformHref?: string;
+};
+
+const navLinks: NavLink[] = [
   { label: "Platform", href: "/platform" },
   { label: "Identity Assurance", href: "/platform#identity-assurance" },
   { label: "Data Assurance", href: "/platform#data-assurance" },
-  { label: "How It Works", href: "/#how-it-works" },
+  {
+    label: "How It Works",
+    href: "/#how-it-works",
+    platformHref: "/platform#how-it-works",
+  },
   { label: "Why KavachIQ", href: "/#why-kavachiq" },
 ];
 
@@ -31,11 +42,13 @@ export default function Navbar() {
           {/* Desktop nav */}
           <div className="hidden lg:flex items-center gap-8">
             {navLinks.map((link) => {
-              const isActive = pathname === "/platform" && link.href === "/platform";
+              const onPlatform = pathname === "/platform";
+              const resolvedHref = onPlatform && link.platformHref ? link.platformHref : link.href;
+              const isActive = onPlatform && link.href === "/platform";
               return (
                 <Link
                   key={link.label}
-                  href={link.href}
+                  href={resolvedHref}
                   className={`text-sm transition-colors duration-200 ${
                     isActive ? "text-text-primary" : "text-text-secondary hover:text-text-primary"
                   }`}
@@ -88,16 +101,19 @@ export default function Navbar() {
       {mobileOpen && (
         <div className="lg:hidden border-t border-border-primary bg-bg-primary/95 backdrop-blur-xl">
           <div className="px-4 py-4 space-y-3">
-            {navLinks.map((link) => (
-              <Link
-                key={link.label}
-                href={link.href}
-                onClick={() => setMobileOpen(false)}
-                className="block text-sm text-text-secondary hover:text-text-primary transition-colors py-2"
-              >
-                {link.label}
-              </Link>
-            ))}
+            {navLinks.map((link) => {
+              const resolvedHref = pathname === "/platform" && link.platformHref ? link.platformHref : link.href;
+              return (
+                <Link
+                  key={link.label}
+                  href={resolvedHref}
+                  onClick={() => setMobileOpen(false)}
+                  className="block text-sm text-text-secondary hover:text-text-primary transition-colors py-2"
+                >
+                  {link.label}
+                </Link>
+              );
+            })}
             <div className="pt-2">
               <Button
                 variant="primary"
