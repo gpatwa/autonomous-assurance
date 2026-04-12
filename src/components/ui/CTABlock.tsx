@@ -118,17 +118,15 @@ export default function CTABlock({ headline, body, ctaText }: CTABlockProps) {
           </p>
           <div className="mt-8 grid gap-4 sm:grid-cols-2">
             {[
-              "Structured incident timeline",
-              "Entra and Microsoft 365 recovery context",
-              "Blast-radius analysis",
-              "Rollback and compensating actions",
-            ].map((item) => (
+              ["In the demo, you will see", "A real recovery scenario from agent-driven Entra change through Microsoft 365 blast radius to trusted-state restoration"],
+              ["What you will walk away with", "A clear understanding of how identity-first recovery sequencing works for your Entra and Microsoft 365 environment"],
+            ].map(([title, desc]) => (
               <div
-                key={item}
-                className="rounded-2xl border border-border-primary bg-bg-primary/60 px-4 py-4 text-sm text-text-secondary"
+                key={title}
+                className="rounded-2xl border border-border-primary bg-bg-primary/60 px-4 py-4"
               >
-                <span className="mr-2 text-accent">&#x2022;</span>
-                {item}
+                <p className="text-sm font-semibold text-text-primary">{title}</p>
+                <p className="mt-2 text-xs leading-relaxed text-text-secondary">{desc}</p>
               </div>
             ))}
           </div>
@@ -233,7 +231,7 @@ export default function CTABlock({ headline, body, ctaText }: CTABlockProps) {
                 </div>
 
                 <p className="text-sm leading-relaxed text-text-muted">
-                  Share your use case and we will follow up with the right conversation.
+                  We will follow up within one business day with a recovery scenario tailored to your environment.
                 </p>
               </form>
             </>

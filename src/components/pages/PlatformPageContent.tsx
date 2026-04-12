@@ -467,8 +467,8 @@ export default function PlatformPageContent() {
 
       {/* ─── 9. Final CTA ────────────────────────────────────────────────── */}
       <CTABlock
-        headline="See identity-first recovery in action"
-        body="Walk through a real recovery scenario with our team. We will show you how KavachIQ maps blast radius across Entra and Microsoft 365 and guides operators through safe recovery."
+        headline="See how identity-first recovery works"
+        body="Walk through a real recovery scenario with our team. See how KavachIQ captures an agent-driven Entra change, maps blast radius across Microsoft 365, sequences rollback with identity-first recovery, and returns your environment to a trusted operational state."
         ctaText="Request a Demo"
       />
     </>
