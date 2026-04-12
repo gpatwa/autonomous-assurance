@@ -392,7 +392,85 @@ export default function HomePageContent() {
         </div>
       </section>
 
-      {/* ─── 8. Buyer relevance ──────────────────────────────────────────── */}
+      {/* ─── 8. Example recovery scenario ─────────────────────────────────── */}
+      <section className="relative bg-bg-surface/40 py-24 sm:py-28" id="recovery-scenario">
+        <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-border-primary to-transparent" />
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <SectionHeader
+            label="Example scenario"
+            title="What recovery looks like when an agent changes Entra group membership"
+          />
+          <motion.div
+            variants={staggerContainer}
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true, margin: "-80px" }}
+            className="mx-auto max-w-4xl"
+          >
+            {[
+              {
+                step: "1",
+                title: "Agent modifies Entra group membership",
+                detail: "An AI workflow adds 12 users to a privileged security group in Microsoft Entra. The change grants those users access to sensitive SharePoint sites, Exchange mailboxes, and a downstream LOB application.",
+                tag: "Incident",
+                tagColor: "text-red-400 bg-red-400/10 border-red-400/20",
+              },
+              {
+                step: "2",
+                title: "KavachIQ captures the change with full context",
+                detail: "The platform records the initiating agent, workflow session, target group, added members, and before/after state. The operator can see exactly what happened and when.",
+                tag: "Capture",
+                tagColor: "text-accent bg-accent/10 border-accent/20",
+              },
+              {
+                step: "3",
+                title: "Blast radius maps across identity and data",
+                detail: "KavachIQ identifies that the group change affected 3 SharePoint site collections, 12 Exchange mailbox delegations, conditional access policy scope, and one downstream app provisioning flow.",
+                tag: "Assess",
+                tagColor: "text-amber-400 bg-amber-400/10 border-amber-400/20",
+              },
+              {
+                step: "4",
+                title: "Recovery sequences identity before data",
+                detail: "KavachIQ recommends reverting the Entra group membership first. Then revoking the downstream SharePoint and Exchange access that was granted. Then verifying the conditional access policy is restored. Then confirming the LOB app provisioning state.",
+                tag: "Recover",
+                tagColor: "text-emerald-400 bg-emerald-400/10 border-emerald-400/20",
+              },
+              {
+                step: "5",
+                title: "Team returns to trusted operational state",
+                detail: "The operator confirms that identity trust is restored, downstream access is correct, and collaboration surfaces are back to their pre-incident state. The incident is closed with a full audit trail.",
+                tag: "Resolved",
+                tagColor: "text-emerald-400 bg-emerald-400/10 border-emerald-400/20",
+              },
+            ].map((item) => (
+              <motion.div
+                key={item.step}
+                variants={fadeUp}
+                className="flex gap-5 py-5 border-b border-border-primary/50 last:border-0"
+              >
+                <div className="flex-shrink-0 flex flex-col items-center">
+                  <div className="flex h-9 w-9 items-center justify-center rounded-full border border-accent/30 bg-accent/10 text-accent text-sm font-bold">
+                    {item.step}
+                  </div>
+                  {item.step !== "5" && <div className="w-px flex-1 bg-gradient-to-b from-accent/20 to-transparent mt-2" />}
+                </div>
+                <div className="pb-2">
+                  <div className="flex items-center gap-3 mb-2">
+                    <span className={`inline-flex rounded-full border px-2.5 py-0.5 text-xs font-semibold ${item.tagColor}`}>
+                      {item.tag}
+                    </span>
+                  </div>
+                  <p className="text-base font-semibold text-text-primary">{item.title}</p>
+                  <p className="mt-2 text-sm leading-relaxed text-text-secondary">{item.detail}</p>
+                </div>
+              </motion.div>
+            ))}
+          </motion.div>
+        </div>
+      </section>
+
+      {/* ─── 9. Buyer relevance ──────────────────────────────────────────── */}
       <section className="relative bg-bg-surface/50 py-20 sm:py-24">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <SectionHeader
