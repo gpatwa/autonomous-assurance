@@ -4,7 +4,7 @@ import PlatformPageContent from "@/components/pages/PlatformPageContent";
 export const metadata: Metadata = {
   title: "Platform",
   description:
-    "See how KavachIQ Autonomous Assurance captures autonomous change, maps blast radius, and drives recovery across Microsoft Entra, Microsoft 365, and downstream systems.",
+    "KavachIQ Autonomous Assurance captures agent-driven change, maps blast radius across Microsoft Entra and Microsoft 365, and guides rollback, restoration, and compensating actions in the safest order.",
 };
 
 export default function PlatformPage() {
