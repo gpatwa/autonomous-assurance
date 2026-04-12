@@ -143,7 +143,7 @@ export default function CTABlock({ headline, body, ctaText }: CTABlockProps) {
                     Request a demo
                   </p>
                   <h3 className="mt-2 text-2xl font-semibold text-text-primary">
-                    Tell us about your environment.
+                    Tell us about your environment
                   </h3>
                 </div>
                 <div className="hidden rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs text-text-secondary sm:block">
@@ -180,7 +180,7 @@ export default function CTABlock({ headline, body, ctaText }: CTABlockProps) {
                 />
                 <div>
                   <label className="mb-2 block text-sm font-medium text-text-primary">
-                    Current AI agent use case
+                    What agent-driven changes concern you most
                   </label>
                   <textarea
                     value={form.useCase}

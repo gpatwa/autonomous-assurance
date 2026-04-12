@@ -59,7 +59,7 @@ export default function Footer() {
             &copy; {new Date().getFullYear()} KavachIQ. All rights reserved.
           </p>
           <p className="text-xs text-text-muted">
-            Identity-first recovery for Microsoft Entra, Microsoft 365, and connected systems
+            Identity-first recovery for Microsoft Entra, Microsoft 365, and connected enterprise systems
           </p>
         </div>
       </div>

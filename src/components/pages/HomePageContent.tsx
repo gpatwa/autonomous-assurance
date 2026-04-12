@@ -95,7 +95,7 @@ const comparisonRows: { layer: string; does: string; stops: string; featured?: b
   {
     layer: "KavachIQ Autonomous Assurance",
     does: "Maps blast radius and guides rollback, restoration, and compensating actions",
-    stops: "Identity-first recovery across Entra, Microsoft 365, and connected systems",
+    stops: "Identity-first recovery across Entra, Microsoft 365, and connected enterprise systems",
     featured: true,
   },
 ];
@@ -250,7 +250,7 @@ export default function HomePageContent() {
             <ValueCard
               icon={<EyeIcon />}
               title="See what agents changed"
-              description="Track agent-driven changes across Entra identity objects, Microsoft 365 workloads, and connected systems with full operational context. Know the initiating agent, the workflow session, the target object, and the before and after state."
+              description="Track agent-driven changes across Entra identity objects, Microsoft 365 workloads, and connected enterprise systems with full operational context. Know the initiating agent, the workflow session, the target object, and the before and after state."
             />
             <ValueCard
               icon={<RadiusIcon />}
