@@ -138,10 +138,10 @@ export default function PlatformPageContent() {
                 <span className="text-accent">Assurance</span>
               </motion.h1>
               <motion.p variants={fadeUp} className="mt-4 text-xl text-text-secondary">
-                The recovery layer for harmful agent-driven change
+                The missing recovery layer for harmful agent-driven change
               </motion.p>
               <motion.p variants={fadeUp} className="mt-6 max-w-xl text-lg leading-relaxed text-text-secondary">
-                AI agents and automation are changing identities, permissions, configurations, and business data across your enterprise. When those changes are harmful, backup, observability, and governance each solve only part of the problem. KavachIQ is the operational layer that helps teams map blast radius, sequence recovery, and return to a trusted state.
+                AI agents and automation are changing identities, permissions, and business data across your enterprise. Backup restores objects. Observability shows events. Governance sets rules. None of them map blast radius across identity and data, sequence recovery in the right order, or coordinate rollback and compensating actions across systems. KavachIQ does.
               </motion.p>
               <motion.div variants={fadeUp} className="mt-10 flex flex-wrap gap-4">
                 <Button variant="primary" size="lg" href="#request-demo" onClick={() => track("cta_click", { page: "platform", label: "Request a Demo" })}>
@@ -164,8 +164,8 @@ export default function PlatformPageContent() {
           <div className="mx-auto max-w-3xl text-center">
             <SectionHeader
               label="Overview"
-              title="Recovery that starts with identity and works outward"
-              subtitle="The real question is not whether an AI agent can act. It is whether your enterprise can recover when it acts incorrectly. KavachIQ starts with Microsoft Entra, maps impact across Microsoft 365, and coordinates the safest path back to a trusted operational state. Over time, the same model extends to connected enterprise systems."
+              title="Recovery starts with identity and works outward"
+              subtitle="The real question is not whether an AI agent can act. It is whether your enterprise can recover when it acts incorrectly. KavachIQ starts with Microsoft Entra because identity is the control plane for everything else. It maps impact across Microsoft 365, coordinates recovery in the safest order, and returns the enterprise to a trusted operational state. Over time, the same model extends to connected enterprise systems."
             />
           </div>
         </div>
@@ -218,17 +218,17 @@ export default function PlatformPageContent() {
             <CapabilityCard
               icon={<EyeIcon />}
               title="Agent-driven change visibility"
-              description="Track agent-driven actions across Entra and Microsoft 365 with the context needed to understand what changed, who initiated it, and what was affected."
+              description="Track what agents changed across Entra identity objects and Microsoft 365 workloads. Know the initiating agent, workflow session, target object, and before/after state."
             />
             <CapabilityCard
               icon={<RadiusIcon />}
               title="Blast-radius analysis"
-              description="Map which identities, permissions, records, workloads, and downstream systems were impacted by a single agent action or workflow."
+              description="Map which identities, permissions, data, and downstream systems were affected. Understand what depends on what and what must be recovered first."
             />
             <CapabilityCard
               icon={<RestoreIcon />}
               title="Recovery orchestration"
-              description="Coordinate rollback, restoration, and compensating actions across identity and data surfaces in the correct dependency order."
+              description="Guide rollback, restoration, and compensating actions across identity and data surfaces with identity-first sequencing."
             />
             <CapabilityCard
               icon={<CheckCircleIcon />}
