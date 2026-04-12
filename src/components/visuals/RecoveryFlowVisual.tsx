@@ -59,7 +59,7 @@ export default function RecoveryFlowVisual() {
             Incident to recovery flow
           </p>
           <h3 className="mt-2 text-xl font-semibold text-text-primary">
-            See autonomous change move through identity, data, and recovery.
+            See agent-driven change move through identity, data, and recovery.
           </h3>
         </div>
         <div className="hidden rounded-full border border-accent/15 bg-accent/10 px-3 py-1 text-xs text-text-secondary sm:block">

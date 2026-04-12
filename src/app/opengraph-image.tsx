@@ -64,8 +64,8 @@ export default function OGImage() {
             maxWidth: "900px",
           }}
         >
-          <span>Deploy AI agents with </span>
-          <span style={{ color: "#38BDF8" }}>confidence</span>
+          <span>Recover from high-impact </span>
+          <span style={{ color: "#38BDF8" }}>agent-driven changes</span>
         </div>
 
         <div
@@ -78,8 +78,8 @@ export default function OGImage() {
             lineHeight: 1.5,
           }}
         >
-          Autonomous Assurance for identity, Microsoft 365, and connected
-          enterprise systems
+          Identity-first recovery across Microsoft Entra, Microsoft 365,
+          and connected enterprise systems
         </div>
 
         <div

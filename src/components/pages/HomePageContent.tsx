@@ -404,7 +404,7 @@ export default function HomePageContent() {
               ["Identity and Entra admins", "Recover Entra users, groups, app access, and identity policy after high-impact agent changes"],
               ["Microsoft 365 admins", "Coordinate recovery across SharePoint, OneDrive, and Exchange with identity-first sequencing"],
               ["CISOs and security architects", "Define recovery posture and ensure the enterprise can return to a trusted state"],
-              ["CIOs and IT leaders", "Deploy AI agents with confidence that high-impact changes can be contained and recovered from"],
+              ["CIOs and IT leaders", "Ensure high-impact agent-driven changes can be understood, contained, and recovered from"],
             ].map(([title, body]) => (
               <motion.div key={title} variants={fadeUp} className="rounded-2xl border border-border-primary bg-bg-surface/55 p-5">
                 <p className="text-sm font-semibold text-text-primary">{title}</p>
