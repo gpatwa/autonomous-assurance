@@ -77,14 +77,14 @@ function RestoreIcon() {
 
 const comparisonRows: { layer: string; does: string; stops: string; featured?: boolean }[] = [
   {
-    layer: "Observability",
-    does: "Shows what happened after the fact",
-    stops: "Cannot restore business state or coordinate cross-system recovery",
-  },
-  {
     layer: "Backup",
     does: "Restores individual systems or objects",
     stops: "Not agent-aware, no blast-radius mapping, no recovery sequencing",
+  },
+  {
+    layer: "Observability",
+    does: "Shows what happened after the fact",
+    stops: "Cannot restore business state or coordinate cross-system recovery",
   },
   {
     layer: "Governance",
@@ -124,7 +124,7 @@ export default function HomePageContent() {
                 <span className="text-accent">agent-driven change</span>
               </motion.h1>
               <motion.p variants={fadeUp} className="mt-6 max-w-xl text-lg leading-relaxed text-text-secondary sm:text-xl">
-                KavachIQ Autonomous Assurance helps enterprises understand what changed, map blast radius across identity and Microsoft 365, and guide rollback, restoration, and compensating actions in the safest order.
+                AI agents and automation are changing identities, permissions, and business data across your enterprise. When those changes are harmful, your team needs to understand what was affected, map the blast radius, and recover in the right order. KavachIQ Autonomous Assurance guides rollback, restoration, and compensating actions so you can return to a trusted operational state.
               </motion.p>
               <motion.div variants={fadeUp} className="mt-10 flex flex-wrap gap-4">
                 <Button variant="primary" size="lg" href="#request-demo" onClick={() => track("cta_click", { page: "homepage", label: "Request a Demo" })}>
@@ -160,7 +160,7 @@ export default function HomePageContent() {
         </div>
       </section>
 
-      {/* ─── 2. What harmful agent-driven change looks like ──────────────── */}
+      {/* ─── 2. The problem ─────────────────────────────────────────────── */}
       <section className="relative py-24 sm:py-28 bg-bg-surface/40">
         <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-border-primary to-transparent" />
         <div className="absolute inset-x-0 top-0 h-24 bg-gradient-to-b from-bg-surface/30 to-transparent" />
@@ -170,15 +170,15 @@ export default function HomePageContent() {
               <SectionHeader
                 label="The problem"
                 align="left"
-                title="AI agents are taking actions that change your enterprise"
-                subtitle="They can create users, modify group memberships, change app access, update permissions, alter files, and trigger workflows across Entra and Microsoft 365. When those changes are harmful, teams need more than logs. They need to know what was affected, what depends on it, and how to recover in the right order."
+                title="AI agents are making changes your team was not designed to recover from"
+                subtitle="Agents and automation can now create users, modify group memberships, change app access, alter permissions, update files, and trigger workflows across Entra and Microsoft 365. Some of those changes will be harmful. When they are, teams need more than logs and object-level restores. They need to understand the full scope of impact and recover in the right order."
               />
               <div className="grid gap-4 sm:grid-cols-2">
                 {[
-                  ["Identity changes", "Users, groups, service principals, app registrations, and access policy"],
-                  ["Permission drift", "Conditional access, role assignments, and downstream provisioning"],
-                  ["Data impact", "SharePoint sites, OneDrive content, Exchange mailboxes, and collaboration settings"],
-                  ["Cross-system fallout", "Changes that cascade from Entra into Microsoft 365 and connected systems"],
+                  ["Identity changes", "Users created, groups modified, service principals altered, app registrations changed, and access policy updated by agent workflows"],
+                  ["Permission drift", "Conditional access changes, role assignment modifications, and downstream provisioning impact that compounds silently"],
+                  ["Data impact", "SharePoint sites, OneDrive content, Exchange mailboxes, and collaboration settings changed without operator awareness"],
+                  ["Cross-system fallout", "Changes that start in Entra and cascade into Microsoft 365 workloads, connected apps, and downstream business systems"],
                 ].map(([title, body]) => (
                   <div key={title} className="rounded-2xl border border-border-primary bg-bg-surface/55 p-5">
                     <p className="text-base font-semibold text-text-primary">{title}</p>
@@ -200,8 +200,8 @@ export default function HomePageContent() {
               <SectionHeader
                 label="Why KavachIQ"
                 align="left"
-                title="The missing layer between AI automation and business recovery"
-                subtitle="Observability shows what happened. Backup restores individual systems. Governance sets rules. None of them map blast radius across identity and data, sequence recovery in the right order, or coordinate rollback and compensating actions across systems. KavachIQ is built for exactly that."
+                title="Backup, observability, and governance each solve part of the problem. None of them solve recovery."
+                subtitle="When an AI agent makes a harmful change to an Entra identity, and that change cascades into Microsoft 365 permissions, downstream app access, and collaboration workflows, no single existing tool can map the blast radius and guide recovery in the right sequence. Backup restores objects. Observability shows events. Governance sets rules. KavachIQ recovers business state."
               />
             </div>
             <div className="overflow-hidden rounded-[28px] border border-border-primary bg-bg-surface/70 p-4 shadow-[0_0_40px_rgba(8,15,35,0.45)]">
@@ -235,7 +235,10 @@ export default function HomePageContent() {
       <section className="relative bg-bg-surface/50 py-24 sm:py-28">
         <GridPattern />
         <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <SectionHeader label="What KavachIQ does" title="Understand, contain, and recover" />
+          <SectionHeader
+            label="What KavachIQ does"
+            title="Understand what changed. Assess the blast radius. Recover safely."
+          />
           <motion.div
             variants={staggerContainer}
             initial="hidden"
@@ -246,17 +249,17 @@ export default function HomePageContent() {
             <ValueCard
               icon={<EyeIcon />}
               title="See what agents changed"
-              description="Track agent-driven changes across Entra identity objects, Microsoft 365 workloads, and connected systems with full operational context."
+              description="Track agent-driven changes across Entra identity objects, Microsoft 365 workloads, and connected systems with full operational context. Know the initiating agent, the workflow session, the target object, and the before and after state."
             />
             <ValueCard
               icon={<RadiusIcon />}
               title="Map blast radius before acting"
-              description="Understand which identities, permissions, data, and downstream systems were affected and what depends on what."
+              description="Understand which identities, permissions, data, and downstream systems were affected. See what depends on what. Know the order in which recovery must happen before taking action."
             />
             <ValueCard
               icon={<RestoreIcon />}
               title="Recover in the safest order"
-              description="Guide rollback, restoration, and compensating actions with identity-first sequencing so teams restore trust before restoring data."
+              description="Guide rollback, restoration, and compensating actions with identity-first sequencing. Restore the control plane before restoring data. Return to a trusted operational state, not just a collection of restored objects."
             />
           </motion.div>
         </div>
@@ -265,13 +268,37 @@ export default function HomePageContent() {
       {/* ─── 5. Why identity-first recovery matters ──────────────────────── */}
       <section className="relative py-24 sm:py-28">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="mx-auto max-w-3xl text-center">
-            <SectionHeader
-              label="Identity-first recovery"
-              title="Restore the control plane before restoring data"
-              subtitle="When an agent changes an Entra user, modifies group membership, or alters an app registration, the impact cascades into Microsoft 365 and every connected system. Recovering data first without restoring identity trust creates new risk. KavachIQ sequences recovery so the control plane is restored before downstream systems."
-            />
-          </div>
+          <SectionHeader
+            label="Identity-first recovery"
+            title="The control plane must be restored before anything else"
+            subtitle="When an agent changes an Entra user, modifies group membership, or alters an app registration, the impact cascades into Microsoft 365 and every connected system. Recovering data first without restoring identity trust creates new exposure. Recovery order matters."
+          />
+          <motion.div
+            variants={staggerContainer}
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true, margin: "-80px" }}
+            className="mx-auto grid max-w-5xl gap-8 md:grid-cols-3"
+          >
+            <motion.div variants={fadeUp} className="rounded-2xl border border-border-primary bg-bg-surface/55 p-6">
+              <p className="text-base font-semibold text-text-primary">Identity is the root of trust</p>
+              <p className="mt-3 text-sm leading-relaxed text-text-secondary">
+                Every permission, access path, and downstream system depends on the integrity of the identity layer. If identity is compromised, restoring data on top of a broken control plane reintroduces risk.
+              </p>
+            </motion.div>
+            <motion.div variants={fadeUp} className="rounded-2xl border border-border-primary bg-bg-surface/55 p-6">
+              <p className="text-base font-semibold text-text-primary">Blast radius crosses system boundaries</p>
+              <p className="mt-3 text-sm leading-relaxed text-text-secondary">
+                A single harmful change to a service principal or group membership can affect Microsoft 365 workloads, connected SaaS apps, provisioning flows, and business workflows simultaneously.
+              </p>
+            </motion.div>
+            <motion.div variants={fadeUp} className="rounded-2xl border border-border-primary bg-bg-surface/55 p-6">
+              <p className="text-base font-semibold text-text-primary">Recovery order determines recovery quality</p>
+              <p className="mt-3 text-sm leading-relaxed text-text-secondary">
+                Restoring a mailbox before fixing the identity that was used to compromise it leaves the door open. KavachIQ sequences identity recovery first, then data and collaboration surfaces, then downstream systems.
+              </p>
+            </motion.div>
+          </motion.div>
         </div>
       </section>
 
@@ -281,6 +308,7 @@ export default function HomePageContent() {
           <SectionHeader
             label="Product pillars"
             title="Built for the systems where trust breaks first"
+            subtitle="KavachIQ starts where the most damage happens fastest: identity and the systems that depend on it. Microsoft Entra and Microsoft 365 are the initial platform. Over time, the same recovery model extends to connected enterprise systems and adjacent SaaS platforms."
           />
           <motion.div
             variants={staggerContainer}
@@ -346,35 +374,52 @@ export default function HomePageContent() {
             <ProcessStep
               step={2}
               title="Map blast radius"
-              description="Identify affected identities, permissions, data, content, and downstream dependencies. Understand what must be recovered first."
+              description="Identify affected identities, permissions, data, content, and downstream dependencies. Understand what must be recovered first and what depends on what."
             />
             <ProcessStep
               step={3}
               title="Guide safe recovery"
-              description="Execute rollback, restoration, or compensating actions in the right sequence. Restore identity trust before recovering data surfaces."
+              description="Execute rollback, restoration, or compensating actions in the right sequence. Restore identity trust before recovering data surfaces. Return the enterprise to a trusted operational state."
               isLast
             />
           </motion.div>
         </div>
       </section>
 
-      {/* ─── 8. Audience ─────────────────────────────────────────────────── */}
+      {/* ─── 8. Buyer relevance ──────────────────────────────────────────── */}
       <section className="relative bg-bg-surface/50 py-24 sm:py-28">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="mx-auto max-w-3xl text-center">
-            <SectionHeader
-              label="Who this is for"
-              title="Built for the teams responsible for identity, access, and business continuity"
-              subtitle="KavachIQ is designed for identity admins, Entra admins, Microsoft 365 admins, and platform security owners who need to recover from harmful agent-driven change. It supports the conversations CISOs, CIOs, and security architects need to have about safe production AI."
-            />
-          </div>
+          <SectionHeader
+            label="Who this is for"
+            title="Built for the teams responsible for identity, access, and business continuity"
+            subtitle="KavachIQ is designed for the operators who will be on the hook when an agent workflow goes wrong. It supports the conversations security leaders and IT executives need to have about deploying AI agents safely in production."
+          />
+          <motion.div
+            variants={staggerContainer}
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true, margin: "-80px" }}
+            className="mx-auto grid max-w-5xl gap-6 md:grid-cols-2"
+          >
+            {[
+              ["Identity and Entra admins", "The operators who manage users, groups, app access, service principals, and identity policy in Microsoft Entra and need to recover when agents make harmful changes"],
+              ["Microsoft 365 admins", "The operators who manage SharePoint, OneDrive, Exchange, and collaboration settings and need recovery that coordinates with identity, not just object-level restores"],
+              ["CISOs and security architects", "The leaders who need to assess agent-driven risk, define recovery posture, and ensure the enterprise can return to a trusted state after harmful change"],
+              ["CIOs, Heads of IT, and platform security owners", "The executives who need to deploy AI agents and automation with confidence that harmful change can be understood, contained, and recovered from"],
+            ].map(([title, body]) => (
+              <motion.div key={title} variants={fadeUp} className="rounded-2xl border border-border-primary bg-bg-surface/55 p-6">
+                <p className="text-base font-semibold text-text-primary">{title}</p>
+                <p className="mt-3 text-sm leading-relaxed text-text-secondary">{body}</p>
+              </motion.div>
+            ))}
+          </motion.div>
         </div>
       </section>
 
       {/* ─── 9. Closing CTA ──────────────────────────────────────────────── */}
       <CTABlock
         headline="See how identity-first recovery works"
-        body="Walk through a real recovery scenario with our team. We will show you how KavachIQ maps blast radius, sequences rollback, and returns your Entra and Microsoft 365 environment to a trusted state."
+        body="Walk through a real recovery scenario with our team. We will show you how KavachIQ maps blast radius across Entra and Microsoft 365, sequences rollback with identity-first recovery, and returns your environment to a trusted operational state."
         ctaText="Request a Demo"
       />
     </>
