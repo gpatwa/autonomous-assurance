@@ -1,16 +1,16 @@
 /**
  * Staging site verification script.
  *
- * Captures screenshots, extracts metadata and visible text,
- * checks for approved and stale messaging, and writes a
- * markdown audit report with screenshot artifacts.
+ * Captures section-aware screenshots using real selectors,
+ * extracts metadata and visible text, checks for approved
+ * and stale messaging, and writes an audit report.
  *
  * Usage:
- *   npx tsx scripts/verify-staging.ts
- *   STAGING_URL=https://custom-url.com npx tsx scripts/verify-staging.ts
+ *   npm run verify:staging
+ *   STAGING_URL=https://custom-url.com npm run verify:staging
  */
 
-import { chromium, type Page } from "playwright";
+import { chromium, type Page, type BrowserContext } from "playwright";
 import { writeFile, mkdir } from "fs/promises";
 import { execSync } from "child_process";
 import { join } from "path";
@@ -21,10 +21,29 @@ const BASE_URL = process.env.STAGING_URL || "https://staging.kavachiq.com";
 const ARTIFACTS_DIR = join(process.cwd(), "artifacts", "staging");
 const REPORT_PATH = join(process.cwd(), "artifacts", "staging-site-audit.md");
 
-const PAGES = [
-  { path: "/", name: "home", label: "Homepage" },
-  { path: "/platform", name: "platform", label: "Platform" },
-];
+const VIEWPORTS = {
+  desktop: { width: 1440, height: 900 },
+  mobile: { width: 375, height: 812 },
+};
+
+// Sections to capture per page. Each entry scrolls to the selector,
+// waits for it to be visible, then takes a viewport screenshot.
+const PAGE_SECTIONS: Record<string, { selector: string; name: string }[]> = {
+  home: [
+    { selector: "h1", name: "hero" },
+    { selector: "#why-kavachiq", name: "comparison" },
+    { selector: "#how-it-works", name: "how-it-works" },
+    { selector: "#request-demo", name: "cta" },
+    { selector: "footer", name: "footer" },
+  ],
+  platform: [
+    { selector: "h1", name: "hero" },
+    { selector: "#platform-proof", name: "proof" },
+    { selector: "#identity-assurance", name: "entra" },
+    { selector: "#data-assurance", name: "m365" },
+    { selector: "#request-demo", name: "cta" },
+  ],
+};
 
 const APPROVED_PHRASES = [
   "Recover from high-impact agent-driven changes",
@@ -48,12 +67,14 @@ const STALE_PHRASES = [
   "Microsoft doesn't back up",
 ];
 
-const VIEWPORTS = {
-  desktop: { width: 1440, height: 900 },
-  mobile: { width: 375, height: 812 },
-};
-
 // ─── Types ───────────────────────────────────────────────────────────────────
+
+interface ScreenshotInfo {
+  file: string;
+  section: string;
+  viewport: string;
+  heading: string;
+}
 
 interface PageAudit {
   url: string;
@@ -70,7 +91,7 @@ interface PageAudit {
   approvedFound: string[];
   approvedMissing: string[];
   staleFound: string[];
-  screenshots: string[];
+  screenshots: ScreenshotInfo[];
 }
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -85,35 +106,45 @@ function getGitInfo(): { commit: string; branch: string } {
   }
 }
 
+async function createContext(browser: Awaited<ReturnType<typeof chromium.launch>>, viewport: { width: number; height: number }): Promise<BrowserContext> {
+  return browser.newContext({
+    viewport,
+    // Disable animations so screenshots capture settled state
+    reducedMotion: "reduce",
+  });
+}
+
 async function extractMetadata(page: Page) {
   return page.evaluate(`(() => {
-    const getMeta = (name) =>
-      (document.querySelector('meta[name="' + name + '"], meta[property="' + name + '"]') || {}).content || "";
-    const getLink = (rel) =>
-      (document.querySelector('link[rel="' + rel + '"]') || {}).href || "";
-
-    const headings = Array.from(document.querySelectorAll("h1, h2, h3"))
-      .map((el) => el.tagName + ": " + (el.textContent || "").trim().substring(0, 120))
-      .filter(Boolean);
-
-    const ctaTexts = Array.from(
-      document.querySelectorAll('a[href*="request-demo"], button[type="submit"], a[href*="how-it-works"]')
-    )
-      .map((el) => (el.textContent || "").trim())
-      .filter(Boolean);
-
-    const firstH1 = (document.querySelector("h1") || {}).textContent || "";
-
+    var getMeta = function(name) {
+      var el = document.querySelector('meta[name="' + name + '"]') || document.querySelector('meta[property="' + name + '"]');
+      return el ? el.getAttribute("content") || "" : "";
+    };
+    var getLink = function(rel) {
+      var el = document.querySelector('link[rel="' + rel + '"]');
+      return el ? el.getAttribute("href") || "" : "";
+    };
+    var headings = [];
+    document.querySelectorAll("h1, h2, h3").forEach(function(el) {
+      var text = (el.textContent || "").trim().substring(0, 120);
+      if (text) headings.push(el.tagName + ": " + text);
+    });
+    var ctaTexts = [];
+    document.querySelectorAll('a[href*="request-demo"], button[type="submit"], a[href*="how-it-works"]').forEach(function(el) {
+      var text = (el.textContent || "").trim();
+      if (text) ctaTexts.push(text);
+    });
+    var h1 = document.querySelector("h1");
     return {
       title: document.title,
       metaDescription: getMeta("description"),
       ogTitle: getMeta("og:title"),
       ogDescription: getMeta("og:description"),
       canonical: getLink("canonical"),
-      firstH1: firstH1.trim(),
+      firstH1: h1 ? h1.textContent.trim() : "",
       headings: headings,
       ctaTexts: ctaTexts,
-      bodyText: document.body.innerText,
+      bodyText: document.body.innerText
     };
   })()`) as Promise<{
     title: string;
@@ -128,37 +159,42 @@ async function extractMetadata(page: Page) {
   }>;
 }
 
-async function captureScreenshots(
+async function captureSection(
   page: Page,
   pageName: string,
-  viewport: "desktop" | "mobile",
-): Promise<string[]> {
-  const prefix = `${pageName}-${viewport}`;
-  const files: string[] = [];
+  section: { selector: string; name: string },
+  viewport: string,
+): Promise<ScreenshotInfo | null> {
+  const filename = `${pageName}-${viewport}-${section.name}.png`;
+  const filepath = join(ARTIFACTS_DIR, filename);
 
-  // Top / hero
-  await page.evaluate(() => window.scrollTo(0, 0));
-  await page.waitForTimeout(500);
-  const topFile = `${prefix}-top.png`;
-  await page.screenshot({ path: join(ARTIFACTS_DIR, topFile) });
-  files.push(topFile);
+  try {
+    // Try to find the element
+    const el = page.locator(section.selector).first();
+    await el.waitFor({ state: "visible", timeout: 5000 });
 
-  // Middle
-  const height = await page.evaluate(() => document.body.scrollHeight);
-  await page.evaluate((h) => window.scrollTo(0, h * 0.35), height);
-  await page.waitForTimeout(500);
-  const midFile = `${prefix}-mid.png`;
-  await page.screenshot({ path: join(ARTIFACTS_DIR, midFile) });
-  files.push(midFile);
+    // Scroll it into view with some top padding
+    await el.evaluate((node: Element) => {
+      const rect = node.getBoundingClientRect();
+      window.scrollTo({ top: window.scrollY + rect.top - 40, behavior: "instant" });
+    });
 
-  // Footer / CTA area
-  await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
-  await page.waitForTimeout(500);
-  const footerFile = `${prefix}-footer.png`;
-  await page.screenshot({ path: join(ARTIFACTS_DIR, footerFile) });
-  files.push(footerFile);
+    // Wait for layout to settle after scroll
+    await page.waitForTimeout(800);
 
-  return files;
+    // Get the nearest heading for the report
+    const heading = await el.evaluate((node: Element) => {
+      const h = node.closest("section")?.querySelector("h1, h2, h3");
+      return h ? h.textContent?.trim()?.substring(0, 80) || "" : "";
+    }).catch(() => "");
+
+    await page.screenshot({ path: filepath });
+
+    return { file: filename, section: section.name, viewport, heading };
+  } catch {
+    console.log(`    ⚠ Could not capture ${section.name} (${section.selector})`);
+    return null;
+  }
 }
 
 function checkPhrases(bodyText: string, phrases: string[]): { found: string[]; missing: string[] } {
@@ -175,6 +211,13 @@ function checkPhrases(bodyText: string, phrases: string[]): { found: string[]; m
   return { found, missing };
 }
 
+// ─── Pages config ────────────────────────────────────────────────────────────
+
+const PAGES = [
+  { path: "/", name: "home", label: "Homepage" },
+  { path: "/platform", name: "platform", label: "Platform" },
+];
+
 // ─── Main ────────────────────────────────────────────────────────────────────
 
 async function main() {
@@ -189,25 +232,34 @@ async function main() {
 
   for (const pageConfig of PAGES) {
     const url = `${BASE_URL}${pageConfig.path}`;
-    console.log(`  Auditing ${pageConfig.label} (${url})...`);
+    const sections = PAGE_SECTIONS[pageConfig.name] || [];
+    console.log(`  📄 ${pageConfig.label} (${url})`);
 
-    const allScreenshots: string[] = [];
+    const allScreenshots: ScreenshotInfo[] = [];
 
     for (const [vpName, vpSize] of Object.entries(VIEWPORTS)) {
-      const context = await browser.newContext({ viewport: vpSize });
+      console.log(`    ${vpName} (${vpSize.width}x${vpSize.height})`);
+      const context = await createContext(browser, vpSize);
       const page = await context.newPage();
 
       await page.goto(url, { waitUntil: "networkidle", timeout: 30000 });
-      await page.waitForTimeout(1000); // let animations settle
+      // Extra wait for fonts and hydration
+      await page.waitForTimeout(1500);
 
-      // Extract metadata (only once, from desktop)
+      // Extract metadata once from desktop
       let meta = { title: "", metaDescription: "", ogTitle: "", ogDescription: "", canonical: "", firstH1: "", headings: [] as string[], ctaTexts: [] as string[], bodyText: "" };
       if (vpName === "desktop") {
         meta = await extractMetadata(page);
       }
 
-      const screenshots = await captureScreenshots(page, pageConfig.name, vpName as "desktop" | "mobile");
-      allScreenshots.push(...screenshots);
+      // Capture each named section
+      for (const section of sections) {
+        const info = await captureSection(page, pageConfig.name, section, vpName);
+        if (info) {
+          allScreenshots.push(info);
+          console.log(`      ✓ ${section.name}`);
+        }
+      }
 
       if (vpName === "desktop") {
         const approved = checkPhrases(meta.bodyText, APPROVED_PHRASES);
@@ -228,16 +280,17 @@ async function main() {
           approvedFound: approved.found,
           approvedMissing: approved.missing,
           staleFound: stale.found,
-          screenshots: [...screenshots],
+          screenshots: [],
         });
-      } else {
-        const existing = audits.find((a) => a.name === pageConfig.name);
-        if (existing) {
-          existing.screenshots.push(...screenshots);
-        }
       }
 
       await context.close();
+    }
+
+    // Attach all screenshots to the audit entry
+    const audit = audits.find((a) => a.name === pageConfig.name);
+    if (audit) {
+      audit.screenshots = allScreenshots;
     }
   }
 
@@ -246,6 +299,7 @@ async function main() {
   // ─── Generate report ─────────────────────────────────────────────────────
 
   const staleCount = audits.reduce((n, a) => n + a.staleFound.length, 0);
+  const totalScreenshots = audits.reduce((n, a) => n + a.screenshots.length, 0);
   const status = staleCount === 0 ? "✅ PASS" : "⚠️ STALE PHRASES FOUND";
 
   let report = `# Staging Site Audit Report
@@ -255,6 +309,7 @@ async function main() {
 **Commit:** \`${git.commit}\` on \`${git.branch}\`
 **Target:** ${BASE_URL}
 **Pages audited:** ${audits.map((a) => a.label).join(", ")}
+**Screenshots:** ${totalScreenshots}
 
 ---
 
@@ -270,9 +325,9 @@ async function main() {
 | Field | Value |
 |-------|-------|
 | Title | ${audit.title} |
-| Meta description | ${audit.metaDescription.substring(0, 120)}${audit.metaDescription.length > 120 ? "..." : ""} |
+| Meta description | ${audit.metaDescription.substring(0, 140)}${audit.metaDescription.length > 140 ? "..." : ""} |
 | OG title | ${audit.ogTitle} |
-| OG description | ${audit.ogDescription.substring(0, 120)}${audit.ogDescription.length > 120 ? "..." : ""} |
+| OG description | ${audit.ogDescription.substring(0, 140)}${audit.ogDescription.length > 140 ? "..." : ""} |
 | Canonical | ${audit.canonical || "not set"} |
 
 ### First H1
@@ -289,9 +344,8 @@ ${audit.ctaTexts.map((c) => `- "${c}"`).join("\n") || "- none found"}
 
 ### Approved Phrases
 
-${audit.approvedFound.length > 0 ? audit.approvedFound.map((p) => `- ✅ ${p}`).join("\n") : "- none found"}
-
-${audit.approvedMissing.length > 0 ? `\n**Missing approved phrases:**\n${audit.approvedMissing.map((p) => `- ❌ ${p}`).join("\n")}` : ""}
+${audit.approvedFound.map((p) => `- ✅ ${p}`).join("\n") || "- none found"}
+${audit.approvedMissing.length > 0 ? `\n**Missing:**\n${audit.approvedMissing.map((p) => `- ❌ ${p}`).join("\n")}` : ""}
 
 ### Stale Phrases
 
@@ -299,7 +353,9 @@ ${audit.staleFound.length > 0 ? audit.staleFound.map((p) => `- 🚨 ${p}`).join(
 
 ### Screenshots
 
-${audit.screenshots.map((s) => `- \`staging/${s}\``).join("\n")}
+| Section | Viewport | Heading | File |
+|---------|----------|---------|------|
+${audit.screenshots.map((s) => `| ${s.section} | ${s.viewport} | ${s.heading.substring(0, 60)} | \`${s.file}\` |`).join("\n")}
 
 ---
 
@@ -310,27 +366,26 @@ ${audit.screenshots.map((s) => `- \`staging/${s}\``).join("\n")}
 
 | Check | Result |
 |-------|--------|
-| Stale phrases | ${staleCount === 0 ? "✅ None found" : `⚠️ ${staleCount} found`} |
+| Status | ${status} |
+| Stale phrases | ${staleCount === 0 ? "✅ None" : `⚠️ ${staleCount} found`} |
 | Homepage H1 | ${audits.find((a) => a.name === "home")?.firstH1 || "?"} |
 | Platform H1 | ${audits.find((a) => a.name === "platform")?.firstH1 || "?"} |
-| Screenshots captured | ${audits.reduce((n, a) => n + a.screenshots.length, 0)} |
+| Screenshots | ${totalScreenshots} |
 
 *Generated by \`npm run verify:staging\`*
 `;
 
   await writeFile(REPORT_PATH, report);
 
-  // Also write JSON for programmatic use
   const jsonPath = join(process.cwd(), "artifacts", "staging-site-audit.json");
   await writeFile(jsonPath, JSON.stringify({ timestamp, git, baseUrl: BASE_URL, status, audits }, null, 2));
 
-  console.log(`\n  📄 Report: artifacts/staging-site-audit.md`);
-  console.log(`  📊 JSON:   artifacts/staging-site-audit.json`);
-  console.log(`  📸 Screenshots: artifacts/staging/ (${audits.reduce((n, a) => n + a.screenshots.length, 0)} files)`);
+  console.log(`\n  📄 Report:      artifacts/staging-site-audit.md`);
+  console.log(`  📊 JSON:        artifacts/staging-site-audit.json`);
+  console.log(`  📸 Screenshots: artifacts/staging/ (${totalScreenshots} files)`);
   console.log(`\n  ${status}\n`);
 
   if (staleCount > 0) {
-    console.log("  Stale phrases found:");
     for (const audit of audits) {
       for (const phrase of audit.staleFound) {
         console.log(`    🚨 [${audit.label}] "${phrase}"`);
