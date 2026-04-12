@@ -90,7 +90,7 @@ const comparisonRows: { layer: string; does: string; stops: string; featured?: b
   {
     layer: "Governance",
     does: "Sets rules, approvals, and permissions",
-    stops: "Cannot unwind harmful change once it has already landed",
+    stops: "Cannot unwind high-impact change once it has already landed",
   },
   {
     layer: "KavachIQ Autonomous Assurance",

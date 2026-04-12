@@ -324,7 +324,7 @@ export default function PlatformPageContent() {
             <div className="rounded-[28px] border border-border-primary bg-bg-surface/70 p-6">
               <div className="grid gap-4 sm:grid-cols-2">
                 {[
-                  ["Users and groups", "Membership drift, privilege expansion, and harmful lifecycle changes from agent workflows"],
+                  ["Users and groups", "Membership drift, privilege expansion, and high-impact lifecycle changes from agent workflows"],
                   ["Applications", "App registrations, service principals, and access paths altered by agent actions"],
                   ["Policies", "Conditional access, identity controls, and settings that shape downstream access risk"],
                   ["Recovery order", "Restore identity trust first, then recover impacted Microsoft 365 and downstream systems"],
@@ -377,7 +377,7 @@ export default function PlatformPageContent() {
                 Recover the systems where business impact shows up
               </motion.p>
               <motion.p variants={fadeUp} className="mt-6 text-lg leading-relaxed text-text-secondary">
-                AI agents increasingly touch SharePoint, OneDrive, Exchange, and collaboration workflows. Harmful changes to files, permissions, content, or messaging can disrupt operations quickly and compound when teams try to recover system by system instead of coordinating with identity recovery. Over time, the same recovery model extends to adjacent SaaS platforms.
+                AI agents increasingly touch SharePoint, OneDrive, Exchange, and collaboration workflows. High-impact changes to files, permissions, content, or messaging can disrupt operations quickly and compound when teams try to recover system by system instead of coordinating with identity recovery. Over time, the same recovery model extends to adjacent SaaS platforms.
               </motion.p>
               <motion.ul variants={fadeUp} className="mt-8 space-y-3">
                 <BulletItem>Identify high-impact changes across Microsoft 365 workloads</BulletItem>
