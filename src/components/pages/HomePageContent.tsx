@@ -398,7 +398,7 @@ export default function HomePageContent() {
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <SectionHeader
             label="Example scenario"
-            title="What recovery looks like when an agent changes Entra group membership"
+            title="Example recovery scenario: agent changes Entra group membership"
           />
 
           {/* ── Status rail ───────────────────────────────────────────────── */}

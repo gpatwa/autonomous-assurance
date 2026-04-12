@@ -118,8 +118,8 @@ export default function CTABlock({ headline, body, ctaText }: CTABlockProps) {
           </p>
           <div className="mt-8 grid gap-4 sm:grid-cols-2">
             {[
-              ["In the demo, you will see", "A real recovery scenario from agent-driven Entra change through Microsoft 365 blast radius to trusted-state restoration"],
-              ["What you will walk away with", "A clear understanding of how identity-first recovery sequencing works for your Entra and Microsoft 365 environment"],
+              ["In the demo, you will see", "An agent-driven Entra change, the blast radius across Microsoft 365, and the recovery sequence that restores identity trust before data"],
+              ["What you will walk away with", "A clear picture of how rollback, restoration, and compensating actions get your environment back to a trusted operational state"],
             ].map(([title, desc]) => (
               <div
                 key={title}
