@@ -400,6 +400,61 @@ export default function HomePageContent() {
             label="Example scenario"
             title="What recovery looks like when an agent changes Entra group membership"
           />
+
+          {/* ── Status rail ───────────────────────────────────────────────── */}
+          <motion.div
+            variants={fadeUp}
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true, margin: "-80px" }}
+            className="mx-auto max-w-3xl mb-14"
+          >
+            {/* Desktop: horizontal rail */}
+            <div className="hidden sm:flex items-center">
+              {[
+                { label: "Agent action", color: "border-red-400/40 bg-red-400/10 text-red-400" },
+                { label: "Identity impact", color: "border-accent/40 bg-accent/10 text-accent" },
+                { label: "Blast radius", color: "border-amber-400/40 bg-amber-400/10 text-amber-400" },
+                { label: "Recovery sequence", color: "border-emerald-400/40 bg-emerald-400/10 text-emerald-400" },
+                { label: "Trusted state", color: "border-emerald-400/40 bg-emerald-400/10 text-emerald-400" },
+              ].map((node, i, arr) => (
+                <div key={node.label} className="flex items-center flex-1 last:flex-none">
+                  <div className="flex flex-col items-center gap-2">
+                    <div className={`h-3 w-3 rounded-full border ${node.color}`} />
+                    <span className="text-[10px] font-semibold uppercase tracking-wider text-text-muted text-center leading-tight w-20">
+                      {node.label}
+                    </span>
+                  </div>
+                  {i < arr.length - 1 && (
+                    <div className="flex-1 h-px bg-gradient-to-r from-border-primary to-border-primary/30 mx-1 -mt-5" />
+                  )}
+                </div>
+              ))}
+            </div>
+            {/* Mobile: compact horizontal dots */}
+            <div className="flex sm:hidden items-center justify-center gap-2">
+              {[
+                { label: "Agent action", color: "bg-red-400" },
+                { label: "Identity impact", color: "bg-accent" },
+                { label: "Blast radius", color: "bg-amber-400" },
+                { label: "Recovery", color: "bg-emerald-400" },
+                { label: "Trusted state", color: "bg-emerald-400" },
+              ].map((node, i, arr) => (
+                <div key={node.label} className="flex items-center">
+                  <div className="flex flex-col items-center gap-1.5">
+                    <div className={`h-2.5 w-2.5 rounded-full ${node.color} opacity-70`} />
+                    <span className="text-[8px] font-semibold uppercase tracking-wider text-text-muted text-center leading-tight w-14">
+                      {node.label}
+                    </span>
+                  </div>
+                  {i < arr.length - 1 && (
+                    <div className="w-3 h-px bg-border-primary/40 -mt-3.5" />
+                  )}
+                </div>
+              ))}
+            </div>
+          </motion.div>
+
           <motion.div
             variants={staggerContainer}
             initial="hidden"
