@@ -59,7 +59,7 @@ export default function Footer() {
             &copy; {new Date().getFullYear()} KavachIQ. All rights reserved.
           </p>
           <p className="text-xs text-text-muted">
-            Autonomous Assurance for identity, Microsoft 365, and downstream systems
+            Identity-first recovery for Microsoft Entra, Microsoft 365, and connected systems
           </p>
         </div>
       </div>
