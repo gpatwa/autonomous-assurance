@@ -1,6 +1,6 @@
 import { ImageResponse } from "next/og";
 
-export const runtime = "edge";
+export const runtime = "nodejs";
 export const alt = "KavachIQ Autonomous Assurance";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
@@ -54,6 +54,8 @@ export default function OGImage() {
 
         <div
           style={{
+            display: "flex",
+            flexWrap: "wrap",
             fontSize: "64px",
             fontWeight: 700,
             color: "#F1F5F9",
@@ -62,12 +64,13 @@ export default function OGImage() {
             maxWidth: "900px",
           }}
         >
-          Deploy AI agents with{" "}
+          <span>Deploy AI agents with </span>
           <span style={{ color: "#38BDF8" }}>confidence</span>
         </div>
 
         <div
           style={{
+            display: "flex",
             fontSize: "24px",
             color: "#94A3B8",
             marginTop: "24px",
