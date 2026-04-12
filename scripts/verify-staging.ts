@@ -30,18 +30,20 @@ const VIEWPORTS = {
 // waits for it to be visible, then takes a viewport screenshot.
 const PAGE_SECTIONS: Record<string, { selector: string; name: string }[]> = {
   home: [
-    { selector: "h1", name: "hero" },
+    { selector: "body", name: "hero" },             // scroll to top to capture full hero with eyebrow
     { selector: "#why-kavachiq", name: "comparison" },
     { selector: "#how-it-works", name: "how-it-works" },
+    { selector: "#recovery-scenario", name: "scenario" },
     { selector: "#request-demo", name: "cta" },
     { selector: "footer", name: "footer" },
   ],
   platform: [
-    { selector: "h1", name: "hero" },
+    { selector: "body", name: "hero" },             // scroll to top to capture full hero with eyebrow
     { selector: "#platform-proof", name: "proof" },
     { selector: "#identity-assurance", name: "entra" },
     { selector: "#data-assurance", name: "m365" },
     { selector: "#request-demo", name: "cta" },
+    { selector: "footer", name: "footer" },
   ],
 };
 
@@ -173,18 +175,23 @@ async function captureSection(
     const el = page.locator(section.selector).first();
     await el.waitFor({ state: "visible", timeout: 5000 });
 
-    // Scroll it into view with some top padding
-    await el.evaluate((node: Element) => {
-      const rect = node.getBoundingClientRect();
-      window.scrollTo({ top: window.scrollY + rect.top - 40, behavior: "instant" });
-    });
+    // Scroll into view: body = top of page, everything else = with top padding
+    if (section.selector === "body") {
+      await page.evaluate(() => window.scrollTo({ top: 0, behavior: "instant" }));
+    } else {
+      await el.evaluate((node: Element) => {
+        const rect = node.getBoundingClientRect();
+        window.scrollTo({ top: window.scrollY + rect.top - 40, behavior: "instant" });
+      });
+    }
 
     // Wait for layout to settle after scroll
     await page.waitForTimeout(800);
 
     // Get the nearest heading for the report
     const heading = await el.evaluate((node: Element) => {
-      const h = node.closest("section")?.querySelector("h1, h2, h3");
+      const section = node.closest("section") || document;
+      const h = section.querySelector("h1, h2, h3");
       return h ? h.textContent?.trim()?.substring(0, 80) || "" : "";
     }).catch(() => "");
 
