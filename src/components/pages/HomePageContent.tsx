@@ -387,29 +387,28 @@ export default function HomePageContent() {
       </section>
 
       {/* ─── 8. Buyer relevance ──────────────────────────────────────────── */}
-      <section className="relative bg-bg-surface/50 py-24 sm:py-28">
+      <section className="relative bg-bg-surface/50 py-20 sm:py-24">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <SectionHeader
             label="Who this is for"
-            title="Built for the teams responsible for identity, access, and business continuity"
-            subtitle="KavachIQ is designed for the operators who will be on the hook when an agent workflow goes wrong. It supports the conversations security leaders and IT executives need to have about deploying AI agents safely in production."
+            title="Built for the teams on the hook when agent workflows go wrong"
           />
           <motion.div
             variants={staggerContainer}
             initial="hidden"
             whileInView="visible"
             viewport={{ once: true, margin: "-80px" }}
-            className="mx-auto grid max-w-5xl gap-6 md:grid-cols-2"
+            className="mx-auto grid max-w-5xl gap-4 sm:grid-cols-2 lg:grid-cols-4"
           >
             {[
-              ["Identity and Entra admins", "The operators who manage users, groups, app access, service principals, and identity policy in Microsoft Entra and need to recover when agents make harmful changes"],
-              ["Microsoft 365 admins", "The operators who manage SharePoint, OneDrive, Exchange, and collaboration settings and need recovery that coordinates with identity, not just object-level restores"],
-              ["CISOs and security architects", "The leaders who need to assess agent-driven risk, define recovery posture, and ensure the enterprise can return to a trusted state after harmful change"],
-              ["CIOs, Heads of IT, and platform security owners", "The executives who need to deploy AI agents and automation with confidence that harmful change can be understood, contained, and recovered from"],
+              ["Identity and Entra admins", "Recover Entra users, groups, app access, and identity policy after harmful agent changes"],
+              ["Microsoft 365 admins", "Coordinate recovery across SharePoint, OneDrive, and Exchange with identity-first sequencing"],
+              ["CISOs and security architects", "Define recovery posture and ensure the enterprise can return to a trusted state"],
+              ["CIOs and IT leaders", "Deploy AI agents with confidence that harmful change can be contained and recovered from"],
             ].map(([title, body]) => (
-              <motion.div key={title} variants={fadeUp} className="rounded-2xl border border-border-primary bg-bg-surface/55 p-6">
-                <p className="text-base font-semibold text-text-primary">{title}</p>
-                <p className="mt-3 text-sm leading-relaxed text-text-secondary">{body}</p>
+              <motion.div key={title} variants={fadeUp} className="rounded-2xl border border-border-primary bg-bg-surface/55 p-5">
+                <p className="text-sm font-semibold text-text-primary">{title}</p>
+                <p className="mt-2 text-xs leading-relaxed text-text-secondary">{body}</p>
               </motion.div>
             ))}
           </motion.div>
