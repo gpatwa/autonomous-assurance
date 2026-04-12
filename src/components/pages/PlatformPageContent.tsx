@@ -171,7 +171,54 @@ export default function PlatformPageContent() {
         </div>
       </section>
 
-      {/* ─── 3. Product proof ────────────────────────────────────────────── */}
+      {/* ─── 3. Why existing tools fall short ────────────────────────────── */}
+      <section className="relative bg-bg-surface/40 py-20 sm:py-24">
+        <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-border-primary to-transparent" />
+        <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
+          <motion.div
+            variants={fadeUp}
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true, margin: "-80px" }}
+            className="text-center mb-10"
+          >
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-accent mb-4">The gap</p>
+            <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-text-primary">
+              Backup, observability, and governance each solve part of the problem
+            </h2>
+          </motion.div>
+          <motion.div
+            variants={staggerContainer}
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true, margin: "-80px" }}
+            className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4"
+          >
+            {[
+              { label: "Backup", desc: "Restores objects", gap: "No blast-radius mapping or recovery sequencing" },
+              { label: "Observability", desc: "Shows what happened", gap: "Cannot restore state or coordinate recovery" },
+              { label: "Governance", desc: "Sets rules and approvals", gap: "Cannot unwind change once it has landed" },
+              { label: "KavachIQ", desc: "Maps blast radius", gap: "Guides rollback, restoration, and compensating actions", featured: true },
+            ].map((item) => (
+              <motion.div
+                key={item.label}
+                variants={fadeUp}
+                className={`rounded-2xl border p-5 ${
+                  item.featured
+                    ? "border-accent/30 bg-accent/10"
+                    : "border-border-primary bg-bg-primary/55"
+                }`}
+              >
+                <p className={`text-sm font-semibold ${item.featured ? "text-accent" : "text-text-primary"}`}>{item.label}</p>
+                <p className="mt-2 text-xs text-text-secondary">{item.desc}</p>
+                <p className={`mt-2 text-xs ${item.featured ? "text-text-primary" : "text-text-muted"}`}>{item.gap}</p>
+              </motion.div>
+            ))}
+          </motion.div>
+        </div>
+      </section>
+
+      {/* ─── 4. Product proof ────────────────────────────────────────────── */}
       <section className="relative bg-bg-surface/50 py-24 sm:py-28" id="platform-proof">
         <GridPattern />
         <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
