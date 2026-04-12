@@ -22,11 +22,11 @@ export const metadata: Metadata = {
     template: "%s | KavachIQ",
   },
   description:
-    "KavachIQ helps enterprises understand, contain, and recover from harmful agent-driven change, starting with Microsoft Entra and Microsoft 365.",
+    "KavachIQ helps enterprises understand, contain, and recover from high-impact agent-driven changes, starting with Microsoft Entra and Microsoft 365.",
   openGraph: {
     title: "KavachIQ Autonomous Assurance",
     description:
-      "Identity-first recovery for harmful agent-driven change across Microsoft Entra, Microsoft 365, and connected enterprise systems.",
+      "Identity-first recovery for high-impact agent-driven changes across Microsoft Entra, Microsoft 365, and connected enterprise systems.",
     siteName: "KavachIQ",
     type: "website",
     locale: "en_US",
@@ -35,7 +35,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "KavachIQ Autonomous Assurance",
     description:
-      "Identity-first recovery for harmful agent-driven change across Microsoft Entra, Microsoft 365, and connected enterprise systems.",
+      "Identity-first recovery for high-impact agent-driven changes across Microsoft Entra, Microsoft 365, and connected enterprise systems.",
   },
   robots: {
     index: true,

@@ -120,11 +120,11 @@ export default function HomePageContent() {
                 variants={fadeUp}
                 className="mt-8 text-4xl font-bold leading-[1.05] tracking-tight text-text-primary sm:text-5xl lg:text-6xl"
               >
-                Recover from harmful{" "}
-                <span className="text-accent">agent-driven change</span>
+                Recover from high-impact{" "}
+                <span className="text-accent">agent-driven changes</span>
               </motion.h1>
               <motion.p variants={fadeUp} className="mt-6 max-w-xl text-lg leading-relaxed text-text-secondary sm:text-xl">
-                AI agents and automation are changing identities, permissions, and business data across your enterprise. When those changes are harmful, your team needs to understand what was affected, map the blast radius, and recover in the right order. KavachIQ Autonomous Assurance guides rollback, restoration, and compensating actions so you can return to a trusted operational state.
+                KavachIQ Autonomous Assurance helps enterprises understand what changed, assess blast radius across identity and Microsoft 365, and guide rollback, restoration, and compensating actions back to a trusted operational state.
               </motion.p>
               <motion.div variants={fadeUp} className="mt-10 flex flex-wrap gap-4">
                 <Button variant="primary" size="lg" href="#request-demo" onClick={() => track("cta_click", { page: "homepage", label: "Request a Demo" })}>
@@ -171,7 +171,7 @@ export default function HomePageContent() {
                 label="The problem"
                 align="left"
                 title="AI agents are making changes your team was not designed to recover from"
-                subtitle="Agents and automation can now create users, modify group memberships, change app access, alter permissions, update files, and trigger workflows across Entra and Microsoft 365. Some of those changes will be harmful. When they are, teams need more than logs and object-level restores. They need to understand the full scope of impact and recover in the right order."
+                subtitle="Agents and automation can now create users, modify group memberships, change app access, alter permissions, update files, and trigger workflows across Entra and Microsoft 365. Some of those changes will be unintended, risky, or outright malicious. When they are, teams need more than logs and object-level restores. They need to understand the full scope of impact and recover in the right order."
               />
               <div className="grid gap-4 sm:grid-cols-2">
                 {[
@@ -201,7 +201,7 @@ export default function HomePageContent() {
                 label="Why KavachIQ"
                 align="left"
                 title="Backup, observability, and governance each solve part of the problem. None of them solve recovery."
-                subtitle="When an AI agent makes a harmful change to an Entra identity, and that change cascades into Microsoft 365 permissions, downstream app access, and collaboration workflows, no single existing tool can map the blast radius and guide recovery in the right sequence. Backup restores objects. Observability shows events. Governance sets rules. KavachIQ recovers business state."
+                subtitle="When an AI agent makes a high-impact change to an Entra identity, and that change cascades into Microsoft 365 permissions, downstream app access, and collaboration workflows, no single existing tool can map the blast radius and guide recovery in the right sequence. Backup restores objects. Observability shows events. Governance sets rules. KavachIQ recovers business state."
               />
             </div>
             <div className="overflow-hidden rounded-[28px] border border-border-primary bg-bg-surface/70 p-4 shadow-[0_0_40px_rgba(8,15,35,0.45)]">
@@ -330,7 +330,7 @@ export default function HomePageContent() {
             <PillarCard
               icon={<DatabaseIcon />}
               title="Data Assurance for Microsoft 365"
-              description="Recover safely from harmful agent-driven changes across SharePoint, OneDrive, Exchange, and collaboration workflows."
+              description="Recover safely from high-impact agent-driven changes across SharePoint, OneDrive, Exchange, and collaboration workflows."
               bullets={[
                 "Map file, mailbox, and permission impact across workloads",
                 "Coordinate recovery with identity-first sequencing",
@@ -401,10 +401,10 @@ export default function HomePageContent() {
             className="mx-auto grid max-w-5xl gap-4 sm:grid-cols-2 lg:grid-cols-4"
           >
             {[
-              ["Identity and Entra admins", "Recover Entra users, groups, app access, and identity policy after harmful agent changes"],
+              ["Identity and Entra admins", "Recover Entra users, groups, app access, and identity policy after high-impact agent changes"],
               ["Microsoft 365 admins", "Coordinate recovery across SharePoint, OneDrive, and Exchange with identity-first sequencing"],
               ["CISOs and security architects", "Define recovery posture and ensure the enterprise can return to a trusted state"],
-              ["CIOs and IT leaders", "Deploy AI agents with confidence that harmful change can be contained and recovered from"],
+              ["CIOs and IT leaders", "Deploy AI agents with confidence that high-impact changes can be contained and recovered from"],
             ].map(([title, body]) => (
               <motion.div key={title} variants={fadeUp} className="rounded-2xl border border-border-primary bg-bg-surface/55 p-5">
                 <p className="text-sm font-semibold text-text-primary">{title}</p>

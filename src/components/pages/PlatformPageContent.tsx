@@ -138,7 +138,7 @@ export default function PlatformPageContent() {
                 <span className="text-accent">Assurance</span>
               </motion.h1>
               <motion.p variants={fadeUp} className="mt-4 text-xl text-text-secondary">
-                The missing recovery layer for harmful agent-driven change
+                The missing recovery layer for high-impact agent-driven changes
               </motion.p>
               <motion.p variants={fadeUp} className="mt-6 max-w-xl text-lg leading-relaxed text-text-secondary">
                 AI agents and automation are changing identities, permissions, and business data across your enterprise. Backup restores objects. Observability shows events. Governance sets rules. None of them map blast radius across identity and data, sequence recovery in the right order, or coordinate rollback and compensating actions across systems. KavachIQ does.
@@ -333,7 +333,7 @@ export default function PlatformPageContent() {
                 AI agents increasingly touch SharePoint, OneDrive, Exchange, and collaboration workflows. Harmful changes to files, permissions, content, or messaging can disrupt operations quickly and compound when teams try to recover system by system instead of coordinating with identity recovery. Over time, the same recovery model extends to adjacent SaaS platforms.
               </motion.p>
               <motion.ul variants={fadeUp} className="mt-8 space-y-3">
-                <BulletItem>Identify harmful changes across Microsoft 365 workloads</BulletItem>
+                <BulletItem>Identify high-impact changes across Microsoft 365 workloads</BulletItem>
                 <BulletItem>Understand affected content, permissions, and collaboration dependencies</BulletItem>
                 <BulletItem>Coordinate recovery in the right order, starting from identity</BulletItem>
                 <BulletItem>Restore a trusted operating state across collaboration surfaces</BulletItem>
