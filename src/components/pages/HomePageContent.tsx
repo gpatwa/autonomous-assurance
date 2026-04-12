@@ -11,6 +11,7 @@ import CTABlock from "@/components/ui/CTABlock";
 import HeroVisual from "@/components/visuals/HeroVisual";
 import GridPattern from "@/components/visuals/GridPattern";
 import RecoveryFlowVisual from "@/components/visuals/RecoveryFlowVisual";
+import RecoveryCascadeVisual from "@/components/visuals/RecoveryCascadeVisual";
 import { track } from "@/lib/analytics";
 
 function ShieldIcon() {
@@ -268,37 +269,42 @@ export default function HomePageContent() {
       {/* ─── 5. Why identity-first recovery matters ──────────────────────── */}
       <section className="relative py-24 sm:py-28">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <SectionHeader
-            label="Identity-first recovery"
-            title="The control plane must be restored before anything else"
-            subtitle="When an agent changes an Entra user, modifies group membership, or alters an app registration, the impact cascades into Microsoft 365 and every connected system. Recovering data first without restoring identity trust creates new exposure. Recovery order matters."
-          />
-          <motion.div
-            variants={staggerContainer}
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true, margin: "-80px" }}
-            className="mx-auto grid max-w-5xl gap-8 md:grid-cols-3"
-          >
-            <motion.div variants={fadeUp} className="rounded-2xl border border-border-primary bg-bg-surface/55 p-6">
-              <p className="text-base font-semibold text-text-primary">Identity is the root of trust</p>
-              <p className="mt-3 text-sm leading-relaxed text-text-secondary">
-                Every permission, access path, and downstream system depends on the integrity of the identity layer. If identity is compromised, restoring data on top of a broken control plane reintroduces risk.
-              </p>
+          <div className="grid items-center gap-14 lg:grid-cols-[1.1fr_0.9fr]">
+            <div>
+              <SectionHeader
+                label="Identity-first recovery"
+                align="left"
+                title="The control plane must be restored before anything else"
+                subtitle="When an agent changes an Entra user, modifies group membership, or alters an app registration, the impact cascades into Microsoft 365 and every connected system. Recovering data first without restoring identity trust creates new exposure. Recovery order matters."
+              />
+              <motion.div
+                variants={staggerContainer}
+                initial="hidden"
+                whileInView="visible"
+                viewport={{ once: true, margin: "-80px" }}
+                className="grid gap-4"
+              >
+                {[
+                  ["Identity is the root of trust", "Every permission, access path, and downstream system depends on identity integrity. Restoring data on a broken control plane reintroduces risk."],
+                  ["Blast radius crosses system boundaries", "A single change to a service principal or group membership can affect Microsoft 365 workloads, connected apps, and provisioning flows simultaneously."],
+                  ["Recovery order determines recovery quality", "Restoring a mailbox before fixing the compromised identity leaves the door open. KavachIQ sequences identity first, then data, then downstream systems."],
+                ].map(([title, body]) => (
+                  <motion.div key={title} variants={fadeUp} className="rounded-2xl border border-border-primary bg-bg-surface/55 p-5">
+                    <p className="text-sm font-semibold text-text-primary">{title}</p>
+                    <p className="mt-2 text-xs leading-relaxed text-text-secondary">{body}</p>
+                  </motion.div>
+                ))}
+              </motion.div>
+            </div>
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              whileInView={{ opacity: 1, scale: 1 }}
+              viewport={{ once: true, margin: "-80px" }}
+              transition={{ duration: 0.6 }}
+            >
+              <RecoveryCascadeVisual />
             </motion.div>
-            <motion.div variants={fadeUp} className="rounded-2xl border border-border-primary bg-bg-surface/55 p-6">
-              <p className="text-base font-semibold text-text-primary">Blast radius crosses system boundaries</p>
-              <p className="mt-3 text-sm leading-relaxed text-text-secondary">
-                A single harmful change to a service principal or group membership can affect Microsoft 365 workloads, connected SaaS apps, provisioning flows, and business workflows simultaneously.
-              </p>
-            </motion.div>
-            <motion.div variants={fadeUp} className="rounded-2xl border border-border-primary bg-bg-surface/55 p-6">
-              <p className="text-base font-semibold text-text-primary">Recovery order determines recovery quality</p>
-              <p className="mt-3 text-sm leading-relaxed text-text-secondary">
-                Restoring a mailbox before fixing the identity that was used to compromise it leaves the door open. KavachIQ sequences identity recovery first, then data and collaboration surfaces, then downstream systems.
-              </p>
-            </motion.div>
-          </motion.div>
+          </div>
         </div>
       </section>
 
