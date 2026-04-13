@@ -174,7 +174,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json(
       {
         success: true,
-        message: "Thank you. We will be in touch within one business day.",
+        message: "Thank you. We will follow up within one business day with a recovery scenario tailored to your environment.",
         id,
       },
       { status: 200 },
