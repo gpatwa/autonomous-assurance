@@ -1,6 +1,8 @@
 "use client";
 
-import { blastRadius } from "./data";
+import { useState } from "react";
+import { blastRadius, affectedObjects, type AffectedObject } from "./data";
+import DetailDrawer from "./DetailDrawer";
 
 const iconMap: Record<string, React.ReactNode> = {
   users: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>,
@@ -12,7 +14,13 @@ const iconMap: Record<string, React.ReactNode> = {
 };
 
 export default function BlastRadius() {
+  const [selectedObject, setSelectedObject] = useState<AffectedObject | null>(null);
   const totalImpact = blastRadius.reduce((n, b) => n + b.count, 0);
+
+  function handleItemClick(itemName: string) {
+    const obj = affectedObjects.find((o) => o.name === itemName);
+    if (obj) setSelectedObject(obj);
+  }
 
   return (
     <div className="space-y-6">
@@ -46,16 +54,41 @@ export default function BlastRadius() {
               </div>
             </div>
             <div className="space-y-2.5">
-              {b.items.map((item) => (
-                <div key={item.name} className="rounded-lg border border-border-primary/50 bg-bg-primary/40 px-3 py-2.5">
-                  <p className="text-xs font-semibold text-text-primary">{item.name}</p>
-                  <p className="text-xs text-text-muted mt-0.5">{item.detail}</p>
-                </div>
-              ))}
+              {b.items.map((item) => {
+                const hasDetail = affectedObjects.some((o) => o.name === item.name);
+                return (
+                  <button
+                    key={item.name}
+                    onClick={() => handleItemClick(item.name)}
+                    disabled={!hasDetail}
+                    className={`w-full text-left rounded-lg border px-3 py-2.5 transition-colors ${
+                      hasDetail
+                        ? "border-border-primary/50 bg-bg-primary/40 hover:border-accent/30 hover:bg-bg-primary/60 cursor-pointer"
+                        : "border-border-primary/50 bg-bg-primary/40 cursor-default"
+                    }`}
+                  >
+                    <div className="flex items-center justify-between gap-2">
+                      <p className="text-xs font-semibold text-text-primary">{item.name}</p>
+                      {hasDetail && (
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-text-muted flex-shrink-0">
+                          <path d="m9 18 6-6-6-6" />
+                        </svg>
+                      )}
+                    </div>
+                    <p className="text-xs text-text-muted mt-0.5">{item.detail}</p>
+                  </button>
+                );
+              })}
             </div>
           </div>
         ))}
       </div>
+
+      {/* Drill-down drawer */}
+      <DetailDrawer
+        object={selectedObject}
+        onClose={() => setSelectedObject(null)}
+      />
     </div>
   );
 }
