@@ -28,7 +28,7 @@ const VIEWPORTS = {
 
 // Sections to capture per page. Each entry scrolls to the selector,
 // waits for it to be visible, then takes a viewport screenshot.
-const PAGE_SECTIONS: Record<string, { selector: string; name: string; clickText?: string }[]> = {
+const PAGE_SECTIONS: Record<string, { selector: string; name: string; clickText?: string; postClickText?: string }[]> = {
   home: [
     { selector: "body", name: "hero" },             // scroll to top to capture full hero with eyebrow
     { selector: "#why-kavachiq", name: "comparison" },
@@ -48,7 +48,9 @@ const PAGE_SECTIONS: Record<string, { selector: string; name: string; clickText?
   demo: [
     { selector: "body", name: "overview" },
     { selector: "body", name: "blast-radius", clickText: "Blast Radius" },
+    { selector: "body", name: "blast-drill", clickText: "Blast Radius", postClickText: "Finance-Confidential" },
     { selector: "body", name: "recovery-plan", clickText: "Recovery Plan" },
+    { selector: "body", name: "recovery-expand", clickText: "Recovery Plan", postClickText: "Revert Entra group membership" },
     { selector: "body", name: "resolution", clickText: "Resolution" },
   ],
 };
@@ -170,7 +172,7 @@ async function extractMetadata(page: Page) {
 async function captureSection(
   page: Page,
   pageName: string,
-  section: { selector: string; name: string; clickText?: string },
+  section: { selector: string; name: string; clickText?: string; postClickText?: string },
   viewport: string,
 ): Promise<ScreenshotInfo | null> {
   const filename = `${pageName}-${viewport}-${section.name}.png`;
@@ -183,6 +185,13 @@ async function captureSection(
         page.locator(`button:text-is("${section.clickText}")`)
       );
       await tab.first().click();
+      await page.waitForTimeout(600);
+    }
+
+    // If a post-click action is specified (drill-down, expand), click matching text
+    if (section.postClickText) {
+      const target = page.getByText(section.postClickText, { exact: false }).first();
+      await target.click();
       await page.waitForTimeout(600);
     }
 
