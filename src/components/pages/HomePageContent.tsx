@@ -137,8 +137,8 @@ export default function HomePageContent() {
               </motion.div>
               <motion.div variants={fadeUp} className="mt-10 grid max-w-2xl gap-4 sm:grid-cols-3">
                 {[
-                  ["Identity-first", "Entra users, groups, app access, service principals, and identity policy"],
-                  ["Data-aware", "SharePoint, OneDrive, Exchange, permissions, and collaboration workflows"],
+                  ["Identity-first", "Entra users, groups, app registrations, service principals, and Conditional Access"],
+                  ["Data-aware", "SharePoint, OneDrive, Exchange, Teams collaboration, and permissions"],
                   ["Recovery-led", "Guided rollback, restoration, compensating actions, and recovery sequencing"],
                 ].map(([title, body]) => (
                   <div key={title} className="rounded-2xl border border-border-primary bg-bg-surface/70 p-4">
@@ -286,7 +286,7 @@ export default function HomePageContent() {
               >
                 {[
                   ["Identity is the root of trust", "Every permission, access path, and downstream system depends on identity integrity. Restoring data on a broken control plane reintroduces risk."],
-                  ["Blast radius crosses system boundaries", "A single change to a service principal or group membership can affect Microsoft 365 workloads, connected apps, and provisioning flows simultaneously."],
+                  ["Blast radius crosses system boundaries", "A single change to a service principal, group membership, or Conditional Access policy can affect Microsoft 365 workloads, connected apps, and provisioning flows simultaneously."],
                   ["Recovery order determines recovery quality", "Restoring a mailbox before fixing the compromised identity leaves the door open. KavachIQ sequences identity first, then data, then downstream systems."],
                 ].map(([title, body]) => (
                   <motion.div key={title} variants={fadeUp} className="rounded-2xl border border-border-primary bg-bg-surface/55 p-5">
@@ -326,9 +326,9 @@ export default function HomePageContent() {
             <PillarCard
               icon={<ShieldIcon />}
               title="Identity Assurance for Microsoft Entra"
-              description="Recover safely from agent-driven changes to users, groups, app access, service principals, and identity policy."
+              description="Recover safely from agent-driven changes to users, groups, app registrations, service principals, Conditional Access policies, and role assignments."
               bullets={[
-                "Trace changes across users, groups, applications, and service principals",
+                "Trace changes across users, groups, app registrations, service principals, and Conditional Access",
                 "Map downstream access, provisioning, and permission impact",
                 "Recover the control plane before risk spreads to data surfaces",
               ]}
@@ -336,9 +336,9 @@ export default function HomePageContent() {
             <PillarCard
               icon={<DatabaseIcon />}
               title="Data Assurance for Microsoft 365"
-              description="Recover safely from high-impact agent-driven changes across SharePoint, OneDrive, Exchange, and collaboration workflows."
+              description="Recover safely from high-impact agent-driven changes across SharePoint, OneDrive, Exchange, and Teams-connected collaboration workflows."
               bullets={[
-                "Map file, mailbox, and permission impact across workloads",
+                "Map file, mailbox, permission, and Teams collaboration impact",
                 "Coordinate recovery with identity-first sequencing",
                 "Restore a trusted operating state across collaboration surfaces",
               ]}
