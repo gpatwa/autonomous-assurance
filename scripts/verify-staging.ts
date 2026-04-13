@@ -28,7 +28,7 @@ const VIEWPORTS = {
 
 // Sections to capture per page. Each entry scrolls to the selector,
 // waits for it to be visible, then takes a viewport screenshot.
-const PAGE_SECTIONS: Record<string, { selector: string; name: string }[]> = {
+const PAGE_SECTIONS: Record<string, { selector: string; name: string; clickText?: string }[]> = {
   home: [
     { selector: "body", name: "hero" },             // scroll to top to capture full hero with eyebrow
     { selector: "#why-kavachiq", name: "comparison" },
@@ -47,6 +47,9 @@ const PAGE_SECTIONS: Record<string, { selector: string; name: string }[]> = {
   ],
   demo: [
     { selector: "body", name: "overview" },
+    { selector: "body", name: "blast-radius", clickText: "Blast Radius" },
+    { selector: "body", name: "recovery-plan", clickText: "Recovery Plan" },
+    { selector: "body", name: "resolution", clickText: "Resolution" },
   ],
 };
 
@@ -167,13 +170,22 @@ async function extractMetadata(page: Page) {
 async function captureSection(
   page: Page,
   pageName: string,
-  section: { selector: string; name: string },
+  section: { selector: string; name: string; clickText?: string },
   viewport: string,
 ): Promise<ScreenshotInfo | null> {
   const filename = `${pageName}-${viewport}-${section.name}.png`;
   const filepath = join(ARTIFACTS_DIR, filename);
 
   try {
+    // If a tab click is specified, click it first and wait for content
+    if (section.clickText) {
+      const tab = page.getByRole("button", { name: section.clickText }).or(
+        page.locator(`button:text-is("${section.clickText}")`)
+      );
+      await tab.first().click();
+      await page.waitForTimeout(600);
+    }
+
     // Try to find the element
     const el = page.locator(section.selector).first();
     await el.waitFor({ state: "visible", timeout: 5000 });
