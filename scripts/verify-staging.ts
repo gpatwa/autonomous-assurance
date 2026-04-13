@@ -221,8 +221,17 @@ async function captureSection(
 
     await page.screenshot({ path: filepath });
 
+    // Close any open drawers/modals after capture to restore clean state for next section
+    if (section.postClickText) {
+      await page.keyboard.press("Escape");
+      await page.waitForTimeout(300);
+    }
+
     return { file: filename, section: section.name, viewport, heading };
   } catch {
+    // Try to clean up any open overlay before reporting failure
+    await page.keyboard.press("Escape").catch(() => {});
+    await page.waitForTimeout(200);
     console.log(`    ⚠ Could not capture ${section.name} (${section.selector})`);
     return null;
   }
