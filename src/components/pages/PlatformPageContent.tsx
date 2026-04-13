@@ -165,7 +165,7 @@ export default function PlatformPageContent() {
             <SectionHeader
               label="Why identity first"
               title="If identity is wrong, everything recovered on top of it is wrong too"
-              subtitle="Microsoft Entra controls who has access to what. When an agent changes a user, group, service principal, or access policy, every downstream system inherits that change. Recovering SharePoint files or Exchange mailboxes before restoring identity trust means recovering on a broken foundation. KavachIQ sequences recovery so identity is restored first."
+              subtitle="Microsoft Entra controls who has access to what. When an agent changes a user, group, service principal, Conditional Access policy, or role assignment, every downstream system inherits that change. Recovering SharePoint files or Exchange mailboxes before restoring identity trust means recovering on a broken foundation. KavachIQ sequences recovery so identity is restored first."
             />
           </div>
         </div>
@@ -311,10 +311,10 @@ export default function PlatformPageContent() {
                 Restore the control plane before anything else
               </motion.p>
               <motion.p variants={fadeUp} className="mt-6 text-lg leading-relaxed text-text-secondary">
-                When an agent changes a user, modifies a group, or alters an app registration in Entra, every downstream system inherits the impact. A single service principal change can break provisioning, expand access, or revoke legitimate permissions across Microsoft 365 and connected apps. KavachIQ traces the change, maps downstream fallout, and sequences identity recovery before data recovery.
+                When an agent changes a user, modifies a group, alters an app registration, or updates a Conditional Access policy in Entra, every downstream system inherits the impact. A single service principal change can break provisioning, expand access, or revoke legitimate permissions across Microsoft 365 and connected apps. KavachIQ traces the change, maps downstream fallout, and sequences identity recovery before data recovery.
               </motion.p>
               <motion.ul variants={fadeUp} className="mt-8 space-y-3">
-                <BulletItem>Trace agent-driven changes across users, groups, applications, and service principals</BulletItem>
+                <BulletItem>Trace agent-driven changes across users, groups, app registrations, service principals, and Conditional Access</BulletItem>
                 <BulletItem>Map downstream access, provisioning, and permission fallout before acting</BulletItem>
                 <BulletItem>Recover the control plane before restoring impacted data surfaces</BulletItem>
                 <BulletItem>Keep operators in control of high-risk identity recovery decisions</BulletItem>
@@ -326,7 +326,7 @@ export default function PlatformPageContent() {
                 {[
                   ["Users and groups", "Membership drift, privilege expansion, and high-impact lifecycle changes from agent workflows"],
                   ["Applications", "App registrations, service principals, and access paths altered by agent actions"],
-                  ["Policies", "Conditional access, identity controls, and settings that shape downstream access risk"],
+                  ["Conditional Access and policies", "Conditional Access policies, role assignments, and identity controls that shape downstream access and recovery risk"],
                   ["Recovery order", "Restore identity trust first, then recover impacted Microsoft 365 and downstream systems"],
                 ].map(([title, body]) => (
                   <div key={title} className="rounded-2xl border border-white/[0.06] bg-bg-primary/50 p-5">
@@ -348,9 +348,9 @@ export default function PlatformPageContent() {
               <div className="grid gap-4 sm:grid-cols-2">
                 {[
                   ["SharePoint and OneDrive", "Trace content, permission, and collaboration changes tied to agent-driven workflows"],
-                  ["Exchange", "Understand mailbox, messaging, and communication impact when agents act at scale"],
-                  ["Permission fallout", "Connect Microsoft 365 data impact back to Entra identity drift and access changes"],
-                  ["Trusted operating state", "Coordinate restoration so teams recover the business surface, not just isolated files"],
+                  ["Exchange", "Understand mailbox, messaging, and delegation impact when agents act at scale"],
+                  ["Teams collaboration", "Map team membership, channel, and permission changes that affect collaboration and access"],
+                  ["Trusted operating state", "Coordinate restoration so operators recover the business surface, not just isolated files"],
                 ].map(([title, body]) => (
                   <div key={title} className="rounded-2xl border border-white/[0.06] bg-bg-surface/55 p-5">
                     <p className="text-base font-semibold text-text-primary">{title}</p>
@@ -377,11 +377,11 @@ export default function PlatformPageContent() {
                 Recover the systems where business impact shows up
               </motion.p>
               <motion.p variants={fadeUp} className="mt-6 text-lg leading-relaxed text-text-secondary">
-                AI agents increasingly touch SharePoint, OneDrive, Exchange, and collaboration workflows. High-impact changes to files, permissions, content, or messaging can disrupt operations quickly and compound when teams try to recover system by system instead of coordinating with identity recovery. Over time, the same recovery model extends to adjacent SaaS platforms.
+                AI agents increasingly touch SharePoint, OneDrive, Exchange, and Teams-connected collaboration workflows. High-impact changes to files, permissions, content, team membership, or messaging can disrupt operations quickly and compound when operators try to recover system by system instead of coordinating with identity recovery. Over time, the same recovery model extends to adjacent SaaS platforms.
               </motion.p>
               <motion.ul variants={fadeUp} className="mt-8 space-y-3">
-                <BulletItem>Identify high-impact changes across Microsoft 365 workloads</BulletItem>
-                <BulletItem>Understand affected content, permissions, and collaboration dependencies</BulletItem>
+                <BulletItem>Identify high-impact changes across SharePoint, OneDrive, Exchange, and Teams</BulletItem>
+                <BulletItem>Understand affected content, permissions, team membership, and collaboration dependencies</BulletItem>
                 <BulletItem>Coordinate recovery in the right order, starting from identity</BulletItem>
                 <BulletItem>Restore a trusted operating state across collaboration surfaces</BulletItem>
               </motion.ul>
