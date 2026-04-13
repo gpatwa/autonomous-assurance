@@ -131,8 +131,8 @@ export default function HomePageContent() {
                 <Button variant="primary" size="lg" href="#request-demo" onClick={() => track("cta_click", { page: "homepage", label: "Request a Demo" })}>
                   Request a Demo
                 </Button>
-                <Button variant="secondary" size="lg" href="#how-it-works">
-                  See How It Works
+                <Button variant="secondary" size="lg" href="/demo">
+                  View Interactive Demo
                 </Button>
               </motion.div>
               <motion.div variants={fadeUp} className="mt-10 grid max-w-2xl gap-4 sm:grid-cols-3">
@@ -522,6 +522,25 @@ export default function HomePageContent() {
               </motion.div>
             ))}
           </motion.div>
+
+          {/* Contextual demo link */}
+          <motion.div
+            variants={fadeUp}
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true, margin: "-80px" }}
+            className="mx-auto max-w-4xl mt-10 text-center"
+          >
+            <a
+              href="/demo"
+              className="inline-flex items-center gap-2 text-sm font-medium text-accent hover:text-accent-hover transition-colors"
+            >
+              Explore this incident in the interactive demo
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M5 12h14" /><path d="m12 5 7 7-7 7" />
+              </svg>
+            </a>
+          </motion.div>
         </div>
       </section>
 
@@ -560,6 +579,19 @@ export default function HomePageContent() {
         body="Walk through a real recovery scenario with our team. We will show you how KavachIQ maps blast radius across Entra and Microsoft 365, sequences rollback with identity-first recovery, and returns your environment to a trusted operational state."
         ctaText="Request a Demo"
       />
+
+      {/* Subtle demo link below CTA */}
+      <div className="relative -mt-16 pb-8 text-center">
+        <a
+          href="/demo"
+          className="inline-flex items-center gap-2 text-xs text-text-muted hover:text-text-secondary transition-colors"
+        >
+          Or preview the recovery workflow first
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M5 12h14" /><path d="m12 5 7 7-7 7" />
+          </svg>
+        </a>
+      </div>
     </>
   );
 }
