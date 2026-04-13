@@ -45,6 +45,9 @@ const PAGE_SECTIONS: Record<string, { selector: string; name: string }[]> = {
     { selector: "#request-demo", name: "cta" },
     { selector: "footer", name: "footer" },
   ],
+  demo: [
+    { selector: "body", name: "overview" },
+  ],
 };
 
 const APPROVED_PHRASES = [
@@ -223,6 +226,7 @@ function checkPhrases(bodyText: string, phrases: string[]): { found: string[]; m
 const PAGES = [
   { path: "/", name: "home", label: "Homepage" },
   { path: "/platform", name: "platform", label: "Platform" },
+  { path: "/demo", name: "demo", label: "Demo" },
 ];
 
 // ─── Main ────────────────────────────────────────────────────────────────────
