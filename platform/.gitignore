@@ -1,0 +1,16 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+*.tsbuildinfo
+
+# Environment (keep .env.example)
+.env*
+!.env.example
+
+# OS
+.DS_Store
+
+# Docker volumes
+azurite-data/

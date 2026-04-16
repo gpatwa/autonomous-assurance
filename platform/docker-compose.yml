@@ -1,0 +1,32 @@
+version: "3.8"
+
+services:
+  # Azure Storage emulator (Blob, Table, Queue)
+  azurite:
+    image: mcr.microsoft.com/azure-storage/azurite
+    ports:
+      - "10000:10000"  # Blob
+      - "10001:10001"  # Queue
+      - "10002:10002"  # Table
+    volumes:
+      - azurite-data:/data
+    command: "azurite --blobHost 0.0.0.0 --queueHost 0.0.0.0 --tableHost 0.0.0.0"
+
+  # Note: Cosmos DB emulator is not available on ARM64/Apple Silicon.
+  # Use the Azure Cosmos DB emulator natively or use the Linux emulator
+  # on x86_64. For Apple Silicon, use the Cosmos DB local emulator
+  # from https://learn.microsoft.com/en-us/azure/cosmos-db/local-emulator
+  # or connect to a real Azure Cosmos DB instance for dev.
+  #
+  # Uncomment for x86_64 Linux/WSL:
+  # cosmos:
+  #   image: mcr.microsoft.com/cosmosdb/linux/azure-cosmos-emulator:latest
+  #   ports:
+  #     - "8081:8081"
+  #     - "10250-10256:10250-10256"
+  #   environment:
+  #     - AZURE_COSMOS_EMULATOR_PARTITION_COUNT=10
+  #     - AZURE_COSMOS_EMULATOR_ENABLE_DATA_PERSISTENCE=true
+
+volumes:
+  azurite-data:
