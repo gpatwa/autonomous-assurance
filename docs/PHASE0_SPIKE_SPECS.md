@@ -89,22 +89,24 @@ This is the only write action in v1. If it is unreliable, the entire execution m
 - List of any audit events generated as side effects of removal
 - Rate-limit behavior observations
 
-### Success Criteria
-- 100% success rate (204 or 404) across all group types
-- 404 returned consistently for already-absent members
-- Per-removal latency < 2 seconds (p95)
-- No unexpected side-effect audit events generated directly by the removal
-- Rate limits not triggered at < 1 removal per second
+### Expected Operating Targets
+- Success rate >= 98% (204 or 404) across security groups. Transient 5xx errors are acceptable if retriable.
+- 404 returned consistently for already-absent members (idempotency confirmed)
+- Per-removal latency < 2 seconds (p95). Occasional outliers > 2s are acceptable if documented.
+- No unexpected side-effect audit events generated directly by the removal. If side effects are observed, document them precisely.
+- Rate limits not triggered at < 1 removal per second. If 429s occur, document the threshold.
 
-### Failure Signals
-- Non-204/404 responses (403, 400, 5xx) for valid removals → permission or API issue
-- Side-effect events (provisioning connector fires, unexpected downstream change logged) → execution model needs side-effect awareness
-- M365 groups behave differently from security groups → action template must differentiate
+**Framing note:** The goal of this spike is to produce decision-grade evidence about Graph API behavior, not to achieve a perfect binary pass/fail. Document the observed behavior, variance, and safety implications. One transient 5xx in 60 attempts does not fail the spike. A pattern of consistent failures or unexpected side effects does.
 
-### If Spike Fails
-- If a specific group type fails: restrict v1 execution to security groups only
-- If side effects are observed: add side-effect expectations to the validation handoff model
-- If rate limits are hit easily: implement per-tenant execution throttling from v1
+### Signals That Require Architecture Adjustment
+- Consistent non-204/404 responses (403, 400) for valid removals → permission scope or API issue; investigate before proceeding
+- Repeatable side-effect events (provisioning connector fires, unexpected downstream changes) → execution model needs side-effect awareness; document exact events and update validation handoff model
+- M365 groups behave materially differently from security groups → restrict v1 scope to security groups only
+
+### If Spike Produces Concerning Results
+- If a specific group type is unreliable: restrict v1 execution to security groups only and document the restriction
+- If side effects are observed: add side-effect expectations to the validation handoff model; do not fail Phase 0
+- If rate limits are hit at low throughput: implement per-tenant execution throttling; document the observed limit
 
 ---
 

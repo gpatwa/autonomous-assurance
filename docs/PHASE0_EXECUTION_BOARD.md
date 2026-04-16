@@ -260,26 +260,30 @@
 
 ---
 
-### WI-11: Canonical Scenario Fixture Data
+### WI-11: Canonical Scenario Fixture Data Generation
 
 | Field | Value |
 |-------|-------|
 | Priority | P1 |
 | Owner | [TBD] |
-| Dependencies | WI-05 (audit log spike informs exact event shape) |
-| Output | JSON fixture files for the canonical scenario |
+| Dependencies | WI-05 (audit log spike provides real event shapes) |
+| Output | JSON fixture files derived from real observed audit events |
 | Status | Not started |
 | Target | Week 3, Day 1-2 |
 
+**Important distinction:** The canonical scenario *definition* is already fixed in `CANONICAL_SCENARIO_FIXTURE.md`. That document is the product truth. It does not change based on spike results. This work item generates *JSON test fixture files* from the real audit events observed during the audit log spike. The fixtures are implementation artifacts that conform to the scenario definition, using real Microsoft event shapes.
+
 **Tasks:**
-- [ ] Create JSON fixtures based on real audit events from Spike 5
-- [ ] Include: 12 raw events, 12 normalized changes, 1 correlated bundle, 1 incident
-- [ ] Include: expected blast-radius output, expected recovery plan
-- [ ] Place fixtures in test data directory with schema validation
+- [ ] Extract the real audit events captured during Spike 5 (WI-05) as JSON files
+- [ ] Create normalized-change fixture files matching the canonical scenario expectations
+- [ ] Create expected correlated bundle and incident fixture files
+- [ ] Include placeholder blast-radius and recovery-plan fixtures (structural, populated in Phase 2)
+- [ ] Place all fixtures in `fixtures/canonical/` directory with schema validation
 
 **Success Criteria:**
-- [ ] Fixtures match canonical scenario fixture document
-- [ ] Fixtures validate against shared schema package types
+- [ ] Raw event fixtures are real Microsoft audit event JSON (not invented)
+- [ ] Normalized change fixtures conform to the shared schema package types
+- [ ] Fixtures align with the scenario definition in `CANONICAL_SCENARIO_FIXTURE.md`
 - [ ] Fixtures are usable by Phase 1 integration tests
 
 ---

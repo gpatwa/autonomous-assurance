@@ -61,7 +61,9 @@ kavachiq/
 
 **Why:** Full-stack TypeScript eliminates language-boundary friction. The marketing site is already Next.js/TypeScript. The team can share types end-to-end. Microsoft Graph SDK for Node.js (`@microsoft/microsoft-graph-client`) is mature.
 
-**Alternative considered:** C# / .NET. Stronger Microsoft Graph SDK. Better Azure-native tooling. But adds a language boundary if the frontend stays React/Next.js. Decision: stay TypeScript unless Graph SDK gaps force a switch. This is a Phase 0 validation.
+**This decision is locked.** TypeScript is the implementation language for Phase 0 and MVP. The team should not revisit this decision unless a Phase 0 spike documents a concrete, blocking Graph SDK issue that cannot be worked around with raw HTTP calls. "C# would be slightly better for X" is not a valid reason to switch. A language switch mid-build is more expensive than any SDK gap.
+
+**Alternative evaluated and rejected:** C# / .NET. Stronger Microsoft Graph SDK, better Azure-native tooling. Rejected because it adds a language boundary with the existing React/Next.js frontend and fragments the team's type system.
 
 ---
 

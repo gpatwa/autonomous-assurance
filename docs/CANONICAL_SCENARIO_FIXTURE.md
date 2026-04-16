@@ -2,6 +2,10 @@
 
 **Purpose:** Single reference-truth scenario used by all engineering, QA, demo, and product work throughout MVP development.
 
+**Important:** This scenario definition is fixed. It is not waiting for spike results to be finalized. Spikes validate *how* we implement the scenario, not *what* the scenario is. JSON fixture files generated from real audit events (WI-11) are derived artifacts that conform to this definition.
+
+**Phase scope note:** Sections 1-7 (actor through incident) are Phase 0-1 validation targets. Sections 8-9 (blast radius and recovery plan) are Phase 2-3 product targets. Sections 10-11 (validation outcomes and audit checkpoints) describe the full MVP end-state. Not all downstream expectations need to be validated in Phase 0. Phase 0 focuses on the core Entra-centric truth path: change capture, normalization, correlation, and incident creation.
+
 ---
 
 ## Scenario Identity
@@ -114,7 +118,7 @@ One CorrelatedChangeBundle:
 | Root change | Finance-Privileged-Access membership +12 |
 | Classification rationale | Non-human actor (+30), high-sensitivity group (+35), bulk magnitude >5 (+20), membership modification (+10) = 95 |
 
-## 8. Expected Blast Radius
+## 8. Expected Blast Radius *(Phase 2 product target)*
 
 ### Categories and Counts
 
@@ -140,7 +144,7 @@ One CorrelatedChangeBundle:
 | Applications | High | Authoritative edge (app role assignment via group) |
 | Conditional Access | High | Authoritative edge (policy group targeting) |
 
-## 9. Expected Recovery Plan
+## 9. Expected Recovery Plan *(Phase 3 product target)*
 
 ### Tier 0: Identity Rollback
 
@@ -175,7 +179,7 @@ One CorrelatedChangeBundle:
 |------|-----------|--------|----------|-----------|
 | 8 | Validation | Mark trusted operational state restored | Required | Operator confirms |
 
-## 10. Expected Validation Outcomes
+## 10. Expected Validation Outcomes *(Phase 4 product target)*
 
 | Check | Expected Result | Timing |
 |-------|----------------|--------|
@@ -191,7 +195,7 @@ One CorrelatedChangeBundle:
 
 All 7 checks verified → "Trusted operational state restored"
 
-## 11. Expected Audit Trail Checkpoints
+## 11. Expected Audit Trail Checkpoints *(progressively validated across Phases 1-4)*
 
 | Checkpoint | Event Type | Immutable |
 |-----------|-----------|-----------|
