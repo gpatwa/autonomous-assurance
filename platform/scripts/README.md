@@ -13,7 +13,7 @@ Orchestration scripts use the local `scripts/lib/runbook.ts` pattern:
 | `fetch-audit-events.ts` | Fetch `/auditLogs/directoryAudits` for a window; write raw JSON | WI-05 | `npm run fetch-audit-events -- --start ISO --end ISO [--output PATH]` |
 | `run-audit-completeness-spike.ts` | WI-05 orchestration: mutation checklist → confirmation → propagation wait → fetch → 4-class completeness analysis → JSON matrix + markdown summary | WI-05 | `npm run audit-completeness-spike -- --output-dir PATH [--confirm-mutations] [--wait-minutes N]` |
 | `test-member-removal.ts` | Graph remove-member spike: reliability / idempotency / timing / rate-limit | WI-06 | `npm run test-member-removal -- --mode MODE --group-id ID (--members-file PATH \| --member-id ID) [--apply] [--output PATH]` |
-| `trigger-canonical-mutations.ts` | WI-05 canonical mutation trigger (M1 via SP-Execute so events carry `initiatedBy.app`; commits 2 and 3 will add M2/M3/M4) | WI-05 | `npm run trigger-canonical-mutations -- [--apply] [--output PATH]` |
+| `trigger-canonical-mutations.ts` | WI-05 canonical mutation trigger (all four mutations). M1 via SP-Execute so events carry `initiatedBy.app`; M2 operator-gated CA edit; M3 app role assignment via SP-Setup; M4 SP credential add + auto-cleanup via SP-Setup. Emits `mutation-trail.json` for analyzer correlation. | WI-05 | `npm run trigger-canonical-mutations -- [--apply] [--confirm-all-manual] [--output PATH]` |
 
 Scripts load `.env.local` first, then `.env`. Config errors exit `78`;
 usage errors exit `2`; other errors exit `1`. See
@@ -243,6 +243,87 @@ must fall back to snapshot-diff reconstruction.
 
 The markdown summary is intentionally short and report-shaped — the
 WI-05 spike report can be written by quoting and expanding it.
+
+## WI-05 canonical mutation trigger (`trigger-canonical-mutations.ts`) detail
+
+Produces the four canonical-scenario audit events required by WI-05 with
+the correct provenance signatures. Emits `mutation-trail.json` that the
+WI-05 analyzer consumes to correlate observed audit events to specific
+mutations (tighter than a wall-clock window).
+
+### Runbook steps
+
+| ID | Kind | Principal | Purpose |
+|---|---|---|---|
+| `discover-privileged-group` | automatic | SP-Read | Find `Finance-Privileged-Access` group ID |
+| `discover-ca-policy` | automatic | SP-Read | Find the CA policy ID (default: `Finance-MFA-Bypass`) |
+| `discover-m1-candidates` | automatic | SP-Read | Resolve 12 users by UPN prefix (seq 5..16 by default) |
+| `m1-add-group-members` | automatic, **requiresApply** | SP-Execute | POST 12 `members/$ref` → events carry `initiatedBy.app` |
+| `m2-ca-policy-edit` | **approval-required** | operator | Portal edit; never automated (lockout risk). Pre-filled instruction includes policy ID + click path |
+| `discover-m3-m4-app` | automatic | SP-Read | Find `KavachiqTest-App-NN` + its service principal (if present) |
+| `discover-m3-assignee` | automatic | SP-Read | Find the assignee user (default: seq 17) |
+| `m3-ensure-app-sp` | automatic, **requiresApply** | SP-Setup | Create the app's servicePrincipal if missing |
+| `m3-app-role-assignment` | automatic, **requiresApply** | SP-Setup | POST `appRoleAssignedTo` → "Add app role assignment to user" event |
+| `m4-credential-cycle` | automatic, **requiresApply** | SP-Setup | Add an SP credential, then immediately remove it. Both events land; cleanup always runs to prevent orphaned secrets |
+
+### Trust boundary
+
+- Discovery is SP-Read only.
+- M1 writes are SP-Execute only (the only principal allowed to mutate group membership in the v1 scope).
+- M2 is a human portal action. No script-level writes.
+- M3 and M4 writes are SP-Setup only (its perms cover application + role-assignment writes).
+- No script-local helper grants one principal's powers to another.
+
+### Example commands
+
+```bash
+# Full flow; TTY prompts for M2 approval:
+npm run trigger-canonical-mutations -- --apply --output ./wi05/mutation-trail.json
+
+# Non-interactive (CI / no-TTY): operator has already done the M2 portal edit
+# or plans to do it during a separate pass.
+npm run trigger-canonical-mutations -- --apply --confirm-all-manual \
+  --output ./wi05/mutation-trail.json
+
+# Only M1 (skip the other three):
+npm run trigger-canonical-mutations -- --apply --mode M1 \
+  --output ./wi05/m1-only.json
+
+# Customize target app / assignee:
+npm run trigger-canonical-mutations -- --apply \
+  --target-app-seq 3 --m3-assignee-user-seq 20 \
+  --output ./wi05/custom.json
+
+# Dry-run (default): prints the plan, no Graph writes.
+npm run trigger-canonical-mutations
+```
+
+### Output shape
+
+`mutation-trail.json` contains:
+
+- `runMetadata` — script name, run ID, correlation ID, tenant ID, privileged
+  group ID, start/end timestamps, dry-run flag, active modes.
+- `attempts[]` — per-attempt record with `mutationId` (M1-M4), `kind`,
+  `startedAt`, `finishedAt`, `httpStatus`, `requestId`, `clientRequestId`,
+  `outcome` (`success` / `failed` / `skipped` / `manual-confirmed` /
+  `manual-declined`), `errorCategory` on failure, and a narrow
+  `payloadSummary`. Secret material is deliberately never persisted.
+- `summary` — per-mutation counters (`attempted` / `succeeded` /
+  `failed` / `skipped`).
+- `runbook` — full RunbookResult trail (steps, statuses, confirmedBy,
+  outputsProduced, aborted, abortReason).
+
+### Safety posture
+
+- **M2 stays manual forever.** CA policy writes can lock a tenant; see
+  `ENGINEERING_BOOTSTRAP_DECISIONS.md §7`.
+- **M4 auto-cleanup.** The credential add is always followed by a remove,
+  even if later steps fail, so test secrets don't leak. If the remove
+  fails, the trail records the orphaned `keyId` with a prominent warning
+  for manual deletion.
+- **Dry-run default.** `--apply` is required to issue any Graph write.
+  `--dry-run` wins over `--apply`; `DRY_RUN=1` env forces dry-run.
 
 ## WI-06 spike (`test-member-removal.ts`) detail
 

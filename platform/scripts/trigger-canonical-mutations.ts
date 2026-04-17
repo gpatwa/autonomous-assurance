@@ -62,6 +62,11 @@ const CANONICAL = {
   privilegedGroupName: "Finance-Privileged-Access",
   userMailPrefix: "kq-test",
   caPolicyName: "Finance-MFA-Bypass",
+  appDisplayPrefix: "KavachiqTest-App",
+  /** Graph's "default access" role for SPs that define no custom app roles. */
+  defaultAppRoleId: "00000000-0000-0000-0000-000000000000",
+  /** Displayed on the test secret M4 creates; deleted before the step returns. */
+  m4SecretDisplayName: "kavachiq-wi05-spike",
 };
 
 type MutationId = "M1" | "M2" | "M3" | "M4";
@@ -75,6 +80,8 @@ interface Args {
   memberStartSeq: number;
   modes: Set<MutationId>;
   caPolicyName: string;
+  targetAppSeq: number;
+  m3AssigneeUserSeq: number;
 }
 
 function parseArgs(argv: string[]): Args {
@@ -83,8 +90,10 @@ function parseArgs(argv: string[]): Args {
     output: "./wi05/mutation-trail.json",
     memberCount: 12,
     memberStartSeq: 5,
-    modes: new Set<MutationId>(["M1", "M2"]), // commits 1+2: M1 + M2; commit 3 adds M3 + M4
+    modes: new Set<MutationId>(["M1", "M2", "M3", "M4"]), // full canonical scenario
     caPolicyName: CANONICAL.caPolicyName,
+    targetAppSeq: 1,
+    m3AssigneeUserSeq: 17,
   };
   for (let i = 0; i < argv.length; i += 1) {
     const arg = argv[i];
@@ -99,6 +108,10 @@ function parseArgs(argv: string[]): Args {
       args.memberStartSeq = parsePositiveInt(argv[++i], "--member-start-seq");
     } else if (arg === "--ca-policy-name") {
       args.caPolicyName = requireValue(argv, ++i, "--ca-policy-name");
+    } else if (arg === "--target-app-seq") {
+      args.targetAppSeq = parsePositiveInt(argv[++i], "--target-app-seq");
+    } else if (arg === "--m3-assignee-user-seq") {
+      args.m3AssigneeUserSeq = parsePositiveInt(argv[++i], "--m3-assignee-user-seq");
     } else if (arg === "--mode") {
       const raw = requireValue(argv, ++i, "--mode");
       const tokens = raw.split(",").map((t) => t.trim().toUpperCase());
@@ -154,10 +167,12 @@ function usage(): string {
     "  --apply                       Perform real Graph writes. Default is dry-run.",
     "  --dry-run                     Force dry-run; wins over --apply.",
     "  --output PATH                 Write mutation-trail.json. Default: ./wi05/mutation-trail.json.",
-    "  --mode <M1|M2|M3|M4|all,...>  Which mutations to run (default: M1,M2 — commit 3 adds M3 + M4).",
+    "  --mode <M1|M2|M3|M4|all,...>  Which mutations to run (default: all four).",
     "  --member-count N              M1: members to add (default: 12).",
     "  --member-start-seq N          M1: starting UPN seq (default: 5).",
     "  --ca-policy-name NAME         M2: CA policy to edit (default: Finance-MFA-Bypass).",
+    "  --target-app-seq N            M3 + M4: which KavachiqTest-App-NN to use (default: 1).",
+    "  --m3-assignee-user-seq N      M3: user seq to assign the app role to (default: 17).",
     "",
     "Manual-step confirmation (CA policy in commit 2; portal steps):",
     "  --confirm-manual-step <id>    Pre-confirm the named step (repeatable).",
@@ -165,9 +180,10 @@ function usage(): string {
     "",
     "Env DRY_RUN=1 forces dry-run regardless of --apply.",
     "",
-    "Required env (commits 1+2):",
-    "  SP_READ_*    — discovery of privileged group, candidate users, CA policy",
+    "Required env:",
+    "  SP_READ_*    — discovery for all mutations",
     "  SP_EXECUTE_* — M1 add-member writes (so events carry initiatedBy.app)",
+    "  SP_SETUP_*   — M3 (app role assignment) and M4 (SP credential add+remove)",
     "  M2 is a portal action by the operator; no extra env required.",
     "",
   ].join("\n");
@@ -311,6 +327,10 @@ interface CaPolicyRef {
   displayName: string;
 }
 
+function pad2(n: number): string {
+  return n.toString().padStart(2, "0");
+}
+
 function buildM2Instruction(caPolicyName: string): string {
   return [
     "Open the Entra admin portal and edit the Conditional Access policy to produce",
@@ -373,12 +393,46 @@ async function findCanonicalUsers(
     .sort((a, b) => a.seq - b.seq);
 }
 
+interface AppRef {
+  id: string;        // application object ID
+  appId: string;     // application client ID (GUID used to link to SP)
+  displayName: string;
+}
+
+async function findAppByDisplayName(
+  graph: GraphTransport,
+  displayName: string,
+): Promise<AppRef | null> {
+  const filter = encodeURIComponent(`displayName eq '${displayName.replace(/'/g, "''")}'`);
+  const res = await graph.get<{ value: Array<AppRef> }>(
+    `/applications?$filter=${filter}&$select=id,appId,displayName&$top=1`,
+  );
+  return res.value[0] ?? null;
+}
+
+async function findServicePrincipalByAppId(
+  graph: GraphTransport,
+  appId: string,
+): Promise<{ id: string; displayName: string } | null> {
+  const filter = encodeURIComponent(`appId eq '${appId}'`);
+  const res = await graph.get<{ value: Array<{ id: string; displayName: string }> }>(
+    `/servicePrincipals?$filter=${filter}&$select=id,displayName&$top=1`,
+  );
+  return res.value[0] ?? null;
+}
+
 // ─── Main ──────────────────────────────────────────────────────────────────
 
 interface ScriptState {
   privilegedGroupId: string | null;
   m1Candidates: CandidateUser[];
   caPolicy: CaPolicyRef | null;
+  m3Target: {
+    app: AppRef;
+    sp: { id: string; displayName: string } | null;
+    assignee: CandidateUser;
+  } | null;
+  m4Target: { app: AppRef } | null;
   attempts: MutationAttempt[];
 }
 
@@ -406,6 +460,8 @@ async function runScript(): Promise<void> {
     privilegedGroupId: null,
     m1Candidates: [],
     caPolicy: null,
+    m3Target: null,
+    m4Target: null,
     attempts: [],
   };
 
@@ -619,6 +675,308 @@ async function runScript(): Promise<void> {
     kind: "approval-required",
     skipIf: () => (args.modes.has("M2") ? false : "M2 not requested"),
     instruction: buildM2Instruction(args.caPolicyName),
+  });
+
+  // ── M3: discovery + ensure-SP + app role assignment ───────────────────
+  const appDisplayName = `${CANONICAL.appDisplayPrefix}-${pad2(args.targetAppSeq)}`;
+  const needsM3OrM4 = () => args.modes.has("M3") || args.modes.has("M4");
+
+  runbook.add({
+    id: "discover-m3-m4-app",
+    label: `Find '${appDisplayName}' via SP-Read`,
+    kind: "automatic",
+    skipIf: () => (needsM3OrM4() ? false : "M3/M4 not requested"),
+    async run() {
+      const app = await findAppByDisplayName(readGraph, appDisplayName);
+      if (!app) {
+        throw new Error(
+          `Application '${appDisplayName}' not found. Run setup-test-tenant --apply ` +
+            `first, or pass a different --target-app-seq.`,
+        );
+      }
+      if (args.modes.has("M3")) {
+        const sp = await findServicePrincipalByAppId(readGraph, app.appId);
+        state.m3Target = {
+          app,
+          sp,
+          // assignee filled below
+          assignee: { id: "", upn: "", seq: args.m3AssigneeUserSeq },
+        };
+      }
+      if (args.modes.has("M4")) state.m4Target = { app };
+      log.info("discovery: m3/m4 app", {
+        id: app.id,
+        appId: app.appId,
+        displayName: app.displayName,
+        spPresent: state.m3Target?.sp !== null && state.m3Target?.sp !== undefined,
+      });
+      return { appId: app.appId, spPresent: state.m3Target?.sp !== null };
+    },
+  });
+
+  runbook.add({
+    id: "discover-m3-assignee",
+    label: `Find M3 assignee user (seq ${args.m3AssigneeUserSeq})`,
+    kind: "automatic",
+    skipIf: () => (args.modes.has("M3") ? false : "M3 not requested"),
+    async run() {
+      const all = await findCanonicalUsers(readGraph);
+      const u = all.find((c) => c.seq === args.m3AssigneeUserSeq);
+      if (!u) {
+        throw new Error(
+          `M3 assignee kq-test-${pad2(args.m3AssigneeUserSeq)} not found. ` +
+            `Either re-run setup-test-tenant --apply to create more users, or pass ` +
+            `--m3-assignee-user-seq <existing-seq>.`,
+        );
+      }
+      if (state.m3Target) state.m3Target.assignee = u;
+      log.info("discovery: m3 assignee", { upn: u.upn, userId: u.id });
+      return { upn: u.upn };
+    },
+  });
+
+  // M3 sometimes requires a service principal to exist for our app. In the
+  // vast majority of test tenants (apps created via POST /applications and
+  // not yet "enterprised"), it does not. This step creates it via SP-Setup
+  // when absent. This produces an incidental "Add service principal" event
+  // but that does NOT match any WI-05 change class; we only record the
+  // following role-assignment as the M3 MutationAttempt.
+  runbook.add({
+    id: "m3-ensure-app-sp",
+    label: "M3: ensure a service principal exists for the target app (SP-Setup)",
+    kind: "automatic",
+    requiresApply: true,
+    skipIf: () => (args.modes.has("M3") ? false : "M3 not requested"),
+    async run() {
+      if (!state.m3Target) throw new Error("m3 target missing");
+      if (state.m3Target.sp) {
+        log.info("m3: app SP already exists", { spId: state.m3Target.sp.id });
+        return { created: false, spId: state.m3Target.sp.id };
+      }
+      const setupCreds = loadSpCredentials("setup");
+      const setupGraph = new GraphTransport({
+        tokenProvider: tokenProviderFor(setupCreds),
+      });
+      const res: PostResult<{ id: string; displayName: string }> = await setupGraph.post(
+        "/servicePrincipals",
+        { appId: state.m3Target.app.appId },
+      );
+      if (!res.body) throw new Error("/servicePrincipals returned no body");
+      state.m3Target.sp = { id: res.body.id, displayName: res.body.displayName };
+      log.info("m3: app SP created", { spId: res.body.id });
+      return { created: true, spId: res.body.id };
+    },
+  });
+
+  runbook.add({
+    id: "m3-app-role-assignment",
+    label: "M3: add app role assignment (user → app SP) via SP-Setup",
+    kind: "automatic",
+    requiresApply: true,
+    skipIf: () => (args.modes.has("M3") ? false : "M3 not requested"),
+    async run() {
+      if (!state.m3Target || !state.m3Target.sp) throw new Error("m3 target/sp missing");
+      const { sp, assignee, app } = state.m3Target;
+      const setupCreds = loadSpCredentials("setup");
+      const setupGraph = new GraphTransport({
+        tokenProvider: tokenProviderFor(setupCreds),
+      });
+      const path = `/servicePrincipals/${sp.id}/appRoleAssignedTo`;
+      const attemptStart = nowIso();
+      const attemptT0 = Date.now();
+      try {
+        const res: PostResult<{ id: string }> = await setupGraph.post(path, {
+          principalId: assignee.id,
+          resourceId: sp.id,
+          appRoleId: CANONICAL.defaultAppRoleId,
+        });
+        state.attempts.push({
+          mutationId: "M3",
+          kind: "app-role-assignment",
+          attemptIndex: 0,
+          requestPath: path,
+          startedAt: attemptStart,
+          finishedAt: nowIso(),
+          elapsedMs: Date.now() - attemptT0,
+          httpStatus: res.status,
+          outcome: "success",
+          ...pickHeaders(res.headers),
+          payloadSummary: {
+            assigneeUserId: assignee.id,
+            assigneeUpn: assignee.upn,
+            resourceSpId: sp.id,
+            appDisplayName: app.displayName,
+            appRoleId: CANONICAL.defaultAppRoleId,
+            assignmentId: res.body?.id ?? null,
+          },
+        });
+        log.info("m3: role assigned", { assignmentId: res.body?.id ?? null });
+        return { assignmentId: res.body?.id ?? null };
+      } catch (err) {
+        if (err instanceof GraphRequestError) {
+          const cls = classifyGraphError(err);
+          state.attempts.push({
+            mutationId: "M3",
+            kind: "app-role-assignment",
+            attemptIndex: 0,
+            requestPath: path,
+            startedAt: attemptStart,
+            finishedAt: nowIso(),
+            elapsedMs: Date.now() - attemptT0,
+            httpStatus: err.status,
+            outcome: cls.outcome,
+            errorCategory: cls.errorCategory,
+            errorMessage: err.message,
+            ...pickHeaders(err.headers),
+            payloadSummary: {
+              assigneeUserId: assignee.id,
+              resourceSpId: sp.id,
+              appRoleId: CANONICAL.defaultAppRoleId,
+              reason: cls.reason,
+            },
+          });
+          if (cls.outcome === "skipped") {
+            log.info("m3: role already assigned", { status: err.status });
+            return { alreadyAssigned: true };
+          }
+        }
+        throw err;
+      }
+    },
+  });
+
+  // ── M4: credential add + immediate cleanup (auto-rollback) ────────────
+  //
+  // One runbook step; internally runs add, THEN always attempts remove,
+  // regardless of add's outcome. This prevents test secrets from leaking
+  // into the tenant if any later step of THIS step fails mid-way. The
+  // audit trail records both add and remove as separate MutationAttempts
+  // so the WI-05 analyzer sees both events produced by the class.
+  runbook.add({
+    id: "m4-credential-cycle",
+    label: "M4: add then immediately remove an SP credential (SP-Setup)",
+    kind: "automatic",
+    requiresApply: true,
+    skipIf: () => (args.modes.has("M4") ? false : "M4 not requested"),
+    async run() {
+      if (!state.m4Target) throw new Error("m4 target missing");
+      const setupCreds = loadSpCredentials("setup");
+      const setupGraph = new GraphTransport({
+        tokenProvider: tokenProviderFor(setupCreds),
+      });
+      const { app } = state.m4Target;
+      const addPath = `/applications/${app.id}/addPassword`;
+      const removePath = `/applications/${app.id}/removePassword`;
+
+      // add
+      const addStart = nowIso();
+      const addT0 = Date.now();
+      let createdKeyId: string | null = null;
+      try {
+        const res: PostResult<{ keyId: string; secretText?: string }> =
+          await setupGraph.post(addPath, {
+            passwordCredential: { displayName: CANONICAL.m4SecretDisplayName },
+          });
+        createdKeyId = res.body?.keyId ?? null;
+        state.attempts.push({
+          mutationId: "M4",
+          kind: "sp-credential-add",
+          attemptIndex: 0,
+          requestPath: addPath,
+          startedAt: addStart,
+          finishedAt: nowIso(),
+          elapsedMs: Date.now() - addT0,
+          httpStatus: res.status,
+          outcome: "success",
+          ...pickHeaders(res.headers),
+          payloadSummary: {
+            appId: app.id,
+            appDisplayName: app.displayName,
+            createdKeyId,
+            secretDisplayName: CANONICAL.m4SecretDisplayName,
+            // NOTE: secretText deliberately NOT persisted in the trail.
+          },
+        });
+        log.info("m4: credential added", { keyId: createdKeyId });
+      } catch (err) {
+        const outcome =
+          err instanceof GraphRequestError ? classifyGraphError(err) : undefined;
+        state.attempts.push({
+          mutationId: "M4",
+          kind: "sp-credential-add",
+          attemptIndex: 0,
+          requestPath: addPath,
+          startedAt: addStart,
+          finishedAt: nowIso(),
+          elapsedMs: Date.now() - addT0,
+          httpStatus: err instanceof GraphRequestError ? err.status : null,
+          outcome: outcome?.outcome ?? "failed",
+          errorCategory: outcome?.errorCategory ?? "network",
+          errorMessage: err instanceof Error ? err.message : String(err),
+          ...(err instanceof GraphRequestError ? pickHeaders(err.headers) : {}),
+          payloadSummary: { appId: app.id, appDisplayName: app.displayName },
+        });
+        log.error("m4: credential add failed", err);
+        // No remove attempt — no keyId to remove. Rethrow to abort if desired,
+        // but this IS the M4 mutation; failure means we still recorded it and
+        // the runbook shouldn't abort M3 or M1 results.
+        return { added: false, removed: false };
+      }
+
+      // remove (always runs if add succeeded)
+      if (!createdKeyId) return { added: true, removed: false, skippedRemove: "no keyId" };
+      const rmStart = nowIso();
+      const rmT0 = Date.now();
+      try {
+        const res: PostResult = await setupGraph.post(removePath, { keyId: createdKeyId });
+        state.attempts.push({
+          mutationId: "M4",
+          kind: "sp-credential-remove",
+          attemptIndex: 1,
+          requestPath: removePath,
+          startedAt: rmStart,
+          finishedAt: nowIso(),
+          elapsedMs: Date.now() - rmT0,
+          httpStatus: res.status,
+          outcome: "success",
+          ...pickHeaders(res.headers),
+          payloadSummary: {
+            appId: app.id,
+            removedKeyId: createdKeyId,
+          },
+        });
+        log.info("m4: credential removed", { keyId: createdKeyId });
+        return { added: true, removed: true };
+      } catch (err) {
+        const outcome =
+          err instanceof GraphRequestError ? classifyGraphError(err) : undefined;
+        state.attempts.push({
+          mutationId: "M4",
+          kind: "sp-credential-remove",
+          attemptIndex: 1,
+          requestPath: removePath,
+          startedAt: rmStart,
+          finishedAt: nowIso(),
+          elapsedMs: Date.now() - rmT0,
+          httpStatus: err instanceof GraphRequestError ? err.status : null,
+          outcome: outcome?.outcome ?? "failed",
+          errorCategory: outcome?.errorCategory ?? "network",
+          errorMessage: err instanceof Error ? err.message : String(err),
+          ...(err instanceof GraphRequestError ? pickHeaders(err.headers) : {}),
+          payloadSummary: {
+            appId: app.id,
+            orphanedKeyId: createdKeyId,
+            severity:
+              "WARNING: added secret could not be removed. Delete it manually in the portal.",
+          },
+        });
+        log.warn("m4: credential remove failed — orphan secret", {
+          keyId: createdKeyId,
+          appId: app.id,
+        });
+        return { added: true, removed: false, orphanedKeyId: createdKeyId };
+      }
+    },
   });
 
   const runbookResult = await runbook.execute();
