@@ -9,7 +9,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@kavachiq/schema": "workspace:*"
+    "@kavachiq/schema": "*"
   },
   "devDependencies": {
     "typescript": "^5.7.0"

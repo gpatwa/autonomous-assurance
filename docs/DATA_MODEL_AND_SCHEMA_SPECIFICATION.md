@@ -919,4 +919,4 @@ The normalization pipeline must be able to re-process historical RawEvents using
 
 1. **Entity size validation.** Create a realistic BlastRadiusResult with 50 ImpactedObjects, each with 3-step dependency chains. Measure serialized size. Confirm it fits within Azure Table Storage entity limits (1MB) or validate that blob storage is needed.
 2. **Query performance.** Populate Azure Table Storage with 10,000 NormalizedChange records for one tenant. Measure query latency for: changes-by-date, changes-by-objectId, changes-by-bundleId. Confirm sub-second response for operational queries.
-3. **Schema package prototype.** Create a shared TypeScript/C# schema package defining all canonical types and enums. Import it into two test services. Verify that schema drift is caught at compile time.
+3. **Schema package prototype.** Create the shared TypeScript schema package defining all canonical types and enums. Import it into two test services. Verify that schema drift is caught at compile time.

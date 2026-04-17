@@ -2,15 +2,26 @@
   "name": "kavachiq-platform",
   "version": "0.0.1",
   "private": true,
+  "type": "module",
   "workspaces": [
     "packages/*"
   ],
   "scripts": {
     "build": "npm run build --workspaces",
-    "typecheck": "npm run typecheck --workspaces --if-present",
-    "clean": "rm -rf packages/*/dist"
+    "typecheck": "npm run typecheck --workspaces --if-present && npm run typecheck:scripts",
+    "typecheck:scripts": "tsc --noEmit -p scripts/tsconfig.json",
+    "clean": "rm -rf packages/*/dist",
+    "setup-test-tenant": "tsx scripts/setup-test-tenant.ts",
+    "fetch-audit-events": "tsx scripts/fetch-audit-events.ts",
+    "test-member-removal": "tsx scripts/test-member-removal.ts"
   },
   "devDependencies": {
+    "@types/node": "^20.12.0",
+    "tsx": "^4.19.0",
     "typescript": "^5.7.0"
+  },
+  "dependencies": {
+    "@azure/identity": "^4.4.0",
+    "dotenv": "^16.4.5"
   }
 }

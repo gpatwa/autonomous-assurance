@@ -117,9 +117,9 @@ Everything else (CA policy writes, Exchange support, advanced detection, multi-r
 
 | Item | Description |
 |------|-------------|
-| **Shared schema package** | TypeScript/C# package defining all canonical entities and enums from the Data Model doc. Imported by all services. CI validation. |
+| **Shared schema package** | TypeScript package defining all canonical entities and enums from the Data Model doc. Imported by all services. CI validation. |
 | **Service boundary decision** | Finalize: read-path monolith + separate execution service. Document which components live where. |
-| **Dev environment** | Local dev: Docker Compose or Aspire with Azure Storage Emulator, Cosmos DB emulator. CI: GitHub Actions with emulated stores. |
+| **Dev environment** | Local dev: Docker Compose with Azure Storage Emulator (Azurite) and Cosmos DB emulator. CI: GitHub Actions with emulated stores. |
 | **Test tenant** | Dedicated Entra test tenant with realistic object population. SP-Read and SP-Execute registered. |
 | **Synthetic event data** | 7-day synthetic audit log dataset for the canonical scenario. Includes before/after state, agent-initiated events, and noise. |
 | **Architecture spike results** | Completed spikes for: audit log completeness, webhook reliability, baseline snapshot size, entity size limits, Graph remove-member behavior. |
@@ -584,7 +584,7 @@ Phase 0 (3 weeks) → Phase 1 (5 weeks) → Phase 2 (5 weeks) → Phase 3 (4 wee
 
 1. **Set up the test tenant.** Register SP-Read and SP-Execute in a dedicated Entra test tenant. Populate with 20+ groups, 50+ users, 10+ apps, 5+ CA policies. This is required for every spike.
 2. **Run the audit log completeness spike.** Read 7 days of audit logs from the test tenant. Catalog which event types include oldValue/newValue. This directly determines the before-state reconstruction strategy.
-3. **Create the shared schema package.** Define the canonical entities and enums from the Data Model doc as a TypeScript or C# package. This prevents schema drift from the first line of code.
+3. **Create the shared schema package.** Define the canonical entities and enums from the Data Model doc as a TypeScript package. This prevents schema drift from the first line of code.
 
 ### First demo-worthy slice
 

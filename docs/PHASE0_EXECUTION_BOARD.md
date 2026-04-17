@@ -93,13 +93,12 @@
 | Priority | P0 (blocking) |
 | Owner | [TBD] |
 | Dependencies | None |
-| Output | Importable TypeScript/C# package with canonical entities and enums |
+| Output | Importable TypeScript package with canonical entities and enums |
 | Status | Not started |
 | Target | Week 1, Day 3 - Week 2, Day 2 |
 
 **Tasks:**
-- [ ] Choose implementation language (TypeScript recommended for full-stack alignment)
-- [ ] Create package from DATA_MODEL_AND_SCHEMA_SPECIFICATION.md
+- [ ] Create package from DATA_MODEL_AND_SCHEMA_SPECIFICATION.md (TypeScript — language is locked per ENGINEERING_BOOTSTRAP_DECISIONS.md §3)
 - [ ] Define all 14 canonical enums
 - [ ] Define all 6 shared embedded types (ActorInfo, TargetInfo, ConfidenceInfo, ProvenanceInfo, StateSnapshot, TimeMetadata)
 - [ ] Define core entity types: NormalizedChange, Incident, BlastRadiusResult, RecoveryPlan, RecoveryStep, ApprovalRecord, ActionInstance, AuditRecord, BaselineVersion
@@ -245,7 +244,7 @@
 | Target | Week 2, Day 1-3 |
 
 **Tasks:**
-- [ ] Choose local dev stack: Docker Compose or .NET Aspire
+- [ ] Stand up the local dev stack on Docker Compose (locked per ENGINEERING_BOOTSTRAP_DECISIONS.md §4)
 - [ ] Configure Azure Storage Emulator (Azurite) for Blob + Table
 - [ ] Configure Cosmos DB emulator for tenant metadata
 - [ ] Create dev configuration for SP-Read/SP-Execute test credentials

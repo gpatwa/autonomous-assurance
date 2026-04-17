@@ -1,0 +1,25 @@
+{
+  "name": "@kavachiq/platform",
+  "version": "0.0.1",
+  "private": true,
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": "./dist/index.js",
+    "./config": "./dist/config/index.js",
+    "./observability": "./dist/observability/index.js",
+    "./errors": "./dist/errors/index.js",
+    "./utils": "./dist/utils/index.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@kavachiq/schema": "*"
+  },
+  "devDependencies": {
+    "@types/node": "^20.12.0",
+    "typescript": "^5.7.0"
+  }
+}
