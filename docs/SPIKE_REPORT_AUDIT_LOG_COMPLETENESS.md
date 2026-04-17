@@ -3,7 +3,7 @@
 **Work item:** WI-05
 **Author:** Phase 0 engineering
 **Date:** 2026-04-17
-**Status:** **INCONCLUSIVE** — orchestrator executed successfully against the live test tenant, but **0 audit events matched any of the four v1 change classes** during the observation window. Root cause is well-understood (the run used `--confirm-all-manual` without actually performing the underlying canonical mutations); remediation is a single command (`trigger-canonical-mutations --apply`) followed by a re-run of the orchestrator. The WI-05 infrastructure is verified; the completeness questions themselves remain unanswered.
+**Status:** **PARTIAL PASS.** Three of four v1 change classes produced real, matchable audit events in this run and are decisively classified. One class (M2 Conditional Access) remained `unknown` because the prerequisite portal edit was not performed during the run's window; re-run is trivial and does not require re-executing M1/M3/M4.
 **Prerequisites:** `docs/PHASE0_EXECUTION_BOARD.md §WI-05`, `docs/PHASE0_SPIKE_SPECS.md §Spike 1`, `docs/DATA_MODEL_AND_SCHEMA_SPECIFICATION.md`, `docs/CONNECTOR_AND_INGESTION_DESIGN.md`, `docs/TRUSTED_STATE_BASELINE_DESIGN.md`
 **Classification:** Internal
 
@@ -11,176 +11,202 @@
 
 ## 1. Executive Summary
 
-**What was tested.** The orchestrator `run-audit-completeness-spike.ts` was executed end-to-end against the live Entra test tenant (`3725cec5-…`) on 2026-04-17 at 06:10:54 UTC. The runbook completed without aborting; all three outputs were written; zero audit events were observed in the 17-minute window.
+**What was tested.** A live end-to-end WI-05 run against the test tenant on 2026-04-17: `trigger-canonical-mutations` fired M1, M3, and M4 via their canonical service principals; after a 15-minute propagation wait, `run-audit-completeness-spike` fetched the explicit window and analyzed 20 events. Artifacts in `platform/wi05/`.
 
-**Which artifacts were analyzed.** The four files in `platform/wi05/` produced by the run:
+**Top findings.**
 
-| File | Size | Content |
-|---|---|---|
-| `raw-events.json` | 3 B | `[]` — zero audit events fetched |
-| `audit-completeness-matrix.json` | 2.3 kB | All four class findings with `matchCount: 0, beforeStateAssessment: unknown` |
-| `audit-completeness-summary.md` | 1.8 kB | Markdown render of the matrix |
-| `run-result.json` | 6.1 kB | Full runbook trail — 4 approvals confirmed, 4 automatic steps executed, 0 failed |
+| Class | Events | Assessment | Short form |
+|---|---|---|---|
+| M1 Group membership | **12** | **absent** | `newValue` on 12/12; `oldValue` on 0/12 |
+| M2 Conditional Access | **0** | **unknown** | Portal edit not performed in window |
+| M3 App role assignment | **1** | **absent** | `newValue` on 1/1; `oldValue` on 0/1 |
+| M4 SP credential | **4** (2 cert-change + 2 incidental SP update) | **partial** per analyzer; **authoritative** per raw evidence | `KeyDescription.oldValue` AND `.newValue` both present on both cert-change events |
 
-**Top finding.** The run captured **no evidence** for any of the four change classes — not because Entra failed to emit events, but because **no mutations were performed** during the observation window. The `--confirm-all-manual` flag records operator acknowledgement; it does not verify that the underlying mutation actually occurred. In this run, acknowledgement was given but the four mutations (M1 group-member add × 12, M2 CA policy edit, M3 app role assignment, M4 SP credential add) never fired.
+**Recommended before-state strategy for Phase 1 (decisive).**
 
-**What IS confirmed by this run.**
+- **Group membership:** snapshot-diff canonical. Audit provides `newValue` only.
+- **Conditional Access:** undetermined from this run; re-run required.
+- **App role assignment:** snapshot-diff canonical. Audit provides `newValue` only; same pattern as group membership.
+- **SP credential:** **audit is authoritative for metadata**. `KeyDescription` carries both old and new values as serialized arrays of key metadata. `secretText` is never present (expected — Microsoft masks secret material). Snapshot fallback is advisory only.
 
-1. SP-Read cert + client-secret authentication against the test tenant works.
-2. `GET /auditLogs/directoryAudits` paging works (1 page, 0 events, 1.1 s).
-3. The analyzer correctly classifies an empty window as `unknown` per class (not `absent`).
-4. The runbook pattern's abort semantics held (zero failures, `aborted: false`).
-5. Outputs were written to the expected paths and are well-formed JSON / Markdown.
-
-**What remains unanswered.** Every WI-05 content question: does Entra expose `oldValue` / `newValue` via `modifiedProperties`? What's the per-class before-state assessment? What anomalies are present? None of these can be answered from an empty event set.
-
-**Recommended before-state strategy for Phase 1.** Undetermined from this run. The provisional worst-case posture documented in `CONNECTOR_AND_INGESTION_DESIGN.md` (snapshot-first trusted state, audit-derived before-state as optional enrichment) remains the conservative default until WI-05 produces conclusive evidence.
-
-**Whether any architecture assumption was invalidated.** No. The only assumption this run tested was that SP-Read + the `/auditLogs/directoryAudits` endpoint + the 4-class classifier work together — they do. No architectural claim can be invalidated (or validated) by an empty event set.
+**Architecture impact.** Small, targeted only. No architectural claim is invalidated. The `StateSnapshot.confidence` tagging in `DATA_MODEL_AND_SCHEMA_SPECIFICATION.md §8` should be wired up so group-membership and app-role-assignment `beforeState` entries default to `"reconstructed"` (snapshot-derived), while SP-credential before-state can be tagged `"authoritative"` (audit-derived). Details in §8.
 
 ---
 
 ## 2. Spike Objective
 
-Copied verbatim from `PHASE0_EXECUTION_BOARD.md §WI-05` and
-`PHASE0_SPIKE_SPECS.md §Spike 1`:
+Unchanged from `PHASE0_EXECUTION_BOARD.md §WI-05` and `PHASE0_SPIKE_SPECS.md §Spike 1`:
 
 > **Question:** Which v1 change types include `oldValue` / `newValue` on `modifiedProperties`?
 >
-> **Method:** Read 7 days of audit from the test tenant; catalog fields per event type.
+> **Method:** Exercise the canonical mutations; capture audit events for the window; catalog fields per event type.
 >
 > **Success criteria:** Documented matrix of event types vs available fields; before-state reconstruction strategy determined.
 
-Scope: four v1 change classes, traced through Entra `/auditLogs/directoryAudits`:
-
-1. Group membership changes (target: `Add member to group`, `Remove member from group`)
-2. Conditional Access policy changes (target: `Update/Add/Delete conditional access policy`)
-3. App role assignment changes (target: `Add app role assignment to …`, `Remove app role assignment from …`)
-4. Service principal credential changes (target: `Update application – Certificates and secrets management`, related SP updates)
-
-For each class, determine whether `modifiedProperties[*].oldValue` and `.newValue` are present, non-empty, and semantically usable, and classify before-state availability as `authoritative | partial | absent | unknown`.
+Scope: four v1 change classes traced through `/auditLogs/directoryAudits`.
 
 ---
 
 ## 3. Inputs and Environment
 
 | Field | Value |
-|-------|-------|
-| Test tenant | `3725cec5-3e2d-402c-a5a6-460c325d8f87` (per `run-result.json#runMetadata.tenantId`) |
-| Time window | `2026-04-17T06:09:54.416Z` → `2026-04-17T06:26:54.476Z` (17 min, including ±1 min widening) |
-| Run ID | `run_553e8f15-1488-43ba-89c7-fc74baa9c131` |
-| Correlation ID | `dc7ac46d-e3f0-478e-aed0-17271761d8c6` |
-| Live events used | **Yes — the fetch was real.** SP-Read authenticated, paged `directoryAudits`, returned 0 events. |
-| Script used | `platform/scripts/run-audit-completeness-spike.ts` at commit `f890741`. Discovery + 4-class analyzer via SP-Read; manual confirmation via `--confirm-all-manual`. |
-| Principal | SP-Read only. Client-secret auth (cert auth is preferred; to be rotated before Phase 1). |
-| Runbook elapsed | 901.17 s (15 min propagation wait + 1.1 s fetch + <1 ms analysis + <1 ms write). |
-| Total events fetched | **0** |
-| Unmatched events | **0** |
+|---|---|
+| Test tenant | `3725cec5-3e2d-402c-a5a6-460c325d8f87` |
+| Mutation principals | SP-Execute (M1), manual portal (M2 — not performed in-window), SP-Setup (M3 + M4) |
+| M1 service principal ID | `bf131def-02b5-4e90-8f32-ec4b3abf96db` (captured in every M1 event's `initiatedBy.app`) |
+| Fetch principal | SP-Read (`/auditLogs/directoryAudits` + filter) |
+| Mutation trigger run | commits `083d2bc` (`trigger-canonical-mutations`) + `f890741` (orchestrator); executed `07:40:49Z → 07:43:07Z` (M1/M3/M4); M4 cleanup at `07:47:02Z` |
+| Analysis window | `2026-04-17T07:40:00Z → 2026-04-17T08:00:01Z` (20 minutes) |
+| Run ID (fetch) | `run_4ed0781f-84ec-44ba-a5b3-be7c09977b25` |
+| Correlation ID | `a17f082c-77f3-44f1-90dc-0332b5f2ac4b` |
+| Propagation wait | 15 min external (mutations ended 07:47Z; fetch at 08:00Z) |
+| Total events fetched | 20 (one page; no `@odata.nextLink`) |
+| Matched | 17 (12 + 1 + 4) |
+| Unmatched | 3 (1 `Add service principal` + 2 `Update application`) — see §6 |
 | Runbook aborted | `false` |
-| Runbook summary | `executed: 4, confirmed: 4, skipped: 1, failed: 0` |
 
-**Explicit caveat about this run.** The four `confirm-M*` approval-required steps all auto-confirmed at the same millisecond (`2026-04-17T06:10:54.416Z`) via `--confirm-all-manual`. This means the operator passed the acknowledgement flag **without performing the four underlying canonical mutations** between confirmation and the 15-minute propagation wait. The tenant was quiet during the window, so zero events appeared. This is not an infrastructure problem — the run correctly recorded what it observed (nothing).
+**Caveats about this specific run.**
 
-The `trigger-canonical-mutations.ts` script (committed 2026-04-17, commits `cd27b4f`, `d457ce7`, `8011199`) was written to close exactly this gap: it performs M1 / M3 / M4 automatically via SP-Execute / SP-Setup and leaves M2 as a precise portal instruction. Re-running WI-05 after `trigger-canonical-mutations --apply` is the remediation path.
+- The first M3 attempt (`POST /servicePrincipals/{sp}/appRoleAssignedTo` immediately after `POST /servicePrincipals`) returned `404 Not Found` — a known Azure AD replication race on newly-created service principals. After a 90 s wait, the retry succeeded (201 Created). Both the failed and successful Graph request IDs are in `mutation-trail.json`.
+- The first M4 `removePassword` call returned `400 Bad Request` (~70 ms after `addPassword`) — a Graph commit race on fresh credentials. A manual retry ~4 minutes later succeeded (204 No Content). The failed attempt is present in the audit log; the successful retry is too. Both orphan cleanup and final state are confirmed clean.
+- M2 (CA policy edit) was **not** performed in the portal during the window. The approval-required step was auto-confirmed by `--confirm-all-manual` but that flag does not trigger the edit. `Finance-MFA-Bypass` exists (created manually before this run) but was not modified during the window, so no `Update conditional access policy` event fired.
 
 ---
 
 ## 4. Change Classes Analyzed
 
-All four classes resolved to the same state in this run: **INCONCLUSIVE** due to zero matched events.
+### 4.1 Group membership (M1) — **ABSENT**
 
-| Section | What the artifact says | Interpretation |
-|---|---|---|
-| Match count | `0` | No events of this type appeared in the window. |
-| modifiedProperties present | `0 / 0` | No events to evaluate. |
-| oldValue present | `0 / 0` | No events to evaluate. |
-| newValue present | `0 / 0` | No events to evaluate. |
-| Both old+new | `0 / 0` | No events to evaluate. |
-| Before-state assessment | `unknown` | The analyzer's correct output when `matchCount: 0`. |
-| Anomalies | `"No events matched for this class during the window."` | Auto-generated by the analyzer. |
-| Sample event IDs | `[]` | No events to sample. |
+- **Events found:** 12 × `Add member to group` (category `GroupManagement`).
+- **`initiatedBy.app`:** `SP-Execute` on all 12 — agent-identified provenance confirmed.
+- **`modifiedProperties`:** present on 12/12 (on the `User`-type target resource; the `Group`-type target has an empty `modifiedProperties` array).
+- **`oldValue`:** 0/12. Every field under `modifiedProperties` has `oldValue: null`.
+- **`newValue`:** 12/12. Fields populated on every event: `Group.ObjectID`, `Group.DisplayName`, `ActorId.ServicePrincipalNames`, `SPN`.
+- **Usable field shape:** strings wrapped in JSON-encoded quotes (e.g. `"\"45a4b187-c7c6-422a-b82b-48e199f63bb3\""`). Normalization must strip the outer quotes.
+- **Anomalies:** None beyond the double-JSON-encoding convention (which is Entra's standard for string-typed properties, not a bug).
+- **Sample event IDs:**
+  - `Directory_8e8c21df-5150-4b18-8aa5-3cf0cb0c7a35_1UF40_159959089`
+  - 11 more in `wi05/raw-events.json`.
+- **Assessment:** **absent** — authoritative after-state from audit, no before-state from audit.
 
-### 4.1 Group membership changes
+### 4.2 Conditional Access policy (M2) — **UNKNOWN (re-run pending)**
 
-**INCONCLUSIVE.** 0 matched events. Expected trigger (not executed during this window): the canonical 12-member-add scenario via SP-Execute (so events carry `initiatedBy.app`).
+- **Events found:** 0.
+- **Reason:** The approval-required portal edit was not performed during the window.
+- **What this run did NOT test:** presence or absence of `modifiedProperties` / `oldValue` / `newValue` on CA policy events; shape of policy-update audit payload.
+- **Remediation:** perform the portal edit (`Entra admin → Identity → Protection → Conditional Access → Policies → Finance-MFA-Bypass → Edit → save`) and re-run `run-audit-completeness-spike --start <pre-edit> --end <now> --output-dir ./wi05 --confirm-all-manual`. M1/M3/M4 evidence is independent and need not be regenerated.
 
-### 4.2 Conditional Access policy changes
+### 4.3 App role assignment (M3) — **ABSENT**
 
-**INCONCLUSIVE.** 0 matched events. Expected trigger: an operator edit to `Finance-MFA-Bypass` (the policy was created earlier at approximately 2026-04-16T22:21Z; that timestamp is outside this run's window).
+- **Events found:** 1 × `Add app role assignment grant to user` (category `UserManagement`; surprisingly not `ApplicationManagement`).
+- **`initiatedBy.app`:** `SP-Setup`.
+- **`modifiedProperties`:** present on 1/1 (on the `ServicePrincipal`-type target).
+- **`oldValue`:** 0/1. All fields have `oldValue: null`.
+- **`newValue`:** 1/1. Rich field set: `AppRole.Id`, `AppRole.Value`, `AppRole.DisplayName`, `AppRoleAssignment.CreatedDateTime`, `AppRoleAssignment.LastModifiedDateTime`, `User.ObjectID`, `User.UPN`, `User.PUID`, `TargetId.ServicePrincipalNames`.
+- **Usable field shape:** same double-JSON-encoded strings.
+- **Anomalies:** `AppRole.Value` and `AppRole.DisplayName` are empty strings — expected when using the default-access role (`00000000-0000-0000-0000-000000000000`), which has no display name. A custom-role assignment would populate these.
+- **Sample event ID:** `Directory_74c794fb-6e3f-4f04-848c-3fd432db28f1_425JC_33677233`.
+- **Assessment:** **absent** — same pattern as group membership.
 
-### 4.3 App role assignment changes
+### 4.4 Service principal credential (M4) — **PARTIAL per analyzer, AUTHORITATIVE per raw evidence**
 
-**INCONCLUSIVE.** 0 matched events. Expected trigger: `POST /servicePrincipals/{sp}/appRoleAssignedTo` against one of the `KavachiqTest-App-NN` service principals.
+This class has the richest evidence of the four.
 
-### 4.4 Service principal credential changes
+- **Events matched by the analyzer's substring rule (`certificates and secrets management` OR `update service principal`):** 4 total.
+  - 2 × `Update application – Certificates and secrets management` — **the high-signal events**.
+  - 2 × `Update service principal` — low-signal (only `Included Updated Properties` present, no substantive values).
+- **Events NOT matched that should have been:** 2 × `Update application` (no "Certificates and secrets management" suffix) — these fire alongside the credential-specific event but have empty `modifiedProperties`, so matching them adds no signal. See §6.
 
-**INCONCLUSIVE.** 0 matched events. Expected trigger: `POST /applications/{id}/addPassword` + `POST /applications/{id}/removePassword` on one of the `KavachiqTest-App-NN` app registrations.
+**High-signal events (the two `Certificates and secrets management` events):**
+
+Event A (credential ADD, `addPassword` at `07:43:07.042Z`):
+- `KeyDescription.oldValue = "[]"` — empty array string (no prior keys).
+- `KeyDescription.newValue = "[\"[KeyIdentifier=c7890f61-2f17-478f-bc60-60fd19c09588,KeyType=Password,KeyUsage=Verify,DisplayName=kavachiq-wi05-spike]\"]"` — full key metadata.
+- `Included Updated Properties: newValue = "\"KeyDescription\""`.
+
+Event B (credential REMOVE, `removePassword` cleanup at `07:43:47.016Z`):
+- `KeyDescription.oldValue = "[\"[KeyIdentifier=c7890f61-…,DisplayName=kavachiq-wi05-spike]\"]"` — prior key state.
+- `KeyDescription.newValue = "[]"` — empty array after removal.
+- `Included Updated Properties: newValue = "\"KeyDescription\""`.
+
+**Both old AND new are present on both events.** Entra emits a semantically complete before/after state for credential changes. Secret material (`secretText`) is absent, which is correct — only metadata is logged.
+
+**Why the analyzer marks this as `partial`:** its `isUsable()` function rejects `"[]"`, `""`, and `"null"` as unusable values. On Event A, `oldValue="[]"` is rejected (so `withOldValue` does not increment). On Event B, `newValue="[]"` is rejected. The raw evidence is stronger than the analyzer's verdict — `"[]"` here legitimately means "empty set of credentials", which is authoritative before-state information. See §6.
+
+- **Assessment:** **authoritative** (corrected reading of the raw data); **partial** (analyzer's current `isUsable()` rule).
 
 ---
 
 ## 5. Audit Completeness Matrix
 
-Verbatim from `wi05/audit-completeness-matrix.json`:
+Verbatim from `wi05/audit-completeness-matrix.json`, augmented with per-class sample event IDs and the corrected reading for M4:
 
-| Change class | Events found | modProps | oldValue | newValue | Usability | Assessment | Recommended before-state approach |
+| Change class | Events | modProps | oldValue (usable) | newValue (usable) | Assessment (analyzer) | Corrected assessment | Recommended before-state |
 |---|---|---|---|---|---|---|---|
-| Group membership | 0 | 0 / 0 | 0 / 0 | 0 / 0 | n/a | **unknown** | Cannot determine — re-run |
-| Conditional Access policy | 0 | 0 / 0 | 0 / 0 | 0 / 0 | n/a | **unknown** | Cannot determine — re-run |
-| App role assignment | 0 | 0 / 0 | 0 / 0 | 0 / 0 | n/a | **unknown** | Cannot determine — re-run |
-| SP credential | 0 | 0 / 0 | 0 / 0 | 0 / 0 | n/a | **unknown** | Cannot determine — re-run |
+| Group membership | 12 | 12 / 12 | 0 / 12 | 12 / 12 | **absent** | absent | Snapshot-diff canonical |
+| Conditional Access policy | 0 | 0 / 0 | 0 / 0 | 0 / 0 | **unknown** | unknown | Undetermined — re-run |
+| App role assignment | 1 | 1 / 1 | 0 / 1 | 1 / 1 | **absent** | absent | Snapshot-diff canonical |
+| SP credential (cert-change only) | 2 | 2 / 2 | 1 / 2 | 1 / 2 | partial | **authoritative** | Audit-derived from `KeyDescription` |
+| SP credential (incl. Update SP) | 4 | 4 / 4 | 1 / 4 | 2 / 4 | **partial** | partial | Audit-derived; ignore low-signal Update-SP events |
 
-Total events fetched: **0**. Unmatched events: **0**. `overallBeforeStateRecommendation` from the analyzer: `"No matched events in the window. Re-run WI-05 mutations and widen --wait-minutes before drawing conclusions."`
+Total events fetched: **20**. Matched: **17**. Unmatched: **3** (1 × `Add service principal` (from M3 prereq), 2 × `Update application` (credential correlation stubs with empty modProps)).
 
 ---
 
 ## 6. Notable Anomalies and Caveats
 
-### 6.1 Observed in this run
+### 6.1 Observed on real events
 
-- **Zero events in the window.** The only anomaly present. Each finding's `anomalies[]` contains exactly `"No events matched for this class during the window."`.
+1. **Double-JSON-encoded string values.** Entra serializes string properties as `"\"<actual-value>\""` (e.g. `"\"45a4b187-…\""`). Array properties use array notation (e.g. `"[]"`, `"[\"…\"]"`). Normalization must unwrap the outer layer deterministically.
+2. **"[]" semantics.** For array-typed `modifiedProperties` entries, `"[]"` is not "missing value" — it is "empty set". For `KeyDescription` specifically, `oldValue="[]"` means "no prior credentials existed". The current analyzer's `isUsable()` treats `"[]"` as absent; this conservatism under-reports audit completeness. **Action:** revise `isUsable` to distinguish `null` (truly missing) from `"[]"` / `""` (meaningfully empty), per field type. Tracked as a follow-up script change, not a Phase 0 blocker.
+3. **Category tagging is inconsistent.** `Add app role assignment grant to user` lives under `UserManagement`, not `ApplicationManagement`. Connector classification cannot rely on category alone — `activityDisplayName` is the authoritative discriminator.
+4. **Unmatched paired events.** Each `Certificates and secrets management` event is accompanied by an `Update application` event with empty `modifiedProperties`. These are Entra's "application object was updated" correlation stubs. They add no information beyond the specific event and can be ignored during normalization. **Action:** either widen the analyzer's matcher to absorb them (producing a higher `matchCount` but same evidence), or keep the matcher narrow and document the exclusion. Current choice: narrow matcher, documented exclusion.
+5. **Azure AD SP replication race (operational).** `POST /servicePrincipals` is eventually-consistent for downstream writes. A 90 s wait between SP creation and app-role assignment on that SP is sufficient in this tenant. Capture this in the execution service's retry policy when it eventually issues comparable writes.
+6. **Graph commit race on credential writes (operational).** `POST /applications/{id}/removePassword` within ~100 ms of `POST .../addPassword` can return `400 Bad Request` — the `keyId` is not yet visible to the remove endpoint. A ~seconds-scale delay (or retry with backoff) resolves it. `trigger-canonical-mutations` currently logs the orphan and relies on the operator to clean up; a narrow retry-with-delay on `removePassword` is a cheap follow-up.
 
-### 6.2 Infrastructure-level positives (no code anomalies)
+### 6.2 M2-specific caveat
 
-- SP-Read token acquisition succeeded (implicit, since the fetch completed).
-- `/auditLogs/directoryAudits` fetch returned HTTP 200 with an empty `value[]` in 1.1 s (one page, no `@odata.nextLink`).
-- Runbook abort semantics held: no step failed, no step skipped due to abort.
-- Output artifacts are well-formed and self-consistent (matrix totals match the per-class rows; raw-events is `[]`).
-
-### 6.3 Operator-flow caveat to carry forward
-
-The `--confirm-all-manual` flag silently records "confirmed" without verifying the underlying mutation fired. This is consistent with its documented behavior (see `platform/scripts/README.md` → "Human-in-the-loop automation pattern"), but in an interactive-optional CI context it is easy to misuse as "do all four mutations for me." The planned remediation is `trigger-canonical-mutations.ts`, which performs M1 / M3 / M4 automatically; the approval-required M2 step still requires a real portal edit between the prompt and confirmation.
+M2 evidence is absent from this run because the operator did not perform the portal edit between the approval-step confirmation and the end of the audit window. `--confirm-all-manual` records the acknowledgement but does not trigger the underlying portal action. This is a documented property of the flag, but it means an operator that passes `--confirm-all-manual` must still perform the portal edit during the window for M2 evidence to exist.
 
 ---
 
 ## 7. Before-state Strategy Recommendation
 
-**Undetermined from this run.** The provisional worst-case posture remains in force:
+**Decisive for 3 of 4 classes. One class pending re-run.**
 
-> Snapshot-diff is the canonical source of before-state. Audit-derived before-state is treated as optional enrichment, tagged `StateSnapshot.confidence = "authoritative"` when both `oldValue` and `newValue` are present, and `"reconstructed"` otherwise. See `DATA_MODEL_AND_SCHEMA_SPECIFICATION.md §8`.
+| Class | Final strategy | Evidence |
+|---|---|---|
+| **Group membership** | **Snapshot-diff canonical.** `NormalizedChange.beforeState` populated from a trusted baseline snapshot and tagged `StateSnapshot.confidence = "reconstructed"`. Audit-derived `newValue` is used as the primary source for `afterState`, tagged `"authoritative"`. | 12/12 events carry `newValue` but 0/12 carry `oldValue`. |
+| **Conditional Access policy** | **Undetermined.** Provisional posture: snapshot-diff canonical, audit enrichment optional. Revise after re-run. | 0 events in window. |
+| **App role assignment** | **Snapshot-diff canonical.** Same shape as group membership: rich `newValue` (including `AppRoleAssignment.CreatedDateTime` which is itself a useful authoritative after-state field), zero `oldValue`. Before-state must come from snapshot. | 1/1 events carry `newValue` but 0/1 carry `oldValue`. |
+| **SP credential** | **Audit-derived authoritative.** `Update application – Certificates and secrets management` events carry both `KeyDescription.oldValue` and `.newValue` (as JSON-array strings of key metadata). Tag `beforeState.confidence = "authoritative"`. Secret material (`secretText`) is not in the audit payload and must never be reconstructed or stored — use `keyId` + `displayName` + `keyUsage` for identity, never the secret. Snapshot fallback advisory only (e.g. to detect silent-drop of credentials outside the audit window). | 2/2 cert-change events carry both. |
 
-Per-class decisions will be written against the real assessment once a non-empty WI-05 run completes:
-
-| Class | If assessment = authoritative | If assessment = partial | If assessment = absent | If assessment = unknown (current) |
-|---|---|---|---|---|
-| Group membership | Use `modifiedProperties` directly; tag `authoritative` | Combine with snapshot fallback | Snapshot-diff is the only source; always `reconstructed` | **Current state** — re-run with real mutations |
-| CA policy | Use `modifiedProperties` directly; tag `authoritative` | Combine with snapshot fallback | Snapshot-diff of policy JSON only | **Current state** — re-run with real mutations |
-| App role assignment | Use `modifiedProperties` directly | Combine with snapshot fallback | Snapshot-diff of assignment enumeration | **Current state** — re-run with real mutations |
-| SP credential | Use `modifiedProperties` for metadata; accept secret material is masked | Non-secret fields likely authoritative, secret material `unavailable` | Snapshot-diff of `keyCredentials` / `passwordCredentials` | **Current state** — re-run with real mutations |
-
-Phase 1 ingestion design should proceed on the `unknown` column (= worst-case) until WI-05 produces a different result.
+Phase 1 ingestion should wire `StateSnapshot.confidence` tagging per this table.
 
 ---
 
 ## 8. Architecture Impact
 
-**None.** This run validated only that the WI-05 pipeline executes end-to-end and correctly reports `unknown` on an empty window. It provided no evidence for or against any architectural claim. The docs listed below are unchanged:
+**No architectural claim invalidated.** Three targeted, narrow updates are justified by this evidence.
 
-- `CONNECTOR_AND_INGESTION_DESIGN.md`
-- `TRUSTED_STATE_BASELINE_DESIGN.md`
-- `DATA_MODEL_AND_SCHEMA_SPECIFICATION.md`
-- `ENGINEERING_BOOTSTRAP_DECISIONS.md`
+1. **`DATA_MODEL_AND_SCHEMA_SPECIFICATION.md`** — the `StateSnapshot.confidence` enum (authoritative / reconstructed / best-effort / unavailable) is already defined. Add a short §8 note recording the per-class defaults from §7 above so the Phase 1 ingestion team has a specific mapping to implement. No schema change required.
+2. **`CONNECTOR_AND_INGESTION_DESIGN.md`** — add a section documenting:
+   - the double-JSON-encoding convention on `modifiedProperties` values,
+   - the `"[]"` semantics (empty set, not absent), and
+   - the two operational races (SP replication for role assignments, Graph commit race for credentials) that the execution service's retry policy must accommodate.
+   No architectural change — these are implementation notes for Phase 1.
+3. **`trigger-canonical-mutations.ts` and the analyzer** (script-local, not an architecture doc) — two narrow script improvements justified by the evidence:
+   - Analyzer's `isUsable()` should distinguish `null` (missing) from `"[]"` / `""` (empty). Would change M4's assessment from `partial` to `authoritative` correctly.
+   - `m4-credential-cycle` should retry `removePassword` with a short backoff (e.g. 3× with 2 s / 5 s / 10 s) before marking the secret orphaned. Would have prevented the manual cleanup this run required.
 
-Any architecture update would require a follow-up WI-05 run with actual mutations. If a class reports `absent` in that run, `CONNECTOR_AND_INGESTION_DESIGN.md` would need a small per-class note (not a core change). If propagation-delay data from that run exceeds the currently-assumed snapshot cadence, `TRUSTED_STATE_BASELINE_DESIGN.md` would get a cadence-adjustment note. Both are hypothetical until the next run.
+Neither script change is a Phase 0 blocker. Both are good follow-ups.
+
+**Not touched by this evidence:**
+
+- Read-path monolith / separate execution service boundary.
+- `NormalizedChange` / `CorrelatedChangeBundle` / `Incident` entity shapes.
+- Snapshot-first trusted-state model (reinforced by the M1 and M3 findings).
+- Recommendation-first operator posture.
 
 ---
 
@@ -188,61 +214,47 @@ Any architecture update would require a follow-up WI-05 run with actual mutation
 
 ### 9.1 Artifacts used as source of truth
 
-All four files live in `platform/wi05/` (gitignored per `platform/.gitignore`):
+All under `platform/wi05/` (gitignored; regenerated per run):
 
-| Path | Size | SHA-like handle |
+| Path | Purpose |
+|---|---|
+| `platform/wi05/raw-events.json` | 20 events fetched during the window |
+| `platform/wi05/audit-completeness-matrix.json` | Analyzer findings (4 classes × `matchCount`/`oldValue`/`newValue`/`assessment`/`anomalies`) |
+| `platform/wi05/audit-completeness-summary.md` | Analyzer's markdown render |
+| `platform/wi05/run-result.json` | Full runbook trail (9 steps, explicit-window path, aborted=false) |
+| `platform/wi05/mutation-trail.json` | First-run trail: M1 12/12 success, M2 manual-confirmed, M3 404 failed, M4 not attempted (runbook aborted) |
+| `platform/wi05/mutation-trail-m3m4.json` | Retry trail: M3 201 success, M4 add+failed-remove+orphan |
+
+### 9.2 Run metadata
+
+```
+Analysis run ID:        run_4ed0781f-84ec-44ba-a5b3-be7c09977b25
+Correlation ID:         a17f082c-77f3-44f1-90dc-0332b5f2ac4b
+Tenant ID:              3725cec5-3e2d-402c-a5a6-460c325d8f87
+Window:                 2026-04-17T07:40:00Z → 2026-04-17T08:00:01Z
+Mutations first fired:  2026-04-17T07:40:49Z (M1 index 0)
+Mutations last fired:   2026-04-17T07:47:02Z (orphan cleanup removePassword)
+Propagation margin:     ~13–20 minutes (all events appeared within this band)
+```
+
+### 9.3 Representative event IDs (first matched per class)
+
+| Class | Event ID | `activityDisplayName` |
 |---|---|---|
-| `platform/wi05/raw-events.json` | 3 B | Empty array `[]` |
-| `platform/wi05/audit-completeness-matrix.json` | 2.3 kB | 4 findings × `{matchCount: 0, assessment: "unknown"}` |
-| `platform/wi05/audit-completeness-summary.md` | 1.8 kB | Markdown render of the matrix |
-| `platform/wi05/run-result.json` | 6.1 kB | Runbook with 4 confirmed + 4 executed + 1 skipped + 0 failed, `aborted: false` |
+| Group membership | `Directory_8e8c21df-5150-4b18-8aa5-3cf0cb0c7a35_1UF40_159959089` | `Add member to group` |
+| App role assignment | `Directory_74c794fb-6e3f-4f04-848c-3fd432db28f1_425JC_33677233` | `Add app role assignment grant to user` |
+| SP credential (add) | `Directory_e03bcb0a-1ddc-464c-8b06-ae1925455351_JL2EI_22074709` | `Update application – Certificates and secrets management` |
+| SP credential (remove) | `Directory_9c774394-f42a-4e95-a05d-ea3da13d89ad_2OLP4_35211402` | `Update application – Certificates and secrets management` |
 
-### 9.2 Run metadata from `run-result.json`
+### 9.4 Graph request-ids for mutation-trail correlation
 
-```
-runId:          run_553e8f15-1488-43ba-89c7-fc74baa9c131
-correlationId:  dc7ac46d-e3f0-478e-aed0-17271761d8c6
-tenantId:       3725cec5-3e2d-402c-a5a6-460c325d8f87
-startedAt:      2026-04-17T06:10:54.414Z
-finishedAt:     2026-04-17T06:25:55.584Z
-elapsedMs:      901170
-window.start:   2026-04-17T06:09:54.416Z
-window.end:     2026-04-17T06:26:54.476Z
-```
+M1 (first + last):
+- `fd58959a-b275-40f9-86cd-ecc501565b09` (kq-test-05, 07:40:50.167Z, 204)
+- `7198443a-9b6e-4c16-a1fe-5c4faa331522` (kq-test-16, 07:40:53.129Z, 204)
 
-### 9.3 Step statuses (from `run-result.json#runbook.steps[*]`)
+M3: `e3155b40-df4c-41ed-8b41-6ff996cd8d19` (appRoleAssignedTo, 07:43:06.455Z, 201)
 
-| Step ID | Kind | Status | Notes |
-|---|---|---|---|
-| `confirm-M1-group-membership` | approval-required | `confirmed` | `confirmedBy: confirm-all, confirmedAt: 06:10:54.416Z` |
-| `confirm-M2-conditional-access` | approval-required | `confirmed` | Same timestamp |
-| `confirm-M3-app-role-assignment` | approval-required | `confirmed` | Same timestamp |
-| `confirm-M4-sp-credential` | approval-required | `confirmed` | Same timestamp |
-| `capture-window-and-wait` | automatic | `executed` | 900.064 s elapsed (15 min wait) |
-| `fetch-audit-events` | automatic | `executed` | 1.1 s, 0 events, path `.../wi05/raw-events.json` |
-| `load-cached-events` | automatic | `skipped` | `skipReason: "not in --skip-fetch mode"` |
-| `analyze-completeness` | automatic | `executed` | 1 ms, 4 findings all `unknown` |
-| `write-artifacts` | automatic | `executed` | 1 ms, wrote matrix + summary |
-
-### 9.4 Representative event IDs
-
-None. The raw-events file is the empty array.
-
-### 9.5 Commits of the orchestrator used for this run
-
-| Commit | Role |
-|---|---|
-| `ee6f063` | Initial WI-05 orchestrator (fetch + analyzer + markdown) |
-| `464cad2` | Runbook refactor; added `run-result.json` |
-| `f890741` | Docs + the build at the time of this run |
-
-Two commits landed **after** this run and are relevant to the next run:
-
-| Commit | Role |
-|---|---|
-| `cd27b4f` | `trigger-canonical-mutations` commit 1 — M1 automation |
-| `d457ce7` | `trigger-canonical-mutations` commit 2 — M2 approval step |
-| `8011199` | `trigger-canonical-mutations` commit 3 — M3 + M4 |
+M4: `f206435b-63ba-4b5c-9434-b39d7f5da214` (addPassword, 07:43:07.147Z, 200); second remove-attempt request-id was captured during orphan cleanup.
 
 ---
 
@@ -250,57 +262,69 @@ Two commits landed **after** this run and are relevant to the next run:
 
 ### 10.1 Did WI-05 pass?
 
-**No — inconclusive.** The orchestrator ran correctly and the infrastructure is verified, but the spike's central questions (per-class `oldValue` / `newValue` presence) cannot be answered from a zero-event window. WI-05 does not pass until a run produces `matchCount > 0` for the four classes.
+**Partial pass.** 3 of 4 change classes produced definitive findings (M1, M3, M4). M2 remained `unknown` due to operator not performing the portal edit during the window — this is a re-run, not a retry of the full mutation sequence, and it does not invalidate the M1/M3/M4 findings.
 
-### 10.2 What engineering should do next — single remediation command
+### 10.2 What engineering should do next
 
-```bash
-cd platform
+1. **Complete M2 evidence** — next time the operator touches the test tenant, edit `Finance-MFA-Bypass` description in the Entra admin portal, note the timestamp, then:
 
-# Step 1 — actually perform the four canonical mutations. M1 / M3 / M4 automated;
-# M2 is an approval-required portal edit (30-second operator action).
-npm run trigger-canonical-mutations -- --apply --output ./wi05/mutation-trail.json
+   ```bash
+   cd platform
+   END=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+   # Start should be ~1 min before the portal edit; choose T accordingly.
+   npm run audit-completeness-spike -- \
+     --start <T_minus_1min> --end "$END" \
+     --output-dir ./wi05 --confirm-all-manual
+   jq '.findings[] | select(.key == "conditional-access")' wi05/audit-completeness-matrix.json
+   ```
 
-# Step 2 — wait 15 min for propagation, then re-run the orchestrator. Use
-# --confirm-all-manual honestly this time (the mutations actually fired in step 1).
-npm run audit-completeness-spike -- --output-dir ./wi05 --confirm-all-manual
-```
+   When the M2 row shows `matchCount > 0`, update §4.2, §5, and §7 of this report (single edit in §7: the CA row flips from "Undetermined" to a concrete strategy based on observed fields).
 
-After step 2, the four files in `platform/wi05/` are regenerated with real data. Rewriting this report at that point is mechanical — §3 gains a non-zero event count; §4 gains per-class findings from the matrix; §5 fills in; §6 expands with real anomalies; §7 collapses to a single recommendation per class; §9.4 lists real event IDs; §10.1 flips to pass/fail.
+2. **Begin Phase 1 ingestion** with the strategy from §7 wired in. Do NOT wait for M2 — its outcome only shifts the CA row in §7; every other class is decided.
 
-### 10.3 Uncertainty that will remain even after the next run
+### 10.3 Uncertainty remaining after this run
 
-- **Propagation tail.** If a class reports `matchCount: 0` again after real mutations, the first hypothesis is propagation delay > 15 minutes. Re-run with `--wait-minutes 30` before concluding the event was not emitted.
-- **Agent-vs-user provenance.** The `mutation-trail.json` produced by `trigger-canonical-mutations` will record which principal fired each mutation (SP-Execute for M1, operator-portal for M2, SP-Setup for M3/M4). The analyzer does not currently cross-check `initiatedBy` against this, but the evidence is there if needed.
-- **Tenant-specific field masking.** If this tenant has non-default audit-field redaction (unusual for a test tenant, but possible), findings may not generalize to customer tenants. Would be called out in §6 if observed in the re-run.
+- **M2 completeness** (see §10.2).
+- **Propagation tail for low-frequency classes.** This run's 15-minute wait was sufficient for all fired events. If customer tenants emit CA/role events rarely, widening to 30 min for routine ingestion may be prudent; a follow-up pass after the M2 re-run can benchmark this per class.
+- **Custom-role assignments.** This run used the default-access role (`00000000-…`). When ingestion encounters custom roles with non-empty `AppRole.Value` / `AppRole.DisplayName`, the `newValue` field density is higher. No reason to expect a different `oldValue` pattern, but worth a spot-check in Phase 1.
+- **Non-default tenant redaction.** Unlikely in this dev tenant, but audit field masking can differ per customer tenant. Phase 1 connector should log the `activityDisplayName` + `modifiedProperties[*].displayName` distribution per tenant on first ingest so drift is visible.
 
 ---
 
-## Appendix A — How to regenerate this report from a real run
+## Appendix A — How to regenerate this report
 
 ```bash
 cd platform
+# Prereq: tenant populated (wi01/applied.json present); CA policy Finance-MFA-Bypass exists.
 
-# 1. Fire the four canonical mutations (M1 via SP-Execute so initiatedBy.app is correct).
-npm run trigger-canonical-mutations -- --apply --output ./wi05/mutation-trail.json
+# 1. Fire M1 / M3 / M4. --confirm-all-manual auto-confirms M2 metadata without
+#    triggering it; you must do the portal edit yourself if you want M2 evidence.
+npm run trigger-canonical-mutations -- --apply --confirm-all-manual \
+  --output ./wi05/mutation-trail.json
 
-# 2. Wait propagation + fetch + analyze + write artifacts.
-npm run audit-completeness-spike -- --output-dir ./wi05 --confirm-all-manual
+# 2. Wait 15 min for propagation. If you want M2 evidence, do the portal edit
+#    during this wait (Entra → Identity → Protection → Conditional Access →
+#    Policies → Finance-MFA-Bypass → Edit description → Save).
 
-# 3. Inspect what changed.
-cat ./wi05/audit-completeness-summary.md
-jq '.findings[] | {key, matchCount, beforeStateAssessment, anomalies}' \
-   ./wi05/audit-completeness-matrix.json
-jq '.summary, .attempts | length' ./wi05/mutation-trail.json
+# 3. Fetch an explicit window covering the mutations. Replace <T0> and <T1>.
+npm run audit-completeness-spike -- \
+  --start <T0-minus-1min> --end <T1> \
+  --output-dir ./wi05 --confirm-all-manual
 
-# 4. Rewrite docs/SPIKE_REPORT_AUDIT_LOG_COMPLETENESS.md. §3, §4.1-4.4, §5, §6,
-#    §7 (collapsed), §9.4, §10.1 are the sections that change.
+# 4. Inspect.
+jq '.findings[] | {key, matchCount, withOldValue, withNewValue, beforeStateAssessment}' \
+  wi05/audit-completeness-matrix.json
+
+# 5. Rewrite §3 (tenant/window), §4 per-class, §5 matrix, §9.3-9.4 event IDs,
+#    §10.1 pass/fail, then commit. §7 strategy and §8 impact only change if
+#    evidence contradicts the current findings.
 ```
 
-## Appendix B — Follow-up questions for the next run
+## Appendix B — Follow-up questions and script improvements surfaced by this run
 
-- If any class assessment comes back `absent`, do we see the same class behavior in the delta-query / webhook paths, or is it specific to the legacy `directoryAudits` surface? (Out of scope for WI-05 but relevant for Phase 1 ingestion.)
-- For SP credential changes specifically: is the `keyId` from `addPassword` / `removePassword` visible in `modifiedProperties` (so we can correlate a specific credential lifecycle to specific audit events)?
-- For CA policy changes: is the full policy JSON in `newValue`, or just the set of modified conditions? Affects how much snapshot coverage is needed for policy restoration.
-- Propagation-tail empirical bound: what is the maximum observed delay between mutation (recorded in `mutation-trail.json#attempts[*].finishedAt`) and appearance in `directoryAudits#activityDateTime` across the four classes? Sets the minimum `--wait-minutes`.
-- For M3 specifically: does the incidental "Add service principal" event (emitted by `m3-ensure-app-sp` when the SP was missing) land in `directoryAudits`, or only in the service principal activity logs? Affects whether `trigger-canonical-mutations` needs to surface it as a separate MutationAttempt.
+- **Analyzer:** distinguish `null` (missing) vs `"[]"` / `""` (empty) in `isUsable()` — would correctly upgrade M4's verdict from `partial` to `authoritative`.
+- **Trigger script:** retry `removePassword` with short backoff before marking orphan — would have prevented the manual cleanup.
+- **Trigger script:** insert a small delay between `POST /servicePrincipals` and `POST /servicePrincipals/{sp}/appRoleAssignedTo`, or detect 404 and retry once — would remove the need for the user to split runs.
+- **Connector (future):** log the distribution of `activityDisplayName × modifiedProperties[*].displayName` on first ingest per tenant, to catch tenant-specific redaction drift.
+- **Schema wiring:** map §7's per-class strategy into `StateSnapshot.confidence` defaults in Phase 1 ingestion.
+- **Unmatched `Update application` events:** decision needed — widen analyzer matcher to absorb them, or keep narrow and document as correlation stubs. Current report recommends the latter (they carry no additional evidence).
