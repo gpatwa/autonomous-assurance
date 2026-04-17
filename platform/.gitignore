@@ -14,3 +14,13 @@ dist/
 
 # Docker volumes
 azurite-data/
+
+# Spike / work-item output directories. These hold per-run artifacts
+# (summary.json, plan.json, applied.json, raw-events.json,
+# audit-completeness-*.json, mutation-trail.json, run-result.json) that
+# churn on every run and must not be committed. The WI-05 spike report
+# in docs/ quotes specific runs from these artifacts when referenced.
+wi01/
+wi05/
+wi06/
+wi07/
