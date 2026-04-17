@@ -71,6 +71,12 @@ const CANONICAL = {
 
 type MutationId = "M1" | "M2" | "M3" | "M4";
 
+const ALL_MUTATION_IDS: readonly MutationId[] = ["M1", "M2", "M3", "M4"] as const;
+
+function isMutationId(raw: string): raw is MutationId {
+  return raw === "M1" || raw === "M2" || raw === "M3" || raw === "M4";
+}
+
 // ─── CLI ───────────────────────────────────────────────────────────────────
 
 interface Args {
@@ -90,11 +96,14 @@ function parseArgs(argv: string[]): Args {
     output: "./wi05/mutation-trail.json",
     memberCount: 12,
     memberStartSeq: 5,
-    modes: new Set<MutationId>(["M1", "M2", "M3", "M4"]), // full canonical scenario
+    modes: new Set<MutationId>(ALL_MUTATION_IDS), // full canonical scenario
     caPolicyName: CANONICAL.caPolicyName,
     targetAppSeq: 1,
     m3AssigneeUserSeq: 17,
   };
+  // First selector flag (--step / --mode / --all) clears the default set
+  // and switches to "user-chosen" mode. Subsequent selectors accumulate.
+  let selectorUsed = false;
   for (let i = 0; i < argv.length; i += 1) {
     const arg = argv[i];
     if (arg === "--help" || arg === "-h") {
@@ -115,16 +124,35 @@ function parseArgs(argv: string[]): Args {
     } else if (arg === "--mode") {
       const raw = requireValue(argv, ++i, "--mode");
       const tokens = raw.split(",").map((t) => t.trim().toUpperCase());
-      args.modes = new Set();
+      if (!selectorUsed) {
+        args.modes = new Set();
+        selectorUsed = true;
+      }
       for (const t of tokens) {
         if (t === "ALL") {
-          args.modes = new Set(["M1", "M2", "M3", "M4"]);
-        } else if (t === "M1" || t === "M2" || t === "M3" || t === "M4") {
+          for (const m of ALL_MUTATION_IDS) args.modes.add(m);
+        } else if (isMutationId(t)) {
           args.modes.add(t);
         } else {
           failUsage(`--mode value must be one of M1|M2|M3|M4|all[,...]; got "${t}"`);
         }
       }
+    } else if (arg === "--step") {
+      const raw = requireValue(argv, ++i, "--step").toUpperCase();
+      if (!selectorUsed) {
+        args.modes = new Set();
+        selectorUsed = true;
+      }
+      if (!isMutationId(raw)) {
+        failUsage(`--step value must be one of M1|M2|M3|M4; got "${raw}"`);
+      }
+      args.modes.add(raw);
+    } else if (arg === "--all") {
+      if (!selectorUsed) {
+        args.modes = new Set();
+        selectorUsed = true;
+      }
+      for (const m of ALL_MUTATION_IDS) args.modes.add(m);
     } else if (arg === "--apply" || arg === "--dry-run") {
       continue; // handled by parseDryRunFlag / override below
     } else if (arg === "--confirm-all-manual") {
@@ -139,6 +167,11 @@ function parseArgs(argv: string[]): Args {
   if (argv.includes("--dry-run")) {
     args.dryRun.apply = false;
     args.dryRun.reason = "explicit --dry-run";
+  }
+  if (selectorUsed && args.modes.size === 0) {
+    failUsage(
+      "No mutations selected. Pass --step M1 (repeatable), --all, or --mode M1,M2,... .",
+    );
   }
   return args;
 }
@@ -167,7 +200,10 @@ function usage(): string {
     "  --apply                       Perform real Graph writes. Default is dry-run.",
     "  --dry-run                     Force dry-run; wins over --apply.",
     "  --output PATH                 Write mutation-trail.json. Default: ./wi05/mutation-trail.json.",
-    "  --mode <M1|M2|M3|M4|all,...>  Which mutations to run (default: all four).",
+    "Mutation selection (first --step / --mode / --all clears the default; subsequent accumulate):",
+    "  --all                         Run all four mutations (default if no selector given).",
+    "  --step <M1|M2|M3|M4>          Pick a single mutation; repeatable: --step M1 --step M3.",
+    "  --mode <M1|M2|M3|M4|all,...>  Comma-separated alternative to --step.",
     "  --member-count N              M1: members to add (default: 12).",
     "  --member-start-seq N          M1: starting UPN seq (default: 5).",
     "  --ca-policy-name NAME         M2: CA policy to edit (default: Finance-MFA-Bypass).",
@@ -248,6 +284,13 @@ interface MutationTrail {
   attempts: MutationAttempt[];
   summary: Record<MutationId, MutationSummary>;
   runbook: RunbookResult;
+  /**
+   * Concrete follow-up commands the operator should run next. Populated
+   * against the actual run outcome (dry-run → re-run with --apply;
+   * successful apply → kick off WI-05 orchestrator; aborted → inspect
+   * errors first).
+   */
+  nextRecommendedActions: string[];
 }
 
 function emptySummary(): MutationSummary {
@@ -329,6 +372,72 @@ interface CaPolicyRef {
 
 function pad2(n: number): string {
   return n.toString().padStart(2, "0");
+}
+
+function buildNextActions(ctx: {
+  dryRun: boolean;
+  summary: Record<MutationId, MutationSummary>;
+  runbookAborted: boolean;
+  abortReason?: string;
+  outputPath: string;
+}): string[] {
+  const actions: string[] = [];
+  if (ctx.runbookAborted) {
+    actions.push(
+      `Runbook aborted: ${ctx.abortReason ?? "unknown"}. Inspect ` +
+        `${ctx.outputPath}#runbook.steps for the failing step, fix the root cause, then re-run.`,
+    );
+    return actions;
+  }
+  if (ctx.dryRun) {
+    actions.push(
+      "Dry-run only — no Graph writes were issued. Re-run with --apply to actually " +
+        "trigger the mutations:",
+    );
+    actions.push(
+      "  npm run trigger-canonical-mutations -- --apply --confirm-all-manual " +
+        `--output ${ctx.outputPath}`,
+    );
+    return actions;
+  }
+  const totalSuccess = (Object.keys(ctx.summary) as MutationId[]).reduce(
+    (n, k) => n + ctx.summary[k].succeeded,
+    0,
+  );
+  const totalFailed = (Object.keys(ctx.summary) as MutationId[]).reduce(
+    (n, k) => n + ctx.summary[k].failed,
+    0,
+  );
+  if (totalFailed > 0) {
+    actions.push(
+      `${totalFailed} mutation attempt(s) failed. Inspect ${ctx.outputPath}#attempts[] ` +
+        "for errorCategory / errorMessage. Fix the cause, then re-run only the " +
+        "affected steps via --step M1 / --step M3 / --step M4.",
+    );
+  }
+  if (totalSuccess > 0) {
+    actions.push(
+      "Wait ~15 minutes for Entra audit propagation, then run the WI-05 " +
+        "orchestrator to fetch + analyze the window:",
+    );
+    actions.push(
+      "  npm run audit-completeness-spike -- --output-dir ./wi05 --confirm-all-manual",
+    );
+    actions.push(
+      "Once ./wi05/audit-completeness-matrix.json shows matchCount > 0 for the " +
+        "four classes, rewrite docs/SPIKE_REPORT_AUDIT_LOG_COMPLETENESS.md from the " +
+        "artifacts per its Appendix A.",
+    );
+  }
+  if (ctx.summary.M2.attempted === 1 && ctx.summary.M2.succeeded === 1) {
+    actions.push(
+      "Reminder: M2 is recorded as manual-confirmed. If the CA policy edit was not " +
+        "actually performed in the portal during this run's window, Entra will emit " +
+        "no 'Update conditional access policy' event and WI-05 will still show M2 " +
+        "as unknown.",
+    );
+  }
+  return actions;
 }
 
 function buildM2Instruction(caPolicyName: string): string {
@@ -1040,6 +1149,15 @@ async function runScript(): Promise<void> {
   const finishedAt = nowIso();
   const elapsedMs = Date.now() - t0;
 
+  const summary = buildSummary(state.attempts);
+  const nextRecommendedActions = buildNextActions({
+    dryRun: !args.dryRun.apply,
+    summary,
+    runbookAborted: runbookResult.aborted,
+    abortReason: runbookResult.abortReason,
+    outputPath: resolve(args.output),
+  });
+
   const trail: MutationTrail = {
     runMetadata: {
       script: "trigger-canonical-mutations",
@@ -1055,8 +1173,9 @@ async function runScript(): Promise<void> {
       modes: Array.from(args.modes),
     },
     attempts: state.attempts,
-    summary: buildSummary(state.attempts),
+    summary,
     runbook: runbookResult,
+    nextRecommendedActions,
   };
 
   const outPath = resolve(args.output);

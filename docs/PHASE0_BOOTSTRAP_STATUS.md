@@ -18,6 +18,7 @@
 | Test-tenant setup + verification | `platform/scripts/setup-test-tenant.ts` | Two modes: `summary` (read-only snapshot + SP-Read/Execute/Setup probes) and `setup` (idempotent population via SP-Setup, dry-run default, `--apply` opts in). Handles WI-01 (population) and contributes to WI-02 / WI-03 (SP verification). Structured result includes `spVerification`, `canonicalObjects`, `discoveredObjectIds`, `manualFollowUp`, `recommendedNextCommands`. |
 | Audit-log fetch utility | `platform/scripts/fetch-audit-events.ts` | SP-Read, paged JSON output. |
 | WI-05 orchestrator | `platform/scripts/run-audit-completeness-spike.ts` | Checklist → confirmation → propagation wait → fetch → 4-class completeness analysis. Writes `raw-events.json`, `audit-completeness-matrix.json`, and `audit-completeness-summary.md` to `--output-dir`. |
+| WI-05 mutation trigger | `platform/scripts/trigger-canonical-mutations.ts` | Produces the four canonical scenario audit events with correct provenance. M1 automated via SP-Execute (events carry `initiatedBy.app`). M2 stays manual/approval-required (operator portal edit). M3 + M4 automated via SP-Setup (M4 auto-cleans up the created credential). Dry-run default; `--apply` opts in. Selectors: `--all`, `--step M1..M4` (repeatable), `--mode M1,M2,...`. Emits `mutation-trail.json` including per-attempt Graph `request-id` / `client-request-id`, and a top-level `nextRecommendedActions[]` pointing to the next command. |
 | Member-removal spike utility | `platform/scripts/test-member-removal.ts` | SP-Execute. 4 modes (`reliability` / `idempotency` / `timing` / `rate-limit`) + `all`. Dry-run default; `--apply` required for real DELETEs. |
 | Graph transport | `platform/scripts/lib/transport.ts` | `GraphTransport`: `get`, `delete`, `post`, `getPaged`. Exposes Graph `request-id` / `client-request-id` / `Retry-After`. Takes a `TokenProvider` — no secret awareness. |
 | Graph credentials | `platform/scripts/lib/credentials.ts` | **Script-local** cert-or-secret construction for SP-Read, SP-Execute, and SP-Setup. Not in shared platform by design. |
@@ -134,6 +135,32 @@ The structured result embeds the full `runbook` trail: each step's status,
 `confirmedBy`, `skipReason`, and any error. Inspect
 `result.runbook.steps[*]` to see exactly which steps executed vs skipped vs
 were confirmed.
+
+### `npm run trigger-canonical-mutations` (WI-05 mutation trigger)
+
+Produces the four canonical audit events. M1 is SP-Execute (agent-identified),
+M2 is operator-gated portal, M3 + M4 are SP-Setup with M4 auto-cleanup.
+Dry-run default; `--apply` required for any Graph write. `--dry-run` wins
+over `--apply`; `DRY_RUN=1` env forces dry-run.
+
+```bash
+# Dry-run the full plan (no writes). See what would happen.
+npm run trigger-canonical-mutations -- --output ./wi05/mutation-trail.json
+
+# Apply. Interactive TTY prompts for M2; other three automate.
+npm run trigger-canonical-mutations -- --apply --output ./wi05/mutation-trail.json
+
+# Non-interactive / CI: auto-confirm M2 (still requires the operator to
+# do the portal edit, or the resulting event window will be empty for M2).
+npm run trigger-canonical-mutations -- --apply --confirm-all-manual \
+  --output ./wi05/mutation-trail.json
+
+# Narrow the set: only M1 and M3 (repeatable --step).
+npm run trigger-canonical-mutations -- --apply --step M1 --step M3 \
+  --output ./wi05/m1m3.json
+```
+
+Requires: `SP_READ_*` (discovery), `SP_EXECUTE_*` (M1), `SP_SETUP_*` (M3 + M4).
 
 ### `npm run audit-completeness-spike` (WI-05 orchestration)
 
