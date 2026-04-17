@@ -26,7 +26,6 @@
  *                  docs/PHASE0_EXECUTION_BOARD.md §WI-05.
  */
 
-import { createInterface } from "node:readline/promises";
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { setTimeout as sleep } from "node:timers/promises";
@@ -51,6 +50,11 @@ import {
 
 import { loadSpCredentials, tokenProviderFor } from "./lib/credentials.js";
 import { GraphTransport } from "./lib/transport.js";
+import {
+  Runbook,
+  parseConfirmationFlags,
+  type RunbookResult,
+} from "./lib/runbook.js";
 
 // ─── CLI ───────────────────────────────────────────────────────────────────
 
@@ -97,7 +101,11 @@ function parseArgs(argv: string[]): Args {
     else if (arg === "--skip-analysis") args.skipAnalysis = true;
     else if (arg === "--mutation-checklist") args.mutationChecklist = true;
     else if (arg === "--confirm-mutations") args.confirmMutations = true;
-    else failUsage(`Unknown argument: ${arg}`);
+    else if (arg === "--confirm-all-manual") continue; // handled by parseConfirmationFlags
+    else if (arg === "--confirm-manual-step") {
+      i += 1; // consume value
+      continue;
+    } else failUsage(`Unknown argument: ${arg}`);
   }
   if (args.start) validateIso(args.start, "--start");
   if (args.end) validateIso(args.end, "--end");
@@ -139,6 +147,14 @@ function usage(): string {
     "  --skip-fetch           Use an existing raw-events.json in --output-dir; skip the Graph call.",
     "  --skip-analysis        Fetch only; do not produce the matrix or summary.",
     "  --dry-run              Print the plan and exit without fetching or waiting.",
+    "",
+    "Manual-step confirmation (CA policies, Teams, SharePoint, admin consent):",
+    "  --confirm-manual-step <id>   Mark the named approval-required step as operator-confirmed.",
+    "                               Repeatable. Step IDs: confirm-M1-group-membership,",
+    "                               confirm-M2-conditional-access, confirm-M3-app-role-assignment,",
+    "                               confirm-M4-sp-credential.",
+    "  --confirm-all-manual         Mark every approval-required step as operator-confirmed.",
+    "                               Equivalent to --confirm-mutations for backward compatibility.",
     "",
     "Required env: SP_READ_TENANT_ID, SP_READ_CLIENT_ID, plus",
     "              SP_READ_CERTIFICATE_PATH (preferred) or SP_READ_CLIENT_SECRET.",
@@ -580,18 +596,6 @@ async function fetchAuditWindow(
   return events;
 }
 
-// ─── Interactive confirmation ──────────────────────────────────────────────
-
-async function confirmInteractive(message: string): Promise<boolean> {
-  const rl = createInterface({ input: process.stdin, output: process.stderr });
-  try {
-    const answer = await rl.question(message);
-    return /^y(es)?$/i.test(answer.trim());
-  } finally {
-    rl.close();
-  }
-}
-
 // ─── Propagation wait with countdown logging ───────────────────────────────
 
 async function waitPropagation(minutes: number, log: Logger): Promise<void> {
@@ -614,6 +618,13 @@ async function waitPropagation(minutes: number, log: Logger): Promise<void> {
 }
 
 // ─── Main ──────────────────────────────────────────────────────────────────
+
+interface SpikeRunState {
+  windowStart: string | null;
+  windowEnd: string | null;
+  rawEvents: AuditEvent[] | null;
+  matrix: CompletenessMatrix | null;
+}
 
 async function runScript(): Promise<void> {
   const args = parseArgs(process.argv.slice(2));
@@ -645,143 +656,230 @@ async function runScript(): Promise<void> {
     failUsage("--output-dir is required (or use --dry-run / --mutation-checklist).");
   }
 
+  const isExplicitWindow = args.start !== null && args.end !== null;
+  const needsConfirmAndWait = !isExplicitWindow && !args.skipFetch;
+
   if (args.dryRun) {
     log.info("dry-run: printing plan and exiting", {
       plan: [
-        args.mutationChecklist
-          ? null
-          : "print mutation checklist to stderr",
-        args.confirmMutations
-          ? null
-          : "wait for interactive confirmation that mutations were executed",
-        `wait ${args.waitMinutes} minutes for audit propagation`,
-        `fetch /auditLogs/directoryAudits from ${args.start ?? "[captured after confirm]"} to ${args.end ?? "[captured after wait]"}`,
+        needsConfirmAndWait ? "confirm 4 canonical mutations (approval-required)" : null,
+        needsConfirmAndWait ? `wait ${args.waitMinutes} minutes for audit propagation` : null,
+        args.skipFetch
+          ? "load raw-events.json from --output-dir"
+          : `fetch /auditLogs/directoryAudits from ${args.start ?? "[captured after wait]"} to ${args.end ?? "[captured after wait]"}`,
         args.skipAnalysis ? null : "analyze events across 4 change classes",
-        `write outputs to ${args.outputDir ?? "[REQUIRED — set --output-dir for a real run]"}`,
+        args.skipAnalysis ? null : `write audit-completeness-matrix.json + audit-completeness-summary.md to ${args.outputDir ?? "[required]"}`,
       ].filter(Boolean),
     });
     return;
   }
 
-  // Ensure output dir exists (we know it's set above).
   const outDir = resolve(args.outputDir!);
   mkdirSync(outDir, { recursive: true });
 
-  let windowStart = args.start;
-  let windowEnd = args.end;
-  let rawEvents: AuditEvent[] | null = null;
-
-  // Decide the flow.
-  const isExplicitWindow = args.start !== null && args.end !== null;
-  const isFullOrchestration = !isExplicitWindow && !args.skipFetch;
-
-  if (isFullOrchestration) {
-    // Print checklist to stderr; the summary markdown will embed it.
-    printChecklistToStream(process.stderr);
-
-    if (!args.confirmMutations) {
-      if (!process.stdin.isTTY) {
-        throw new Error(
-          "Interactive confirmation required but stdin is not a TTY. " +
-            "Pass --confirm-mutations to skip, or run the script in a terminal.",
-        );
-      }
-      const ok = await confirmInteractive(
-        "Have you executed all four canonical mutations? [y/N] ",
-      );
-      if (!ok) {
-        log.warn("operator declined confirmation; aborting before wait");
-        process.exit(ExitCodes.OK);
-      }
-    }
-
-    windowStart = nowIso();
-    log.info("window start captured", { windowStart });
-    await waitPropagation(args.waitMinutes, log);
-    windowEnd = nowIso();
-    log.info("window end captured", { windowEnd });
-    // Widen by one minute on each side to catch events whose activityDateTime
-    // landed just outside our sampled boundary.
-    windowStart = isoMinus(windowStart, MINUTE_MS);
-    windowEnd = isoPlus(windowEnd, MINUTE_MS);
-  }
-
-  // Fetch (or load).
   const creds = loadSpCredentials("read");
+  const graph = new GraphTransport({ tokenProvider: tokenProviderFor(creds) });
 
-  if (args.skipFetch) {
-    const rawPath = resolve(outDir, "raw-events.json");
-    if (!existsSync(rawPath)) {
-      throw new Error(`--skip-fetch requires ${rawPath} to already exist.`);
-    }
-    rawEvents = JSON.parse(readFileSync(rawPath, "utf-8")) as AuditEvent[];
-    log.info("loaded existing raw events", { count: rawEvents.length, path: rawPath });
-    // If --skip-fetch and no explicit window, use the file's min/max dates.
-    if (!windowStart || !windowEnd) {
-      const withDates = rawEvents
-        .map((e) => e.activityDateTime)
-        .filter((t): t is string => typeof t === "string")
-        .sort();
-      windowStart = withDates[0] ?? nowIso();
-      windowEnd = withDates[withDates.length - 1] ?? nowIso();
-    }
-  } else {
-    if (!windowStart || !windowEnd) {
-      // Defensive: isExplicitWindow already ensured both are set in that branch,
-      // and full-orchestration sets them after wait. Fall back to 2h window ending now.
-      windowEnd = windowEnd ?? nowIso();
-      windowStart = windowStart ?? isoMinus(windowEnd, 2 * HOUR_MS);
-    }
-    const graph = new GraphTransport({ tokenProvider: tokenProviderFor(creds) });
-    rawEvents = await fetchAuditWindow(graph, windowStart, windowEnd, log);
-    const rawPath = resolve(outDir, "raw-events.json");
-    writeFileSync(rawPath, JSON.stringify(rawEvents, null, 2), "utf-8");
-    log.info("wrote raw events", { path: rawPath, count: rawEvents.length });
+  // Confirmation flags: --confirm-mutations retained for backward compatibility
+  // as a shorthand for --confirm-all-manual.
+  const { confirmAll, confirmedIds } = parseConfirmationFlags(process.argv.slice(2));
+  const autoConfirm = confirmAll || args.confirmMutations;
+
+  // Shared state across runbook steps (closures read/write via the container).
+  const state: SpikeRunState = {
+    windowStart: args.start,
+    windowEnd: args.end,
+    rawEvents: null,
+    matrix: null,
+  };
+
+  // Echo the checklist to stderr up front so operators see it before the
+  // approval prompts. The markdown summary also embeds it.
+  if (needsConfirmAndWait) {
+    printChecklistToStream(process.stderr);
   }
 
-  if (args.skipAnalysis) {
-    log.info("skip-analysis: stopping before matrix/summary", {
-      eventCount: rawEvents.length,
+  const runbook = new Runbook({
+    scriptName: "run-audit-completeness-spike",
+    apply: true, // read-only by nature; we only skip via skipIf/requiresApply
+    autoConfirm,
+    confirmedStepIds: confirmedIds,
+    logger: log,
+  });
+
+  // ── Four approval-required mutation confirmations ─────────────────────
+  for (const m of MUTATION_CHECKLIST) {
+    runbook.add({
+      id: `confirm-${m.id}`,
+      label: m.title,
+      kind: "approval-required",
+      instruction: m.description,
+      skipIf: () =>
+        needsConfirmAndWait
+          ? false
+          : "explicit --start/--end or --skip-fetch: confirmation not needed",
     });
-    return;
   }
 
-  // Analyze.
-  const analysis = analyze(rawEvents);
-  const finishedAt = nowIso();
-  const elapsedMs = Date.now() - t0;
-  const matrix: CompletenessMatrix = {
+  // ── Capture window and wait for audit propagation ─────────────────────
+  runbook.add({
+    id: "capture-window-and-wait",
+    label: `Capture window start, wait ${args.waitMinutes}m for propagation, capture window end`,
+    kind: "automatic",
+    skipIf: () =>
+      needsConfirmAndWait
+        ? false
+        : "explicit --start/--end or --skip-fetch: wait not needed",
+    async run() {
+      state.windowStart = nowIso();
+      log.info("window start captured", { windowStart: state.windowStart });
+      await waitPropagation(args.waitMinutes, log);
+      state.windowEnd = nowIso();
+      // Widen by one minute on each side to catch events whose activityDateTime
+      // landed just outside our sampled boundary.
+      state.windowStart = isoMinus(state.windowStart, MINUTE_MS);
+      state.windowEnd = isoPlus(state.windowEnd, MINUTE_MS);
+      return {
+        windowStart: state.windowStart,
+        windowEnd: state.windowEnd,
+      };
+    },
+  });
+
+  // ── Fetch vs load ──────────────────────────────────────────────────────
+  runbook.add({
+    id: "fetch-audit-events",
+    label: "Fetch directoryAudits events via SP-Read",
+    kind: "automatic",
+    skipIf: () => (args.skipFetch ? "--skip-fetch" : false),
+    async run() {
+      if (!state.windowEnd) {
+        // Full-orchestration sets this; explicit-window sets this at parse.
+        // Defensive fallback: last 2h.
+        state.windowEnd = state.windowEnd ?? nowIso();
+        state.windowStart = state.windowStart ?? isoMinus(state.windowEnd, 2 * HOUR_MS);
+      }
+      state.rawEvents = await fetchAuditWindow(
+        graph,
+        state.windowStart!,
+        state.windowEnd,
+        log,
+      );
+      const rawPath = resolve(outDir, "raw-events.json");
+      writeFileSync(rawPath, JSON.stringify(state.rawEvents, null, 2), "utf-8");
+      runbook.recordOutput(rawPath);
+      return { eventCount: state.rawEvents.length, path: rawPath };
+    },
+  });
+
+  runbook.add({
+    id: "load-cached-events",
+    label: "Load cached raw-events.json from --output-dir",
+    kind: "automatic",
+    skipIf: () => (!args.skipFetch ? "not in --skip-fetch mode" : false),
+    async run() {
+      const rawPath = resolve(outDir, "raw-events.json");
+      if (!existsSync(rawPath)) {
+        throw new Error(`--skip-fetch requires ${rawPath} to already exist.`);
+      }
+      state.rawEvents = JSON.parse(readFileSync(rawPath, "utf-8")) as AuditEvent[];
+      if (!state.windowStart || !state.windowEnd) {
+        const dates = state.rawEvents
+          .map((e) => e.activityDateTime)
+          .filter((t): t is string => typeof t === "string")
+          .sort();
+        state.windowStart = state.windowStart ?? dates[0] ?? nowIso();
+        state.windowEnd = state.windowEnd ?? dates[dates.length - 1] ?? nowIso();
+      }
+      return { eventCount: state.rawEvents.length, path: rawPath };
+    },
+  });
+
+  // ── Analysis ───────────────────────────────────────────────────────────
+  runbook.add({
+    id: "analyze-completeness",
+    label: "Analyze events across 4 change classes",
+    kind: "automatic",
+    skipIf: () => (args.skipAnalysis ? "--skip-analysis" : false),
+    async run() {
+      if (!state.rawEvents) throw new Error("no raw events available to analyze");
+      const analysis = analyze(state.rawEvents);
+      const finishedAt = nowIso();
+      state.matrix = {
+        runMetadata: {
+          script: "run-audit-completeness-spike",
+          runId,
+          correlationId: currentCorrelationId() ?? runId,
+          tenantId: creds.tenantId,
+          startedAt,
+          finishedAt,
+          elapsedMs: Date.now() - t0,
+          window: { start: state.windowStart!, end: state.windowEnd! },
+        },
+        totalEvents: state.rawEvents.length,
+        ...analysis,
+      };
+      return {
+        totalEvents: state.matrix.totalEvents,
+        unmatchedEventCount: state.matrix.unmatchedEventCount,
+        findings: state.matrix.findings.map((f) => ({
+          key: f.key,
+          matchCount: f.matchCount,
+          assessment: f.beforeStateAssessment,
+        })),
+      };
+    },
+  });
+
+  runbook.add({
+    id: "write-artifacts",
+    label: "Write audit-completeness-matrix.json + audit-completeness-summary.md",
+    kind: "automatic",
+    skipIf: () => (args.skipAnalysis ? "--skip-analysis" : false),
+    async run() {
+      if (!state.matrix) throw new Error("no matrix to write");
+      const matrixPath = resolve(outDir, "audit-completeness-matrix.json");
+      writeFileSync(matrixPath, JSON.stringify(state.matrix, null, 2), "utf-8");
+      runbook.recordOutput(matrixPath);
+      const md = renderMarkdownSummary(state.matrix);
+      const mdPath = resolve(outDir, "audit-completeness-summary.md");
+      writeFileSync(mdPath, md, "utf-8");
+      runbook.recordOutput(mdPath);
+      return { matrix: matrixPath, summary: mdPath };
+    },
+  });
+
+  const runbookResult = await runbook.execute();
+
+  // Write the combined run result so CI / reporters have a single artifact.
+  const runResultPath = resolve(outDir, "run-result.json");
+  const finalResult = {
     runMetadata: {
-      script: "run-audit-completeness-spike",
+      script: "run-audit-completeness-spike" as const,
       runId,
       correlationId: currentCorrelationId() ?? runId,
       tenantId: creds.tenantId,
       startedAt,
-      finishedAt,
-      elapsedMs,
-      window: { start: windowStart!, end: windowEnd! },
+      finishedAt: nowIso(),
+      elapsedMs: Date.now() - t0,
+      window: {
+        start: state.windowStart,
+        end: state.windowEnd,
+      },
     },
-    totalEvents: rawEvents.length,
-    ...analysis,
+    runbook: runbookResult,
+    totalEvents: state.rawEvents?.length ?? 0,
+    completenessAvailable: state.matrix !== null,
   };
-
-  const matrixPath = resolve(outDir, "audit-completeness-matrix.json");
-  writeFileSync(matrixPath, JSON.stringify(matrix, null, 2), "utf-8");
-  log.info("wrote matrix", { path: matrixPath });
-
-  const md = renderMarkdownSummary(matrix);
-  const mdPath = resolve(outDir, "audit-completeness-summary.md");
-  writeFileSync(mdPath, md, "utf-8");
-  log.info("wrote summary", { path: mdPath });
+  writeFileSync(runResultPath, JSON.stringify(finalResult, null, 2), "utf-8");
+  log.info("wrote run result", { path: runResultPath });
 
   log.info("complete", {
-    elapsedMs,
-    totalEvents: matrix.totalEvents,
-    findings: matrix.findings.map((f) => ({
-      key: f.key,
-      matchCount: f.matchCount,
-      assessment: f.beforeStateAssessment,
-    })),
+    elapsedMs: Date.now() - t0,
+    aborted: runbookResult.aborted,
+    abortReason: runbookResult.abortReason,
+    summary: runbookResult.summary,
+    outputs: runbookResult.outputsProduced,
   });
 }
 
