@@ -33,8 +33,9 @@ export type ConfirmedBy = "tty" | "flag" | "confirm-all";
 /**
  * Declarative step spec.
  *
- *   automatic        — Has `run()`. Executed when the runbook is in apply
- *                      mode; skipped (not executed) in dry-run.
+ *   automatic        — Has `run()`. Always executes by default (safe reads,
+ *                      verification). Set `requiresApply: true` for steps
+ *                      that perform mutations; those are skipped in dry-run.
  *   manual           — Informational. Script prints the instruction and
  *                      records the step as skipped ("manual: operator-run
  *                      outside this script") unless explicitly confirmed
@@ -46,6 +47,12 @@ export interface StepSpec<TResult = unknown> {
   id: string;
   label: string;
   kind: StepKind;
+  /**
+   * Automatic-step safety flag. True = mutating; runs only when
+   * runbook.apply is true. False / undefined = safe read; always runs.
+   * Ignored for manual / approval-required steps.
+   */
+  requiresApply?: boolean;
   /** Human-readable guidance shown for manual / approval-required steps. */
   instruction?: string;
   /** Required for `automatic`. Should return a small JSON-safe summary. */
@@ -275,11 +282,11 @@ export class Runbook {
     });
 
     if (spec.kind === "automatic") {
-      if (!this.opts.apply) {
+      if (spec.requiresApply && !this.opts.apply) {
         return {
           ...base,
           status: "skipped",
-          skipReason: "dry-run: apply=false",
+          skipReason: "dry-run: step is marked requiresApply=true",
         };
       }
       return await this.runAutomatic(spec, base);

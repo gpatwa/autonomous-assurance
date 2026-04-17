@@ -59,6 +59,11 @@ import {
   GraphTransport,
   type PostResult,
 } from "./lib/transport.js";
+import {
+  Runbook,
+  parseConfirmationFlags,
+  type RunbookResult,
+} from "./lib/runbook.js";
 
 // ─── CLI ───────────────────────────────────────────────────────────────────
 
@@ -120,6 +125,14 @@ function parseArgs(argv: string[]): Args {
     } else if (arg === "--apply" || arg === "--dry-run") {
       // handled by parseDryRunFlag / override below
       continue;
+    } else if (arg === "--confirm-all-manual") {
+      // handled by parseConfirmationFlags
+      continue;
+    } else if (arg === "--confirm-manual-step") {
+      // handled by parseConfirmationFlags; consume the value so it is not
+      // treated as an unknown argument.
+      i += 1;
+      continue;
     } else {
       failUsage(`Unknown argument: ${arg}`);
     }
@@ -160,6 +173,11 @@ function usage(): string {
     "  --apps N           Target app registration count (default 10).",
     "  --base-members N   Members to add to the privileged group (default 4).",
     "  --output PATH      Write the structured result as JSON. Default: stdout.",
+    "",
+    "Manual-step confirmation (CA policies, Teams, SharePoint, admin consent):",
+    "  --confirm-manual-step <id>   Mark the named manual step as operator-confirmed.",
+    "                               Repeatable. See result.steps[].id for IDs.",
+    "  --confirm-all-manual         Mark every manual step as operator-confirmed.",
     "",
     "Env DRY_RUN=1 forces dry-run regardless of --apply.",
     "",
@@ -226,7 +244,7 @@ interface TenantSetupResult {
   spVerification: Record<SpKind, SpVerification>;
   canonicalObjects: CanonicalSnapshot;
   discoveredObjectIds: DiscoveredIds;
-  manualFollowUp: string[];
+  runbook: RunbookResult;
   recommendedNextCommands: string[];
 }
 
@@ -614,33 +632,27 @@ function stringifyError(err: unknown): string {
 
 // ─── Main ──────────────────────────────────────────────────────────────────
 
-function buildManualFollowUp(): string[] {
-  return [
-    `Create ${CANONICAL.caPolicyNames.length} Conditional Access policies manually in the Entra admin portal: ${CANONICAL.caPolicyNames.join(", ")}. Policy misconfiguration can lock the tenant; automation is deliberately deferred.`,
-    `Create the Teams team '${CANONICAL.teamName}' and link it to the privileged group manually.`,
-    `Configure ${CANONICAL.sharepointSites} SharePoint site collections with group-based permissions manually.`,
-    `Admin-consent any app registrations that need application permissions.`,
-    `Scenario trigger: ${CANONICAL.addedMemberCount} member-add events are produced by WI-05, not by this script.`,
-  ];
-}
-
 function buildRecommendedCommands(
   mode: Mode,
   dryRun: boolean,
   sp: Record<SpKind, SpVerification>,
+  runbookAborted: boolean,
 ): string[] {
   const recs: string[] = [];
-  if (mode === "summary") {
-    if (dryRun) {
-      recs.push(
-        "Summary complete. To populate missing objects, re-run with --mode setup --apply (requires SP_SETUP_* env).",
-      );
-    }
+  if (runbookAborted) {
+    recs.push(
+      "Runbook aborted mid-flow. Inspect result.runbook.abortReason and runbook.steps[*].error, then re-run.",
+    );
+  }
+  if (mode === "summary" && dryRun) {
+    recs.push(
+      "Summary complete. To populate missing objects, re-run with --mode setup --apply (requires SP_SETUP_* env).",
+    );
   } else if (mode === "setup" && dryRun) {
     recs.push(
       "Setup dry-run complete. Re-run with --apply to create missing users/groups/apps and add base members.",
     );
-  } else {
+  } else if (mode === "setup" && !dryRun) {
     recs.push(
       "Setup applied. Re-run with --mode summary to verify final counts against canonical targets.",
     );
@@ -685,90 +697,252 @@ async function runScript(): Promise<void> {
   const readCreds = loadSpCredentials("read");
   const readGraph = new GraphTransport({ tokenProvider: tokenProviderFor(readCreds) });
 
-  // Verify all three principals up front.
+  // Shared state captured by runbook steps via closures.
   const spVerification: Record<SpKind, SpVerification> = {
-    read: await verifySp("read", log),
-    execute: await verifySp("execute", log),
-    setup: await verifySp("setup", log),
+    read: emptyVerification("read"),
+    execute: emptyVerification("execute"),
+    setup: emptyVerification("setup"),
   };
-
-  // Pre-fetch canonical snapshot via SP-Read.
-  const prefetch = await prefetchCanonical(readGraph, log);
-
-  // Initial counts.
-  const existingUsers = prefetch.existingUserUpns.size;
-  const existingGroupsTotal = prefetch.existingGroupNames.size; // includes privileged if present
-  const existingApps = prefetch.existingAppNames.size;
-
+  // State shared across runbook steps. Wrapped in a container so TS keeps
+  // the union types (closures inside step.run() cannot narrow a plain `let`).
+  interface StepState {
+    prefetch: CanonicalPrefetch | null;
+    snapshotBefore: {
+      users: number;
+      groups: number;
+      apps: number;
+      baseMembers: number;
+    } | null;
+    setupGraph: GraphTransport | null;
+    setupCtx: SetupContext | null;
+  }
+  const state: StepState = {
+    prefetch: null,
+    snapshotBefore: null,
+    setupGraph: null,
+    setupCtx: null,
+  };
   const discovered: DiscoveredIds = {
-    privilegedGroupId: prefetch.privilegedGroupId,
+    privilegedGroupId: null,
     createdUserIds: [],
     createdGroupIds: [],
     createdAppIds: [],
-    baseMemberUserIds: [...prefetch.baseMemberUserIds],
+    baseMemberUserIds: [],
   };
-
   let privilegedCreated = false;
 
-  if (args.mode === "setup" && args.dryRun.apply) {
-    if (!spVerification.setup.configured) {
-      throw new Error(
-        "SP-Setup not configured. --apply requires SP_SETUP_TENANT_ID, SP_SETUP_CLIENT_ID, " +
-          "and either SP_SETUP_CERTIFICATE_PATH or SP_SETUP_CLIENT_SECRET.",
-      );
-    }
-    if (!spVerification.setup.tokenAcquired) {
-      throw new Error(
-        "SP-Setup token acquisition failed. Check cert/secret and tenant/client IDs before retrying.",
-      );
-    }
-    const { domain, initialPassword } = requireSetupEnv();
-    const setupCreds = loadSpCredentials("setup");
-    const setupGraph = new GraphTransport({
-      tokenProvider: tokenProviderFor(setupCreds),
+  const { confirmAll, confirmedIds } = parseConfirmationFlags(process.argv.slice(2));
+  const runbook = new Runbook({
+    scriptName: "setup-test-tenant",
+    apply: args.dryRun.apply,
+    autoConfirm: confirmAll,
+    confirmedStepIds: confirmedIds,
+    logger: log,
+  });
+
+  // ── Verification steps (automatic; safe reads) ─────────────────────────
+  for (const kind of ["read", "execute", "setup"] as SpKind[]) {
+    runbook.add({
+      id: `verify-sp-${kind}`,
+      label: `Verify SP-${kind.toUpperCase()} (token acquisition${
+        kind === "execute" ? "" : " + read probe"
+      })`,
+      kind: "automatic",
+      async run() {
+        const v = await verifySp(kind, log);
+        spVerification[kind] = v;
+        return {
+          configured: v.configured,
+          tokenAcquired: v.tokenAcquired,
+          probeOk: v.probe?.ok ?? null,
+        };
+      },
     });
-    const ctx: SetupContext = { setupGraph, domain, initialPassword, log };
-
-    // Create generic groups first so base-member add doesn't race on
-    // privileged group creation; privileged group is its own call.
-    const groupResult = await ensureGroups(args.groups, prefetch, ctx);
-    discovered.createdGroupIds.push(...groupResult.createdIds);
-
-    const privResult = await ensurePrivilegedGroup(prefetch, ctx);
-    discovered.privilegedGroupId = privResult.id ?? discovered.privilegedGroupId;
-    privilegedCreated = privResult.created;
-
-    const userResult = await ensureUsers(args.users, prefetch, ctx);
-    discovered.createdUserIds.push(...userResult.createdIds);
-
-    const baseResult = await ensureBaseMembers(args.baseMembers, prefetch, ctx);
-    discovered.baseMemberUserIds = [...prefetch.baseMemberUserIds];
-
-    const appResult = await ensureApps(args.apps, prefetch, ctx);
-    discovered.createdAppIds.push(...appResult.createdIds);
-  } else if (args.mode === "setup" && !args.dryRun.apply) {
-    log.warn(
-      "setup dry-run: no writes will occur. Re-run with --apply to create missing objects.",
-    );
   }
+
+  // ── Pre-fetch canonical snapshot (automatic; SP-Read) ──────────────────
+  runbook.add({
+    id: "prefetch-canonical",
+    label: "Pre-fetch canonical users/groups/apps/privileged group via SP-Read",
+    kind: "automatic",
+    async run() {
+      const prefetched = await prefetchCanonical(readGraph, log);
+      state.prefetch = prefetched;
+      discovered.privilegedGroupId = prefetched.privilegedGroupId;
+      discovered.baseMemberUserIds = [...prefetched.baseMemberUserIds];
+      state.snapshotBefore = {
+        users: prefetched.existingUserUpns.size,
+        groups: prefetched.existingGroupNames.size,
+        apps: prefetched.existingAppNames.size,
+        baseMembers: prefetched.baseMemberUserIds.length,
+      };
+      return state.snapshotBefore;
+    },
+  });
+
+  // ── Setup-mode automatic steps (only added if mode === "setup") ────────
+  if (args.mode === "setup") {
+    // Preflight step: confirms SP-Setup is ready AND loads env for writes.
+    // Fails (and aborts) if --apply is set but env is missing.
+    runbook.add({
+      id: "setup-preflight",
+      label: "Verify SP-Setup is usable and TENANT_DOMAIN / TENANT_SETUP_INITIAL_PASSWORD are set",
+      kind: "automatic",
+      requiresApply: true,
+      async run() {
+        if (!spVerification.setup.configured) {
+          throw new Error(
+            "SP-Setup not configured. --apply requires SP_SETUP_TENANT_ID, SP_SETUP_CLIENT_ID, " +
+              "and either SP_SETUP_CERTIFICATE_PATH or SP_SETUP_CLIENT_SECRET.",
+          );
+        }
+        if (!spVerification.setup.tokenAcquired) {
+          throw new Error(
+            "SP-Setup token acquisition failed. Check cert/secret and tenant/client IDs before retrying.",
+          );
+        }
+        const { domain, initialPassword } = requireSetupEnv();
+        const setupCreds = loadSpCredentials("setup");
+        const g = new GraphTransport({
+          tokenProvider: tokenProviderFor(setupCreds),
+        });
+        state.setupGraph = g;
+        state.setupCtx = { setupGraph: g, domain, initialPassword, log };
+        return { domain, passwordLength: initialPassword.length };
+      },
+    });
+
+    runbook.add({
+      id: "ensure-groups",
+      label: "Create missing canonical security groups",
+      kind: "automatic",
+      requiresApply: true,
+      async run() {
+        if (!state.prefetch || !state.setupCtx) throw new Error("prefetch/setupCtx missing");
+        const r = await ensureGroups(args.groups, state.prefetch, state.setupCtx);
+        discovered.createdGroupIds.push(...r.createdIds);
+        return { createdCount: r.createdIds.length };
+      },
+    });
+
+    runbook.add({
+      id: "ensure-privileged-group",
+      label: `Ensure the canonical privileged group "${CANONICAL.privilegedGroupName}"`,
+      kind: "automatic",
+      requiresApply: true,
+      async run() {
+        if (!state.prefetch || !state.setupCtx) throw new Error("prefetch/setupCtx missing");
+        const r = await ensurePrivilegedGroup(state.prefetch, state.setupCtx);
+        discovered.privilegedGroupId = r.id ?? discovered.privilegedGroupId;
+        privilegedCreated = r.created;
+        return { id: r.id, created: r.created };
+      },
+    });
+
+    runbook.add({
+      id: "ensure-users",
+      label: "Create missing canonical users",
+      kind: "automatic",
+      requiresApply: true,
+      async run() {
+        if (!state.prefetch || !state.setupCtx) throw new Error("prefetch/setupCtx missing");
+        const r = await ensureUsers(args.users, state.prefetch, state.setupCtx);
+        discovered.createdUserIds.push(...r.createdIds);
+        return { createdCount: r.createdIds.length };
+      },
+    });
+
+    runbook.add({
+      id: "ensure-base-members",
+      label: `Add ${args.baseMembers} base members to the privileged group`,
+      kind: "automatic",
+      requiresApply: true,
+      async run() {
+        if (!state.prefetch || !state.setupCtx) throw new Error("prefetch/setupCtx missing");
+        const r = await ensureBaseMembers(args.baseMembers, state.prefetch, state.setupCtx);
+        discovered.baseMemberUserIds = [...state.prefetch.baseMemberUserIds];
+        return { addedCount: r.addedUserIds.length };
+      },
+    });
+
+    runbook.add({
+      id: "ensure-apps",
+      label: "Create missing canonical app registrations",
+      kind: "automatic",
+      requiresApply: true,
+      async run() {
+        if (!state.prefetch || !state.setupCtx) throw new Error("prefetch/setupCtx missing");
+        const r = await ensureApps(args.apps, state.prefetch, state.setupCtx);
+        discovered.createdAppIds.push(...r.createdIds);
+        return { createdCount: r.createdIds.length };
+      },
+    });
+  }
+
+  // ── Manual steps (always present; operator-run outside this script) ────
+  runbook.add({
+    id: "ca-policies",
+    label: `Create Conditional Access policies: ${CANONICAL.caPolicyNames.join(", ")}`,
+    kind: "manual",
+    instruction:
+      "Create these policies in the Entra admin portal. Policy misconfiguration " +
+      "can lock the tenant — automation is deliberately deferred. Pass " +
+      "--confirm-manual-step ca-policies once the policies exist.",
+  });
+  runbook.add({
+    id: "teams-setup",
+    label: `Create the Teams team "${CANONICAL.teamName}" and link it to the privileged group`,
+    kind: "manual",
+    instruction:
+      "Provision in Teams admin center; link to Finance-Privileged-Access. " +
+      "Pass --confirm-manual-step teams-setup once linked.",
+  });
+  runbook.add({
+    id: "sharepoint-setup",
+    label: `Configure ${CANONICAL.sharepointSites} SharePoint site collections with group-based permissions`,
+    kind: "manual",
+    instruction:
+      "Create in SharePoint admin center and assign permissions to Finance-Privileged-Access. " +
+      "Pass --confirm-manual-step sharepoint-setup once configured.",
+  });
+  runbook.add({
+    id: "admin-consent",
+    label: "Admin-consent any app registrations that need application permissions",
+    kind: "manual",
+    instruction:
+      "In Entra admin portal → Enterprise Applications → each created app → grant admin consent. " +
+      "Pass --confirm-manual-step admin-consent once consent is granted.",
+  });
+  runbook.add({
+    id: "scenario-trigger",
+    label: `Scenario trigger: ${CANONICAL.addedMemberCount} member-add events are produced by WI-05, not this script`,
+    kind: "manual",
+    instruction:
+      "No action required here; this step exists to remind operators that the " +
+      "12-member-add audit events are produced by run-audit-completeness-spike (WI-05), " +
+      "not by setup. Pass --confirm-manual-step scenario-trigger to acknowledge.",
+  });
+
+  const runbookResult = await runbook.execute();
 
   const finishedAt = nowIso();
   const elapsedMs = Date.now() - t0;
 
+  const snapshot = state.snapshotBefore;
+  const baseMembersBefore = snapshot?.baseMembers ?? 0;
   const baseMembersAdded = Math.max(
     0,
-    discovered.baseMemberUserIds.length - prefetch.baseMemberUserIds.length,
+    discovered.baseMemberUserIds.length - baseMembersBefore,
   );
-  const baseMembersBefore = prefetch.baseMemberUserIds.length;
 
   const canonicalObjects: CanonicalSnapshot = {
     users: {
-      existing: existingUsers,
+      existing: snapshot?.users ?? 0,
       created: discovered.createdUserIds.length,
       target: args.users,
     },
     groups: {
-      existing: existingGroupsTotal,
+      existing: snapshot?.groups ?? 0,
       created: discovered.createdGroupIds.length,
       target: args.groups,
     },
@@ -783,7 +957,7 @@ async function runScript(): Promise<void> {
       target: args.baseMembers,
     },
     apps: {
-      existing: existingApps,
+      existing: snapshot?.apps ?? 0,
       created: discovered.createdAppIds.length,
       target: args.apps,
     },
@@ -805,20 +979,20 @@ async function runScript(): Promise<void> {
     spVerification,
     canonicalObjects,
     discoveredObjectIds: discovered,
-    manualFollowUp: buildManualFollowUp(),
+    runbook: runbookResult,
     recommendedNextCommands: buildRecommendedCommands(
       args.mode,
       !args.dryRun.apply,
       spVerification,
+      runbookResult.aborted,
     ),
   };
 
   log.info("complete", {
     elapsedMs,
     canonicalObjects,
-    spRead: spVerification.read.tokenAcquired,
-    spExecute: spVerification.execute.tokenAcquired,
-    spSetup: spVerification.setup.tokenAcquired,
+    runbookSummary: runbookResult.summary,
+    aborted: runbookResult.aborted,
   });
 
   const payload = JSON.stringify(result, null, 2);
@@ -831,6 +1005,10 @@ async function runScript(): Promise<void> {
     process.stdout.write(payload);
     process.stdout.write("\n");
   }
+}
+
+function emptyVerification(kind: SpKind): SpVerification {
+  return { kind, configured: false, tokenAcquired: false };
 }
 
 withContext({ correlationId: newCorrelationId() }, runScript).catch((err: unknown) => {
