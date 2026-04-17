@@ -13,6 +13,7 @@ Orchestration scripts use the local `scripts/lib/runbook.ts` pattern:
 | `fetch-audit-events.ts` | Fetch `/auditLogs/directoryAudits` for a window; write raw JSON | WI-05 | `npm run fetch-audit-events -- --start ISO --end ISO [--output PATH]` |
 | `run-audit-completeness-spike.ts` | WI-05 orchestration: mutation checklist → confirmation → propagation wait → fetch → 4-class completeness analysis → JSON matrix + markdown summary | WI-05 | `npm run audit-completeness-spike -- --output-dir PATH [--confirm-mutations] [--wait-minutes N]` |
 | `test-member-removal.ts` | Graph remove-member spike: reliability / idempotency / timing / rate-limit | WI-06 | `npm run test-member-removal -- --mode MODE --group-id ID (--members-file PATH \| --member-id ID) [--apply] [--output PATH]` |
+| `trigger-canonical-mutations.ts` | WI-05 canonical mutation trigger (M1 via SP-Execute so events carry `initiatedBy.app`; commits 2 and 3 will add M2/M3/M4) | WI-05 | `npm run trigger-canonical-mutations -- [--apply] [--output PATH]` |
 
 Scripts load `.env.local` first, then `.env`. Config errors exit `78`;
 usage errors exit `2`; other errors exit `1`. See
