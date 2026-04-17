@@ -1,11 +1,11 @@
 /**
  * Pure Microsoft Graph transport. Trust-boundary-safe:
  * takes a TokenProvider at construction time and knows nothing about
- * SP-Read vs SP-Execute, certificates, secrets, or env vars. Callers
- * build the TokenProvider in their own process and hand it in.
+ * SP-Read vs SP-Execute vs SP-Setup, certificates, secrets, or env vars.
+ * Callers build the TokenProvider in their own process and hand it in.
  *
- * Supports GET, DELETE, and $nextLink paging. POST is deliberately not
- * added until a real caller needs it.
+ * Supports GET, DELETE, POST, and $nextLink paging. POST was added when
+ * tenant-setup automation (WI-01) needed it.
  *
  * This file may be promoted to @kavachiq/graph-transport after WI-06
  * confirms the write-path shape. See PLATFORM_SHARED_PACKAGE_PLAN.md.
@@ -40,6 +40,13 @@ export interface ResponseHeadersSummary {
 
 export interface DeleteResult {
   status: number;
+  headers: ResponseHeadersSummary;
+}
+
+export interface PostResult<T = unknown> {
+  status: number;
+  /** Parsed JSON body; null on 204/No Content or non-JSON responses. */
+  body: T | null;
   headers: ResponseHeadersSummary;
 }
 
@@ -117,6 +124,26 @@ export class GraphTransport {
     return { status: res.status, headers: extractResponseHeaders(res) };
   }
 
+  /**
+   * POST with a JSON body. Returns status + parsed body + selected
+   * headers. Throws GraphRequestError on any non-2xx so callers can
+   * inspect err.status (e.g., 409 Conflict on idempotent create).
+   */
+  async post<T = unknown>(path: string, body: unknown): Promise<PostResult<T>> {
+    const res = await this.request("POST", path, {
+      body: JSON.stringify(body),
+      extraHeaders: { "Content-Type": "application/json" },
+    });
+    const headers = extractResponseHeaders(res);
+    if (res.status === 204) {
+      return { status: res.status, body: null, headers };
+    }
+    // Some endpoints return empty body on 201 (rare); guard against that.
+    const text = await res.text();
+    if (!text) return { status: res.status, body: null, headers };
+    return { status: res.status, body: JSON.parse(text) as T, headers };
+  }
+
   getPaged<T>(path: string): AsyncIterable<PagedResult<T>> {
     // Preserve `this` across the async generator boundary.
     const self = this;
@@ -142,7 +169,11 @@ export class GraphTransport {
     };
   }
 
-  private async request(method: string, pathOrUrl: string): Promise<Response> {
+  private async request(
+    method: string,
+    pathOrUrl: string,
+    opts: { body?: string; extraHeaders?: Record<string, string> } = {},
+  ): Promise<Response> {
     const url = pathOrUrl.startsWith("http") ? pathOrUrl : `${this.baseUrl}${pathOrUrl}`;
     const token = await this.tokenProvider.getToken();
     const res = await fetch(url, {
@@ -150,7 +181,9 @@ export class GraphTransport {
       headers: {
         Authorization: `Bearer ${token}`,
         Accept: "application/json",
+        ...(opts.extraHeaders ?? {}),
       },
+      body: opts.body,
     });
     if (!res.ok) {
       const body = await res.text();

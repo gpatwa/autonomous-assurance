@@ -22,7 +22,17 @@ import type { TokenProvider } from "./transport.js";
 
 const GRAPH_SCOPE = "https://graph.microsoft.com/.default";
 
-export type SpKind = "read" | "execute";
+export type SpKind = "read" | "execute" | "setup";
+
+const ENV_PREFIX: Record<SpKind, string> = {
+  read: "SP_READ",
+  execute: "SP_EXECUTE",
+  // SP_SETUP carries tenant-population write perms (User.ReadWrite.All,
+  // Group.ReadWrite.All, Application.ReadWrite.All, GroupMember.ReadWrite.All).
+  // It is a separate principal from SP-Execute (narrow GroupMember.ReadWrite.All only)
+  // and from SP-Read. Kept here, NOT in @kavachiq/platform.
+  setup: "SP_SETUP",
+};
 
 export interface SpCredentials {
   kind: SpKind;
@@ -33,7 +43,7 @@ export interface SpCredentials {
 }
 
 export function loadSpCredentials(kind: SpKind): SpCredentials {
-  const prefix = kind === "read" ? "SP_READ" : "SP_EXECUTE";
+  const prefix = ENV_PREFIX[kind];
   const tenantId = requireEnv(`${prefix}_TENANT_ID`);
   const clientId = requireEnv(`${prefix}_CLIENT_ID`);
   const certificatePath = optionalEnv(`${prefix}_CERTIFICATE_PATH`);
@@ -64,12 +74,27 @@ function buildCredential(input: {
   if (clientSecret) {
     return new ClientSecretCredential(tenantId, clientId, clientSecret);
   }
-  const prefix = kind === "read" ? "SP_READ" : "SP_EXECUTE";
+  const prefix = ENV_PREFIX[kind];
   throw new ConfigError(
     `Missing credentials for SP-${kind.toUpperCase()}: set ${prefix}_CERTIFICATE_PATH ` +
       `(preferred) or ${prefix}_CLIENT_SECRET (fallback for early Phase 0).`,
     { spKind: kind },
   );
+}
+
+/**
+ * Probe-only: does the process have enough env to even ATTEMPT to load
+ * credentials for this kind? Used by setup-test-tenant to report SP
+ * presence without forcing the script to fail when one principal is
+ * missing (e.g., SP-Setup is unneeded for summary mode).
+ */
+export function hasSpCredentialsConfigured(kind: SpKind): boolean {
+  const prefix = ENV_PREFIX[kind];
+  const hasIds = !!(optionalEnv(`${prefix}_TENANT_ID`) && optionalEnv(`${prefix}_CLIENT_ID`));
+  const hasSecret = !!(
+    optionalEnv(`${prefix}_CERTIFICATE_PATH`) || optionalEnv(`${prefix}_CLIENT_SECRET`)
+  );
+  return hasIds && hasSecret;
 }
 
 export function tokenProviderFor(creds: SpCredentials): TokenProvider {
