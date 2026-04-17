@@ -61,6 +61,7 @@ import {
 const CANONICAL = {
   privilegedGroupName: "Finance-Privileged-Access",
   userMailPrefix: "kq-test",
+  caPolicyName: "Finance-MFA-Bypass",
 };
 
 type MutationId = "M1" | "M2" | "M3" | "M4";
@@ -73,6 +74,7 @@ interface Args {
   memberCount: number;
   memberStartSeq: number;
   modes: Set<MutationId>;
+  caPolicyName: string;
 }
 
 function parseArgs(argv: string[]): Args {
@@ -81,7 +83,8 @@ function parseArgs(argv: string[]): Args {
     output: "./wi05/mutation-trail.json",
     memberCount: 12,
     memberStartSeq: 5,
-    modes: new Set<MutationId>(["M1"]), // commit 1: M1 only; commits 2+3 extend
+    modes: new Set<MutationId>(["M1", "M2"]), // commits 1+2: M1 + M2; commit 3 adds M3 + M4
+    caPolicyName: CANONICAL.caPolicyName,
   };
   for (let i = 0; i < argv.length; i += 1) {
     const arg = argv[i];
@@ -94,6 +97,8 @@ function parseArgs(argv: string[]): Args {
       args.memberCount = parsePositiveInt(argv[++i], "--member-count");
     } else if (arg === "--member-start-seq") {
       args.memberStartSeq = parsePositiveInt(argv[++i], "--member-start-seq");
+    } else if (arg === "--ca-policy-name") {
+      args.caPolicyName = requireValue(argv, ++i, "--ca-policy-name");
     } else if (arg === "--mode") {
       const raw = requireValue(argv, ++i, "--mode");
       const tokens = raw.split(",").map((t) => t.trim().toUpperCase());
@@ -149,9 +154,10 @@ function usage(): string {
     "  --apply                       Perform real Graph writes. Default is dry-run.",
     "  --dry-run                     Force dry-run; wins over --apply.",
     "  --output PATH                 Write mutation-trail.json. Default: ./wi05/mutation-trail.json.",
-    "  --mode <M1|M2|M3|M4|all,...>  Which mutations to run (default: M1 — commits 2 and 3 add the rest).",
+    "  --mode <M1|M2|M3|M4|all,...>  Which mutations to run (default: M1,M2 — commit 3 adds M3 + M4).",
     "  --member-count N              M1: members to add (default: 12).",
     "  --member-start-seq N          M1: starting UPN seq (default: 5).",
+    "  --ca-policy-name NAME         M2: CA policy to edit (default: Finance-MFA-Bypass).",
     "",
     "Manual-step confirmation (CA policy in commit 2; portal steps):",
     "  --confirm-manual-step <id>    Pre-confirm the named step (repeatable).",
@@ -159,9 +165,10 @@ function usage(): string {
     "",
     "Env DRY_RUN=1 forces dry-run regardless of --apply.",
     "",
-    "Required env (commit 1):",
-    "  SP_READ_*   — discovery of privileged group + candidate users",
+    "Required env (commits 1+2):",
+    "  SP_READ_*    — discovery of privileged group, candidate users, CA policy",
     "  SP_EXECUTE_* — M1 add-member writes (so events carry initiatedBy.app)",
+    "  M2 is a portal action by the operator; no extra env required.",
     "",
   ].join("\n");
 }
@@ -299,6 +306,49 @@ async function findPrivilegedGroup(
   return res.value[0]?.id ?? null;
 }
 
+interface CaPolicyRef {
+  id: string;
+  displayName: string;
+}
+
+function buildM2Instruction(caPolicyName: string): string {
+  return [
+    "Open the Entra admin portal and edit the Conditional Access policy to produce",
+    "ONE directoryAudits event of type 'Update conditional access policy'.",
+    "",
+    "Portal path:",
+    "  https://entra.microsoft.com/",
+    "  → Identity → Protection → Conditional Access → Policies",
+    `  → click '${caPolicyName}'`,
+    "",
+    "Safe edit (no enforcement impact):",
+    "  1. Edit the policy's Description (add or remove a single space).",
+    "  2. Click 'Save'. A success toast confirms the write.",
+    "  3. Optionally revert the description in a second save (produces a 2nd event;",
+    "     still counts for WI-05 because we match on activityDisplayName).",
+    "",
+    "Do NOT toggle the enablement state or change Grant controls. Keep 'Enable policy'",
+    "at its current value (report-only is strongly preferred — see ENGINEERING_BOOTSTRAP",
+    "_DECISIONS.md §7).",
+    "",
+    "After saving, return here and confirm the prompt. The script records the step's",
+    "startedAt/confirmedAt as the M2 mutation window for WI-05 correlation.",
+  ].join("\n");
+}
+
+async function findCaPolicy(
+  graph: GraphTransport,
+  displayName: string,
+): Promise<CaPolicyRef | null> {
+  // /identity/conditionalAccess/policies supports $filter on displayName.
+  const filter = encodeURIComponent(`displayName eq '${displayName.replace(/'/g, "''")}'`);
+  const res = await graph.get<{ value: Array<{ id: string; displayName: string }> }>(
+    `/identity/conditionalAccess/policies?$filter=${filter}&$select=id,displayName&$top=1`,
+  );
+  const p = res.value[0];
+  return p ? { id: p.id, displayName: p.displayName } : null;
+}
+
 async function findCanonicalUsers(
   graph: GraphTransport,
 ): Promise<CandidateUser[]> {
@@ -328,6 +378,7 @@ async function findCanonicalUsers(
 interface ScriptState {
   privilegedGroupId: string | null;
   m1Candidates: CandidateUser[];
+  caPolicy: CaPolicyRef | null;
   attempts: MutationAttempt[];
 }
 
@@ -354,6 +405,7 @@ async function runScript(): Promise<void> {
   const state: ScriptState = {
     privilegedGroupId: null,
     m1Candidates: [],
+    caPolicy: null,
     attempts: [],
   };
 
@@ -386,6 +438,26 @@ async function runScript(): Promise<void> {
       state.privilegedGroupId = id;
       log.info("discovery: privileged group", { id });
       return { id };
+    },
+  });
+
+  runbook.add({
+    id: "discover-ca-policy",
+    label: `Find CA policy '${args.caPolicyName}' ID via SP-Read`,
+    kind: "automatic",
+    skipIf: () => (args.modes.has("M2") ? false : "M2 not requested"),
+    async run() {
+      const policy = await findCaPolicy(readGraph, args.caPolicyName);
+      if (!policy) {
+        throw new Error(
+          `Conditional Access policy '${args.caPolicyName}' not found. ` +
+            `Create it manually in the Entra admin portal (report-only mode is safe), ` +
+            `or pass a different --ca-policy-name to target an existing policy.`,
+        );
+      }
+      state.caPolicy = policy;
+      log.info("discovery: ca policy", { id: policy.id, displayName: policy.displayName });
+      return { id: policy.id, displayName: policy.displayName };
     },
   });
 
@@ -536,7 +608,76 @@ async function runScript(): Promise<void> {
     },
   });
 
+  // ── M2: approval-required portal edit (never automated — policy lockout risk) ──
+  //
+  // Pre-filled instruction captures the exact policy + click path so the
+  // operator does not have to search. The CA policy edit stays manual by
+  // design; see ENGINEERING_BOOTSTRAP_DECISIONS.md §7.
+  runbook.add({
+    id: "m2-ca-policy-edit",
+    label: `M2: edit the Conditional Access policy '${args.caPolicyName}'`,
+    kind: "approval-required",
+    skipIf: () => (args.modes.has("M2") ? false : "M2 not requested"),
+    instruction: buildM2Instruction(args.caPolicyName),
+  });
+
   const runbookResult = await runbook.execute();
+
+  // ── Synthesize the M2 MutationAttempt from the runbook step result ─────
+  //
+  // Approval-required steps do not produce their own MutationAttempt
+  // because no HTTP request fires. We record one here from the step's
+  // status so the WI-05 analyzer has a window + outcome for correlation.
+  if (args.modes.has("M2")) {
+    const m2Step = runbookResult.steps.find((s) => s.id === "m2-ca-policy-edit");
+    if (m2Step && m2Step.status !== "skipped") {
+      const outcome: MutationOutcome =
+        m2Step.status === "confirmed"
+          ? "manual-confirmed"
+          : m2Step.status === "failed"
+            ? "failed"
+            : "manual-declined";
+      const finishedAtStamp =
+        m2Step.confirmedAt ?? m2Step.finishedAt ?? nowIso();
+      state.attempts.push({
+        mutationId: "M2",
+        kind: "ca-policy-edit",
+        attemptIndex: 0,
+        requestPath: state.caPolicy
+          ? `/identity/conditionalAccess/policies/${state.caPolicy.id}`
+          : undefined,
+        startedAt,
+        finishedAt: finishedAtStamp,
+        elapsedMs: Math.max(0, new Date(finishedAtStamp).getTime() - t0),
+        httpStatus: null,
+        outcome,
+        errorMessage: m2Step.error?.message,
+        payloadSummary: {
+          caPolicyId: state.caPolicy?.id ?? null,
+          caPolicyName: state.caPolicy?.displayName ?? args.caPolicyName,
+          confirmedBy: m2Step.confirmedBy ?? null,
+          mechanism: "portal-edit-by-operator",
+        },
+      });
+    } else if (m2Step && m2Step.status === "skipped") {
+      // skipIf kept M2 out of this run, or runbook aborted earlier.
+      state.attempts.push({
+        mutationId: "M2",
+        kind: "ca-policy-edit",
+        attemptIndex: 0,
+        startedAt,
+        finishedAt: nowIso(),
+        elapsedMs: Date.now() - t0,
+        httpStatus: null,
+        outcome: "skipped",
+        errorMessage: m2Step.skipReason,
+        payloadSummary: {
+          caPolicyName: state.caPolicy?.displayName ?? args.caPolicyName,
+          mechanism: "portal-edit-by-operator",
+        },
+      });
+    }
+  }
 
   const finishedAt = nowIso();
   const elapsedMs = Date.now() - t0;
