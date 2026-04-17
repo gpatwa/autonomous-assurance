@@ -13,7 +13,8 @@
     "clean": "rm -rf packages/*/dist",
     "setup-test-tenant": "tsx scripts/setup-test-tenant.ts",
     "fetch-audit-events": "tsx scripts/fetch-audit-events.ts",
-    "test-member-removal": "tsx scripts/test-member-removal.ts"
+    "test-member-removal": "tsx scripts/test-member-removal.ts",
+    "audit-completeness-spike": "tsx scripts/run-audit-completeness-spike.ts"
   },
   "devDependencies": {
     "@types/node": "^20.12.0",

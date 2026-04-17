@@ -1,7 +1,7 @@
 # Phase 0 Bootstrap Status
 
 **Date:** April 2026
-**Status:** Workspace installable and typechecking. Three Phase 0 spike utilities are real and runnable (WI-01 setup, WI-05 audit fetch, WI-06 member removal).
+**Status:** Workspace installable and typechecking. Four Phase 0 spike utilities are real and runnable (WI-01/02/03 setup-and-verify, WI-05 audit fetch, WI-05 orchestration, WI-06 member removal).
 
 ---
 
@@ -15,13 +15,14 @@
 | Cross-package imports | `@kavachiq/schema` + `@kavachiq/platform` resolve across workspaces | Resolves via npm workspaces |
 | Root build | `npm run build` | Builds all workspace packages |
 | Root typecheck | `npm run typecheck` | Type-checks all workspaces plus `scripts/` |
-| Audit-log fetch utility | `platform/scripts/fetch-audit-events.ts` | Real SP-Read auth, real Graph calls, paged JSON output. Uses `@kavachiq/platform` for env/logger/correlation/errors. |
-| Test-tenant setup utility | `platform/scripts/setup-test-tenant.ts` | Dry-run by default (`DRY_RUN=1` override). Uses `@kavachiq/platform` for env/logger/correlation/errors/dry-run. |
-| Member-removal spike utility | `platform/scripts/test-member-removal.ts` | SP-Execute. 4 modes (`reliability` / `idempotency` / `timing` / `rate-limit`) + `all`. Dry-run default; `--apply` required for real DELETEs; `--dry-run` wins over `--apply`; `DRY_RUN=1` env forces dry-run. Structured JSON result (runMetadata, sampleCounts, latencySummary, rateLimit, attempts, observations, recommendations). |
-| Graph transport | `platform/scripts/lib/transport.ts` | `GraphTransport`: `get`, `delete`, `getPaged`. Exposes Graph `request-id` / `client-request-id` / `Retry-After` on success and on `GraphRequestError`. Takes a `TokenProvider` — no secret awareness. |
-| Graph credentials | `platform/scripts/lib/credentials.ts` | **Script-local** cert-or-secret construction. Reads env via `@kavachiq/platform/config`. Not in shared platform by design. |
+| Test-tenant setup + verification | `platform/scripts/setup-test-tenant.ts` | Two modes: `summary` (read-only snapshot + SP-Read/Execute/Setup probes) and `setup` (idempotent population via SP-Setup, dry-run default, `--apply` opts in). Handles WI-01 (population) and contributes to WI-02 / WI-03 (SP verification). Structured result includes `spVerification`, `canonicalObjects`, `discoveredObjectIds`, `manualFollowUp`, `recommendedNextCommands`. |
+| Audit-log fetch utility | `platform/scripts/fetch-audit-events.ts` | SP-Read, paged JSON output. |
+| WI-05 orchestrator | `platform/scripts/run-audit-completeness-spike.ts` | Checklist → confirmation → propagation wait → fetch → 4-class completeness analysis. Writes `raw-events.json`, `audit-completeness-matrix.json`, and `audit-completeness-summary.md` to `--output-dir`. |
+| Member-removal spike utility | `platform/scripts/test-member-removal.ts` | SP-Execute. 4 modes (`reliability` / `idempotency` / `timing` / `rate-limit`) + `all`. Dry-run default; `--apply` required for real DELETEs. |
+| Graph transport | `platform/scripts/lib/transport.ts` | `GraphTransport`: `get`, `delete`, `post`, `getPaged`. Exposes Graph `request-id` / `client-request-id` / `Retry-After`. Takes a `TokenProvider` — no secret awareness. |
+| Graph credentials | `platform/scripts/lib/credentials.ts` | **Script-local** cert-or-secret construction for SP-Read, SP-Execute, and SP-Setup. Not in shared platform by design. |
 | Docker Compose | `platform/docker-compose.yml` | Azurite configured |
-| Env example | `platform/.env.example` | SP-Read + SP-Execute placeholders, both cert path and secret fallback |
+| Env example | `platform/.env.example` | SP-Read, SP-Execute, and SP-Setup placeholders (cert + secret fallback), plus `TENANT_DOMAIN` and `TENANT_SETUP_INITIAL_PASSWORD` for user creation |
 
 ## What Is Still Placeholder
 
@@ -80,14 +81,54 @@ npm run fetch-audit-events -- \
 Requires: `SP_READ_TENANT_ID`, `SP_READ_CLIENT_ID`, and either
 `SP_READ_CERTIFICATE_PATH` (preferred) or `SP_READ_CLIENT_SECRET` (early-Phase-0 fallback).
 
-### `npm run setup-test-tenant` (WI-01)
+### `npm run setup-test-tenant` (WI-01 / WI-02 / WI-03)
+
+Two modes. Summary is read-only and always safe. Setup is idempotent;
+dry-run is the default, `--apply` opts in to writes.
 
 ```bash
-npm run setup-test-tenant                 # dry-run; reads-only, prints plan
-npm run setup-test-tenant -- --apply      # real Graph writes where automated
+# Snapshot + verify all three principals (SP-Read, SP-Execute, SP-Setup).
+npm run setup-test-tenant -- --mode summary --output ./wi01/summary.json
+
+# Compute the delta between tenant and canonical targets (no writes).
+npm run setup-test-tenant -- --mode setup --output ./wi01/plan.json
+
+# Create missing users / groups / privileged group / base members / apps.
+npm run setup-test-tenant -- --mode setup --apply --output ./wi01/applied.json
 ```
 
-Requires the same SP-Read env vars as above for the dry-run read paths.
+Summary requires only SP-Read. Setup `--apply` additionally requires:
+`SP_SETUP_*` env vars (User/Group/Application ReadWrite.All +
+GroupMember.ReadWrite.All), plus `TENANT_DOMAIN` and
+`TENANT_SETUP_INITIAL_PASSWORD`.
+
+### `npm run audit-completeness-spike` (WI-05 orchestration)
+
+End-to-end WI-05 evidence collection with a mutation checklist,
+propagation wait, fetch, analysis, and three output files (`raw-events.json`,
+`audit-completeness-matrix.json`, `audit-completeness-summary.md`).
+
+```bash
+# Full interactive flow: checklist → prompt → 15-min wait → fetch → analyze.
+npm run audit-completeness-spike -- --output-dir ./wi05
+
+# Non-interactive (skips the "have you done the mutations?" prompt).
+npm run audit-completeness-spike -- --output-dir ./wi05 --confirm-mutations
+
+# Known window; skip the wait entirely.
+npm run audit-completeness-spike -- \
+  --start 2026-04-15T12:00:00Z --end 2026-04-15T12:30:00Z \
+  --output-dir ./wi05 --confirm-mutations
+
+# Re-analyze a previously-captured raw-events.json without re-fetching.
+npm run audit-completeness-spike -- --output-dir ./wi05 --skip-fetch --confirm-mutations
+
+# Print the canonical mutation checklist and exit.
+npm run audit-completeness-spike -- --mutation-checklist
+```
+
+Requires SP-Read. Does not issue mutations — the operator runs those
+with the agent-identified SP per the printed checklist.
 
 ### `npm run test-member-removal` (WI-06)
 
@@ -134,18 +175,20 @@ enough for the WI-06 spike report to be written directly from it.
 
 ## What Still Requires Manual Setup (Phase 0)
 
-- **Entra test tenant provisioning.** Create the tenant and register SP-Read +
-  SP-Execute (WI-01/02/03). The setup script assumes the tenant exists.
-- **Bulk user, group, and application creation.** `setup-test-tenant` logs
-  existence counts and a "would create" delta; the actual POST /users,
-  POST /groups, and POST /applications calls are not yet implemented and
-  remain manual in the Entra admin portal.
+- **Entra test tenant provisioning itself.** Create the tenant and register
+  SP-Read + SP-Execute + SP-Setup (the third is new). The setup script
+  assumes the tenant and the three app registrations exist.
 - **Conditional Access policies** (`Finance-MFA-Bypass`, `Finance-Data-Restriction`)
-  — kept manual in Phase 0 because policy misconfiguration can lock the tenant.
-- **Teams + SharePoint** — create and link to the privileged group manually.
-- **Client certificates for SP-Read / SP-Execute** — generate and register
-  through the Entra admin portal or Azure CLI. Certificate path goes in
-  `.env.local`.
+  — kept manual because misconfiguration can lock the tenant.
+- **Teams team (`Finance-Team`) + SharePoint site provisioning** — linked to
+  the privileged group; still portal-driven.
+- **Admin consent** for app registrations created by `setup-test-tenant`.
+- **WI-05 canonical mutations.** `run-audit-completeness-spike` prints the
+  checklist; triggering the four mutations with the agent-identified SP
+  remains manual so the audit events carry the correct `initiatedBy.app`.
+- **Client certificates for SP-Read / SP-Execute / SP-Setup** — generate and
+  register through the Entra admin portal or Azure CLI. Certificate paths go
+  in `.env.local`.
 - **WI-06 input data** — a group with real members for reliability/timing,
   plus a separate newline-separated file of already-absent member IDs for
   idempotency and rate-limit modes. `test-member-removal.ts` does not
@@ -158,19 +201,24 @@ enough for the WI-06 spike report to be written directly from it.
 
 Aligned with `PHASE0_EXECUTION_BOARD.md`:
 
-1. **Execute WI-06.** With SP-Execute credentials loaded in `.env.local` and a
-   populated test tenant, run `test-member-removal.ts` in all four modes
-   against three group types. Collect the four structured result files and
-   write the WI-06 spike report directly from them.
-2. **WI-01 finish:** complete manual tenant population (users, groups,
-   privileged group, apps, CA policies, Teams, SharePoint). Re-run
-   `setup-test-tenant` in dry-run to confirm counts match the canonical scenario.
-3. **WI-02 / WI-03:** generate SP-Read and SP-Execute client certificates,
-   record thumbprints, store the PEMs, update `.env.local`.
-4. **WI-05:** execute the canonical scenario against the test tenant, wait
-   15 minutes, run `fetch-audit-events` into `fixtures/canonical/raw-events.json`,
-   analyze the completeness matrix.
-5. **WI-11:** derive normalized fixture JSON from the captured raw events.
+1. **Populate the test tenant end-to-end using the new automation.**
+   - Register SP-Setup (new) with User/Group/Application ReadWrite.All + GroupMember.ReadWrite.All.
+   - Fill `.env.local` with SP-Read + SP-Execute + SP-Setup creds, plus
+     `TENANT_DOMAIN` and `TENANT_SETUP_INITIAL_PASSWORD`.
+   - Run `npm run setup-test-tenant -- --mode summary` to verify all three principals.
+   - Run `npm run setup-test-tenant -- --mode setup --apply` to create the
+     50 users, 19 groups, privileged group, 4 base members, and 10 apps.
+   - Do the remaining manual items (CA policies, Teams, SharePoint, admin
+     consent) — tracked in `result.manualFollowUp`.
+2. **Execute WI-05 via `npm run audit-completeness-spike`.**
+   - Default interactive flow prints the checklist, waits 15 minutes after
+     the operator confirms mutations, fetches the window, and writes
+     `raw-events.json`, `audit-completeness-matrix.json`, and
+     `audit-completeness-summary.md`. The markdown is directly quotable
+     into the WI-05 spike report.
+3. **Execute WI-06 via `npm run test-member-removal`** across all four modes
+   and three group types to produce the member-removal spike evidence.
+4. **WI-11:** derive normalized fixture JSON from the captured raw events.
 
 ## What Should NOT Be Done Yet
 
