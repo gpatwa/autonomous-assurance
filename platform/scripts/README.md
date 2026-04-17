@@ -1,8 +1,9 @@
 # Scripts
 
-Phase 0 spike utilities. Run via `tsx` from `platform/`. All scripts now
-use `@kavachiq/platform` for env, logging, correlation, errors, and
-dry-run — no ad-hoc plumbing.
+Phase 0 spike utilities. Run via `tsx` from `platform/`. All scripts use
+`@kavachiq/platform` for env, logging, correlation, errors, and dry-run.
+Orchestration scripts use the local `scripts/lib/runbook.ts` pattern:
+**automation with explicit human approval gates** for risky steps.
 
 ## Run
 
@@ -30,6 +31,7 @@ writes event JSON to **stdout** when `--output` is omitted — pipe-safe.
 | `test-member-removal.ts` | WI-06 script | SP-Execute only; the ONLY script that issues DELETEs. Dry-run default. |
 | `lib/transport.ts` | Pure Graph transport (`GET`, `DELETE`, `POST`, `$nextLink` paging). Surfaces `request-id` / `client-request-id` / `Retry-After`. Takes a `TokenProvider` at construction. | No secrets. Ready to be promoted to `@kavachiq/graph-transport` now that multiple scripts are real consumers. |
 | `lib/credentials.ts` | SP credential bootstrap (cert or secret) for SP-Read, SP-Execute, and SP-Setup kinds. Reads env via `@kavachiq/platform/config`. | **Local by design.** Secret resolution stays at the script edge. Never moves into `@kavachiq/platform`. |
+| `lib/runbook.ts` | Human-in-the-loop orchestration helper. Three step kinds (`automatic`, `manual`, `approval-required`), `requiresApply` gate for mutating steps, TTY prompts or `--confirm-manual-step` / `--confirm-all-manual` for non-interactive. Aborts on failure or decline; records `outputsProduced`. | No secrets. Script-local — promote to `@kavachiq/platform` when a second non-script consumer appears. |
 | `tsconfig.json` | Scripts-only typecheck config | — |
 
 ## What is local vs shared
@@ -51,6 +53,39 @@ Shared (via `@kavachiq/platform`):
 - `parseDryRunFlag`, `DryRunContext` (with `DRY_RUN=1` safety override)
 - `nowIso`, `parseIso`, `isoMinus`, `MINUTE_MS` / `HOUR_MS` / `DAY_MS`
 - `newId(prefix)` for run IDs and entity IDs
+
+## Human-in-the-loop automation pattern
+
+Orchestration scripts build a **runbook** — an ordered list of steps, each
+classified as:
+
+- **automatic** — the script runs it. Has `run()`. Default: always executes.
+  Set `requiresApply: true` for mutating steps; those are skipped in dry-run.
+- **manual** — informational. Script prints the instruction and records the
+  step as skipped ("manual: operator-run outside this script"). Never blocks.
+  Becomes `confirmed` when the operator passes `--confirm-manual-step <id>`
+  or `--confirm-all-manual`.
+- **approval-required** — the script pauses for explicit confirmation before
+  proceeding. On TTY: interactive `[y/N]` prompt. Non-interactive: requires
+  `--confirm-manual-step <id>` or `--confirm-all-manual`, otherwise the
+  step fails with a clear message. Declining aborts the runbook.
+
+Abort semantics: any automatic failure or approval-required decline stops
+execution; every subsequent step lands as `skipped` with `skipReason:
+"runbook aborted"`. The final result includes `aborted`, `abortReason`,
+and the full step trail so the operator can investigate and re-run.
+
+Confirmation flags (used by every orchestration script):
+
+- `--confirm-manual-step <id>` — repeatable; pre-confirms the named step.
+- `--confirm-all-manual` — pre-confirms every manual / approval-required step.
+- Interactive TTY — prompts per approval-required step; manual steps are not
+  prompted (they are documentation-as-code).
+
+Rationale: the recommendation-first / operator-safe posture for KavachiQ
+means risky Microsoft changes (CA policies, Teams/SharePoint, admin consent,
+canonical scenario mutations) are automatable-with-approval, not silently
+automated. The runbook codifies this without becoming a workflow engine.
 
 ## Trust boundary preservation
 
@@ -106,33 +141,63 @@ Required env for `--apply`:
 
 ### What stays manual
 
-The script **does not** automate these; they are reported in
-`result.manualFollowUp` and remain operator-run in the Entra admin portal:
+These appear as `manual` runbook steps (status `skipped` unless the operator
+confirms via `--confirm-manual-step <id>` / `--confirm-all-manual`). Never
+automated, because the failure mode is either destructive (tenant lockout)
+or cross-workload with subjective choices:
 
-- Conditional Access policies (`Finance-MFA-Bypass`, `Finance-Data-Restriction`) — lockout risk.
-- Teams team (`Finance-Team`) + SharePoint site provisioning.
-- Admin consent for app registrations.
-- The WI-05 scenario trigger (12 member-add events) — that is the spike, not setup.
+- `ca-policies` — Conditional Access policies (`Finance-MFA-Bypass`, `Finance-Data-Restriction`). Lockout risk.
+- `teams-setup` — Teams team (`Finance-Team`) + link to privileged group.
+- `sharepoint-setup` — 3 SharePoint site collections with group-based permissions.
+- `admin-consent` — Application-permission consent for created app registrations.
+- `scenario-trigger` — The 12 canonical member-add events; produced by WI-05, not setup.
+
+Example with all manual items pre-confirmed (CI-friendly):
+
+```bash
+npm run setup-test-tenant -- --mode setup --apply \
+  --confirm-manual-step ca-policies \
+  --confirm-manual-step teams-setup \
+  --confirm-manual-step sharepoint-setup \
+  --confirm-manual-step admin-consent \
+  --confirm-manual-step scenario-trigger \
+  --output ./wi01/applied.json
+
+# Or the shortcut:
+npm run setup-test-tenant -- --mode setup --apply --confirm-all-manual --output ./wi01/applied.json
+```
 
 ## WI-05 orchestration (`run-audit-completeness-spike.ts`) detail
 
 Orchestrates the WI-05 evidence flow end-to-end and produces directly-usable
 spike artifacts.
 
-### Flow
+### Runbook steps
 
-1. Print the canonical mutation checklist (four change classes).
-2. Confirmation: interactive prompt, or `--confirm-mutations` to skip.
-3. Capture start timestamp.
-4. Wait `--wait-minutes` for audit propagation (default 15). Logs once per minute.
-5. Capture end timestamp (widened ±1 min).
-6. Fetch `/auditLogs/directoryAudits` for the window (SP-Read).
-7. Analyze events across 4 change classes:
-   `group-membership`, `conditional-access`, `app-role-assignment`, `sp-credential`.
-8. Write three files into `--output-dir`:
-   - `raw-events.json`
-   - `audit-completeness-matrix.json`
-   - `audit-completeness-summary.md`
+The script builds a 9-step runbook:
+
+| ID | Kind | Purpose |
+|----|------|---------|
+| `confirm-M1-group-membership` | approval-required | Operator confirms the 12-member-add mutation was executed |
+| `confirm-M2-conditional-access` | approval-required | Operator confirms the CA policy change was executed |
+| `confirm-M3-app-role-assignment` | approval-required | Operator confirms the app role change was executed |
+| `confirm-M4-sp-credential` | approval-required | Operator confirms the SP credential change was executed |
+| `capture-window-and-wait` | automatic | Captures start, waits `--wait-minutes`, captures end, widens ±1 min |
+| `fetch-audit-events` | automatic | Paged `/auditLogs/directoryAudits` fetch via SP-Read |
+| `load-cached-events` | automatic | Reads `raw-events.json` from `--output-dir` (used in `--skip-fetch`) |
+| `analyze-completeness` | automatic | 4-class analyzer |
+| `write-artifacts` | automatic | Writes matrix JSON + markdown summary |
+
+Outputs produced in `--output-dir`:
+
+- `raw-events.json`
+- `audit-completeness-matrix.json`
+- `audit-completeness-summary.md`
+- `run-result.json` — full runbook trail (steps, summary, outputs, correlation)
+
+Confirmation: interactive TTY prompt per approval-required step, or
+`--confirm-all-manual` (also aliased as `--confirm-mutations` for backward
+compatibility), or per-step `--confirm-manual-step confirm-M1-group-membership`.
 
 ### Alternative flows
 

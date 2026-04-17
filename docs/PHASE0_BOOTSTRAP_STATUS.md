@@ -21,6 +21,7 @@
 | Member-removal spike utility | `platform/scripts/test-member-removal.ts` | SP-Execute. 4 modes (`reliability` / `idempotency` / `timing` / `rate-limit`) + `all`. Dry-run default; `--apply` required for real DELETEs. |
 | Graph transport | `platform/scripts/lib/transport.ts` | `GraphTransport`: `get`, `delete`, `post`, `getPaged`. Exposes Graph `request-id` / `client-request-id` / `Retry-After`. Takes a `TokenProvider` — no secret awareness. |
 | Graph credentials | `platform/scripts/lib/credentials.ts` | **Script-local** cert-or-secret construction for SP-Read, SP-Execute, and SP-Setup. Not in shared platform by design. |
+| Runbook orchestration helper | `platform/scripts/lib/runbook.ts` | Human-in-the-loop pattern: three step kinds (`automatic`, `manual`, `approval-required`); `requiresApply` gates mutations; TTY prompts or `--confirm-manual-step` / `--confirm-all-manual` for non-interactive; abort-on-failure with structured trail. Script-local; promote when a second non-script consumer appears. |
 | Docker Compose | `platform/docker-compose.yml` | Azurite configured |
 | Env example | `platform/.env.example` | SP-Read, SP-Execute, and SP-Setup placeholders (cert + secret fallback), plus `TENANT_DOMAIN` and `TENANT_SETUP_INITIAL_PASSWORD` for user creation |
 
@@ -43,6 +44,23 @@ cp .env.example .env.local  # fill in real tenant values before the scripts
 npm run typecheck
 npm run build
 ```
+
+## Human-in-the-loop automation pattern
+
+KavachiQ's posture is recommendation-first and operator-safe. Phase 0
+orchestration scripts (`setup-test-tenant`, `run-audit-completeness-spike`)
+model this explicitly: each script builds a **runbook** of classified steps.
+Safe reads and verifications are automatic and always run. Mutating writes
+are automatic but gated by `requiresApply` — skipped unless `--apply` is
+passed. Risky tenant-sensitive actions (Conditional Access, Teams,
+SharePoint, admin consent, the WI-05 canonical mutations) are modeled as
+`manual` or `approval-required` steps with clear instructions; they are
+**not** silently automated. Operators confirm either interactively on TTY
+or non-interactively via `--confirm-manual-step <id>` / `--confirm-all-manual`.
+
+The pattern is script-local (`platform/scripts/lib/runbook.ts`); it is not
+a workflow engine and has no persistence, retries, or branching. Promotion
+to `@kavachiq/platform` waits for a second non-script consumer.
 
 ## Shared Platform Usage In Scripts
 
@@ -84,7 +102,10 @@ Requires: `SP_READ_TENANT_ID`, `SP_READ_CLIENT_ID`, and either
 ### `npm run setup-test-tenant` (WI-01 / WI-02 / WI-03)
 
 Two modes. Summary is read-only and always safe. Setup is idempotent;
-dry-run is the default, `--apply` opts in to writes.
+dry-run is the default, `--apply` opts in to writes. Five manual runbook
+steps cover CA policies / Teams / SharePoint / admin consent / scenario
+trigger — operator confirms via `--confirm-manual-step <id>` or
+`--confirm-all-manual`.
 
 ```bash
 # Snapshot + verify all three principals (SP-Read, SP-Execute, SP-Setup).
@@ -93,8 +114,15 @@ npm run setup-test-tenant -- --mode summary --output ./wi01/summary.json
 # Compute the delta between tenant and canonical targets (no writes).
 npm run setup-test-tenant -- --mode setup --output ./wi01/plan.json
 
-# Create missing users / groups / privileged group / base members / apps.
-npm run setup-test-tenant -- --mode setup --apply --output ./wi01/applied.json
+# Create missing users/groups/apps; mark all manual follow-ups as confirmed.
+npm run setup-test-tenant -- --mode setup --apply \
+  --confirm-all-manual --output ./wi01/applied.json
+
+# Or pre-confirm specific manual steps:
+npm run setup-test-tenant -- --mode setup --apply \
+  --confirm-manual-step ca-policies \
+  --confirm-manual-step admin-consent \
+  --output ./wi01/applied.json
 ```
 
 Summary requires only SP-Read. Setup `--apply` additionally requires:
@@ -102,33 +130,53 @@ Summary requires only SP-Read. Setup `--apply` additionally requires:
 GroupMember.ReadWrite.All), plus `TENANT_DOMAIN` and
 `TENANT_SETUP_INITIAL_PASSWORD`.
 
+The structured result embeds the full `runbook` trail: each step's status,
+`confirmedBy`, `skipReason`, and any error. Inspect
+`result.runbook.steps[*]` to see exactly which steps executed vs skipped vs
+were confirmed.
+
 ### `npm run audit-completeness-spike` (WI-05 orchestration)
 
-End-to-end WI-05 evidence collection with a mutation checklist,
-propagation wait, fetch, analysis, and three output files (`raw-events.json`,
-`audit-completeness-matrix.json`, `audit-completeness-summary.md`).
+Nine-step runbook. Four **approval-required** steps confirm the four
+canonical mutations were executed; the remaining five automatic steps
+capture the window, wait for propagation, fetch, analyze, and write
+artifacts. On TTY the script prompts interactively per mutation; non-TTY
+environments use `--confirm-manual-step <id>` (repeatable) or
+`--confirm-all-manual` (alias: legacy `--confirm-mutations`).
+
+Outputs written to `--output-dir`:
+
+- `raw-events.json` — paged Graph audit events
+- `audit-completeness-matrix.json` — 4-class findings
+- `audit-completeness-summary.md` — directly quotable into the WI-05 report
+- `run-result.json` — full runbook trail (correlation, step statuses, outputs)
 
 ```bash
-# Full interactive flow: checklist → prompt → 15-min wait → fetch → analyze.
+# Full interactive flow: prints checklist, prompts per mutation, 15-min wait, fetch, analyze.
 npm run audit-completeness-spike -- --output-dir ./wi05
 
-# Non-interactive (skips the "have you done the mutations?" prompt).
-npm run audit-completeness-spike -- --output-dir ./wi05 --confirm-mutations
+# Non-interactive: pre-confirm every approval-required step.
+npm run audit-completeness-spike -- --output-dir ./wi05 --confirm-all-manual
 
-# Known window; skip the wait entirely.
+# Pre-confirm specific mutations (e.g. group membership + CA only):
+npm run audit-completeness-spike -- --output-dir ./wi05 \
+  --confirm-manual-step confirm-M1-group-membership \
+  --confirm-manual-step confirm-M2-conditional-access
+
+# Known window; confirm / wait steps are auto-skipped.
 npm run audit-completeness-spike -- \
   --start 2026-04-15T12:00:00Z --end 2026-04-15T12:30:00Z \
-  --output-dir ./wi05 --confirm-mutations
+  --output-dir ./wi05
 
 # Re-analyze a previously-captured raw-events.json without re-fetching.
-npm run audit-completeness-spike -- --output-dir ./wi05 --skip-fetch --confirm-mutations
+npm run audit-completeness-spike -- --output-dir ./wi05 --skip-fetch
 
 # Print the canonical mutation checklist and exit.
 npm run audit-completeness-spike -- --mutation-checklist
 ```
 
-Requires SP-Read. Does not issue mutations — the operator runs those
-with the agent-identified SP per the printed checklist.
+Requires SP-Read. Does not issue mutations — the operator runs those with
+the agent-identified SP per the printed checklist.
 
 ### `npm run test-member-removal` (WI-06)
 
