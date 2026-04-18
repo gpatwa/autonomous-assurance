@@ -15,7 +15,8 @@
     "fetch-audit-events": "tsx scripts/fetch-audit-events.ts",
     "test-member-removal": "tsx scripts/test-member-removal.ts",
     "audit-completeness-spike": "tsx scripts/run-audit-completeness-spike.ts",
-    "trigger-canonical-mutations": "tsx scripts/trigger-canonical-mutations.ts"
+    "trigger-canonical-mutations": "tsx scripts/trigger-canonical-mutations.ts",
+    "generate-canonical-fixtures": "tsx scripts/generate-canonical-fixtures.ts"
   },
   "devDependencies": {
     "@types/node": "^20.12.0",

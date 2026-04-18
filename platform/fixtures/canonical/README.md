@@ -1,23 +1,151 @@
 # Canonical Scenario Fixtures
 
-These JSON fixture files are derived from real Microsoft audit events observed during the Phase 0 audit log spike (WI-05).
+Schema-conforming fixture files for the canonical scenario
+(*Privileged Group Membership Expansion by Agent* — see
+`docs/CANONICAL_SCENARIO_FIXTURE.md`).
 
-The **scenario definition** is fixed in `docs/CANONICAL_SCENARIO_FIXTURE.md`. These files are implementation artifacts that conform to that definition.
+These fixtures are **derived artifacts**. They are generated from real
+Microsoft Entra audit events captured during WI-05 on 2026-04-17, not
+hand-written placeholders. Regenerate with:
+
+```bash
+cd platform
+npm run generate-canonical-fixtures
+```
 
 ## Files
 
-| File | Content | Status |
-|------|---------|--------|
-| `raw-events.json` | 12 raw Entra audit events from the canonical scenario | TODO: populate from spike results |
-| `normalized-changes.json` | 12 NormalizedChange records | TODO: populate from spike results |
-| `correlated-bundle.json` | 1 CorrelatedChangeBundle | TODO: populate from spike results |
-| `incident.json` | 1 Incident (expected output) | TODO: populate from spike results |
-| `blast-radius.json` | 1 BlastRadiusResult (structural placeholder) | TODO: populate in Phase 2 |
-| `recovery-plan.json` | 1 RecoveryPlan (structural placeholder) | TODO: populate in Phase 3 |
+| File | Shape (from `@kavachiq/schema`) | Count |
+|------|--------------------------------|-------|
+| `raw-events.json` | `RawEvent[]` | 12 |
+| `normalized-changes.json` | `NormalizedChange[]` | 12 |
+| `correlated-bundle.json` | `CorrelatedChangeBundle` | 1 |
+| `incident.json` | `Incident` | 1 |
+| `blast-radius.json` | (placeholder — Phase 2) | — |
+| `recovery-plan.json` | (placeholder — Phase 3) | — |
+
+## Source evidence
+
+| Source | Path | Role |
+|--------|------|------|
+| WI-05 raw audit events | `platform/wi05/raw-events.json` | 12 `Add member to group` events filtered from 34 total — the canonical scenario trigger |
+| WI-05 completeness matrix | `platform/wi05/audit-completeness-matrix.json` | Confirmed `matchCount: 12, withOldValue: 0, withNewValue: 12, beforeStateAssessment: "absent"` for group-membership — drives the `StateSnapshot.confidence` tagging below |
+| WI-05 spike report | `docs/SPIKE_REPORT_AUDIT_LOG_COMPLETENESS.md §7` | Per-class before-state strategy |
+| Canonical scenario | `docs/CANONICAL_SCENARIO_FIXTURE.md` | Incident classification, sensitivity, scoring |
+| Generator | `platform/scripts/generate-canonical-fixtures.ts` | Single-purpose transform (not a framework) |
+
+M2 (Conditional Access), M3 (app role assignment), and M4 (SP credential)
+evidence from WI-05 is present in `platform/wi05/raw-events.json` but is
+**not** part of this canonical fixture set. The canonical scenario is
+specifically the 12-member-add trigger.
+
+## Fields directly from real audit evidence
+
+These fields trace directly to observed `wi05/raw-events.json` values:
+
+- **`tenantId`** = `3725cec5-3e2d-402c-a5a6-460c325d8f87` (test tenant)
+- **`actor`** per `initiatedBy.app`:
+  - `type: "service-principal"`
+  - `id: "bf131def-02b5-4e90-8f32-ec4b3abf96db"` (SP-Execute `servicePrincipalId`)
+  - `displayName: "SP-Execute"`
+- **`target`** per `targetResources[type=User]`:
+  - `objectType: "user"`
+  - `objectId` / `externalId` = real user ID from the event
+  - `displayName` = real `userPrincipalName` (e.g. `kq-test-05@patwainc.onmicrosoft.com`)
+- **`observedAt`** = `activityDateTime` (microsecond-precision, as emitted by Entra)
+- **`afterState.state.auditNewValues`** = each event's `modifiedProperties[*].newValue`,
+  with Entra's double-JSON-encoded scalar convention unwrapped per WI-05 §6
+- **`correlationHints.timeCluster`** = second-truncated `activityDateTime`
+- **`rawEventIds`** / `changeIds` cross-reference the files consistently
+- **`bundle.timeRange`** = observed min/max `activityDateTime` across the 12 events
+- **`rawPayload`** inside each `RawEvent` = the complete original Graph event, preserved verbatim
+
+## Fields derived from the canonical scenario definition
+
+Where the schema requires values not directly observable in audit, these
+come from `docs/CANONICAL_SCENARIO_FIXTURE.md` and are documented here so
+reviewers can see the non-audit inputs explicitly:
+
+- **`actor.agentIdentified: true`** — SP-Execute is the test-agent SP for this
+  scenario; in a production ingestion path this flag would be set by the
+  agent-identified-SP allowlist, not by the audit event itself.
+- **`incident.severity: "high"` / `incident.urgency: "immediate"`** —
+  canonical scenario §7.
+- **`incident.creationType: "immediate"` / `candidateId: null`** —
+  score-threshold-driven per canonical scenario §7 (score 95 ≥ 80 immediate
+  threshold; no candidate stage).
+- **`incident.classificationRationale.signals`** — the four weighted signals
+  from canonical scenario §7 (non-human actor +30, target sensitivity +35,
+  bulk magnitude +20, change type +10 = 95).
+- **`incident.sensitivityContext.targetSensitivity: "high"`** — canonical
+  scenario's tenant sensitivity list tags `Finance-Privileged-Access` as
+  high-sensitivity.
+- **`incident.confidence.level: "high"`** — warranted by 12 authoritative
+  audit events + agent-identified actor + high-sensitivity target.
+
+## Confidence and provenance tagging rules (drawn from WI-05 final findings)
+
+Per `docs/SPIKE_REPORT_AUDIT_LOG_COMPLETENESS.md §7` for group membership:
+
+| Where | Value | Rationale |
+|-------|-------|-----------|
+| `NormalizedChange.beforeState.confidence` | `"reconstructed"` | WI-05 observed 0/12 `oldValue` on group-membership audit events. Before-state must come from a trusted baseline snapshot. |
+| `NormalizedChange.beforeState.captureSource` | `"snapshot-diff"` | Marks that this pre-state is snapshot-derived, not audit-derived. |
+| `NormalizedChange.afterState.confidence` | `"authoritative"` | 12/12 `newValue` observed; after-state is directly from the audit event. |
+| `NormalizedChange.afterState.captureSource` | `"entra-audit"` | Direct from the audit event's `modifiedProperties[*].newValue`. |
+| `NormalizedChange.confidence.level` | `"high"` | An authoritative audit event confirms the change itself; the per-side split (auth after / reconstructed before) does not reduce top-level confidence. |
+| `NormalizedChange.confidence.reasons` | 3 entries (see file) | Explicitly records what is authoritative vs reconstructed. |
+| `NormalizedChange.confidence.missingFields` | `["authoritative-before-state"]` | Honest signal that snapshot is required for full before-state recovery. |
+
+Per-class defaults for other scenarios (not in this fixture set but
+documented so the generator can be extended consistently):
+
+| Class | `beforeState.confidence` | `afterState.confidence` | Notes |
+|-------|--------------------------|--------------------------|-------|
+| Group membership | `reconstructed` | `authoritative` | This fixture |
+| Conditional Access policy | `authoritative` | `authoritative` | WI-05 §4.2: full policy JSON in both old and new |
+| App role assignment | `reconstructed` | `authoritative` | Same shape as group membership |
+| SP credential | `authoritative` (metadata) | `authoritative` (metadata) | `secretText` always `unavailable` |
+
+## Explicit caveats
+
+1. **No Microsoft batch correlation.** WI-05 observed distinct Microsoft
+   `correlationId` per member-add (§6 of the spike report). The bundle's
+   `correlationSignals` omits `microsoft-batch-correlation`; correlation
+   is driven by `same-actor-service-principal` + `same-target-group` +
+   `time-cluster-within-3s`.
+2. **Tenant identifiers are real.** `tenantId`, user IDs, group ID, SP
+   object IDs are from the actual Phase 0 test tenant. Fixtures that need
+   sanitized identifiers should re-run the generator against a different
+   `wi05/` artifact or post-process the output.
+3. **User names are test-tenant names** (`kq-test-05` .. `kq-test-16`),
+   not the canonical scenario's product names (Alex Rivera, Jordan Lee,
+   …). The fixtures serve Phase 1 normalization tests; they represent the
+   canonical scenario's shape, not its product narrative.
+4. **Generator is single-purpose.** `scripts/generate-canonical-fixtures.ts`
+   handles this scenario only. Additional scenarios (M2 CA edit, M3/M4
+   app-role + credential) can be generated as separate one-shot scripts
+   if Phase 1 ingestion tests need them.
 
 ## Usage
 
-These fixtures are used by:
-- Unit tests (validate normalization pipeline output)
-- Integration tests (replay through full pipeline)
-- Phase 1 admin CLI (inspect fixture data)
+These fixtures are consumed by:
+
+- Phase 1 ingestion pipeline unit tests (normalize → correlate → detect)
+- Phase 1 admin CLI (`npm run cli -- inspect fixture …` — not yet built)
+- Demo paths (replay a deterministic scenario without hitting a live tenant)
+
+## Regeneration
+
+Any time `platform/wi05/raw-events.json` changes (new WI-05 run), regenerate:
+
+```bash
+cd platform
+npm run generate-canonical-fixtures
+git diff fixtures/canonical/    # review the deltas before committing
+```
+
+The generator uses a random UUID seed per run, so `raw-events[i].rawEventId`,
+`normalizedChanges[i].changeId`, `bundleId`, and `incidentId` change each
+time. If deterministic IDs are needed for test fixtures, wire a `--seed`
+flag into the generator (not implemented here).

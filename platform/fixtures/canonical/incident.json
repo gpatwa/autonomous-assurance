@@ -1,1 +1,100 @@
-[]
+{
+  "incidentId": "inc_b053d92b-923d-464d-beda-74407ecdafd2",
+  "tenantId": "3725cec5-3e2d-402c-a5a6-460c325d8f87",
+  "title": "Privileged group membership expansion by agent (Finance-Privileged-Access +12)",
+  "severity": "high",
+  "urgency": "immediate",
+  "confidence": {
+    "level": "high",
+    "reasons": [
+      "12-authoritative-audit-events-observed",
+      "agent-identified-service-principal-actor",
+      "high-sensitivity-target-group (canonical scenario)",
+      "bulk-membership-modification-magnitude-12"
+    ],
+    "missingFields": []
+  },
+  "status": "new",
+  "rootChangeIds": [
+    "chg_81478013-6cad-40b7-af39-c7c045b90cf8",
+    "chg_eb0efe07-5a8f-4922-8c1e-ca14274e829c",
+    "chg_c43fde2f-4763-4ba5-a84d-6e13d52815e9",
+    "chg_a3f3b0c8-4fcd-4579-a639-3c3edebf8ab2",
+    "chg_c840da10-20b8-467e-8ea0-96c29e2126a0",
+    "chg_5dbaed88-ec46-4845-937c-84b2bd3da96f",
+    "chg_92483fd2-f8b2-4738-9e2a-be6a5cb327af",
+    "chg_85efc29f-7520-45ce-864a-a06fab916591",
+    "chg_fa43ef22-69c6-4ba1-8cca-a8665e063567",
+    "chg_54ad2bc5-7da4-41dc-ab4b-37451c31919d",
+    "chg_eafa7b79-505f-4aef-95ee-64c82253a414",
+    "chg_f70c0a69-a6de-48ab-9c62-2a7958e2c023"
+  ],
+  "correlatedChangeIds": [
+    "chg_81478013-6cad-40b7-af39-c7c045b90cf8",
+    "chg_eb0efe07-5a8f-4922-8c1e-ca14274e829c",
+    "chg_c43fde2f-4763-4ba5-a84d-6e13d52815e9",
+    "chg_a3f3b0c8-4fcd-4579-a639-3c3edebf8ab2",
+    "chg_c840da10-20b8-467e-8ea0-96c29e2126a0",
+    "chg_5dbaed88-ec46-4845-937c-84b2bd3da96f",
+    "chg_92483fd2-f8b2-4738-9e2a-be6a5cb327af",
+    "chg_85efc29f-7520-45ce-864a-a06fab916591",
+    "chg_fa43ef22-69c6-4ba1-8cca-a8665e063567",
+    "chg_54ad2bc5-7da4-41dc-ab4b-37451c31919d",
+    "chg_eafa7b79-505f-4aef-95ee-64c82253a414",
+    "chg_f70c0a69-a6de-48ab-9c62-2a7958e2c023"
+  ],
+  "classificationRationale": {
+    "signals": [
+      {
+        "signalType": "non-human-actor",
+        "value": "service-principal",
+        "weight": 30,
+        "source": "entra-audit.initiatedBy.app"
+      },
+      {
+        "signalType": "target-sensitivity",
+        "value": "high",
+        "weight": 35,
+        "source": "canonical-scenario.sensitivity-list"
+      },
+      {
+        "signalType": "bulk-magnitude",
+        "value": 12,
+        "weight": 20,
+        "source": "derived.correlated-bundle.changeCount"
+      },
+      {
+        "signalType": "change-type",
+        "value": "memberAdded",
+        "weight": 10,
+        "source": "derived.normalized-change.changeType"
+      }
+    ],
+    "scoreAtCreation": 95,
+    "scoreAtPromotion": null,
+    "immediateCreationCriteria": [
+      "score-95-exceeds-immediate-threshold-80",
+      "non-human-actor-AND-high-sensitivity-target"
+    ],
+    "promotionEvidence": null,
+    "narrative": "A service principal ('SP-Execute', id bf131def-02b5-4e90-8f32-ec4b3abf96db) added 12 users to the high-sensitivity group 'Finance-Privileged-Access' within a 3-second window. Matches the canonical 'Privileged group membership expansion by agent' scenario. Incident created immediately per the non-human-actor × high-sensitivity-target × bulk-magnitude classification rule."
+  },
+  "sensitivityContext": {
+    "targetSensitivity": "high",
+    "actorClassification": "service-principal:test-agent",
+    "sensitivityListMatches": [
+      "Finance-Privileged-Access"
+    ]
+  },
+  "creationType": "immediate",
+  "candidateId": null,
+  "currentBlastRadiusId": null,
+  "currentPlanId": null,
+  "currentPlanVersion": null,
+  "mergedFrom": [],
+  "detectedAt": "2026-04-17T07:40:53.097706Z",
+  "createdAt": "2026-04-17T07:40:55.097Z",
+  "updatedAt": "2026-04-17T07:40:55.097Z",
+  "closedAt": null,
+  "schemaVersion": 1
+}

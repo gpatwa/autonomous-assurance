@@ -1,1 +1,44 @@
-[]
+{
+  "bundleId": "bnd_0bac5bb1-ff77-4207-9ff7-a37cbacfd629",
+  "tenantId": "3725cec5-3e2d-402c-a5a6-460c325d8f87",
+  "changeIds": [
+    "chg_81478013-6cad-40b7-af39-c7c045b90cf8",
+    "chg_eb0efe07-5a8f-4922-8c1e-ca14274e829c",
+    "chg_c43fde2f-4763-4ba5-a84d-6e13d52815e9",
+    "chg_a3f3b0c8-4fcd-4579-a639-3c3edebf8ab2",
+    "chg_c840da10-20b8-467e-8ea0-96c29e2126a0",
+    "chg_5dbaed88-ec46-4845-937c-84b2bd3da96f",
+    "chg_92483fd2-f8b2-4738-9e2a-be6a5cb327af",
+    "chg_85efc29f-7520-45ce-864a-a06fab916591",
+    "chg_fa43ef22-69c6-4ba1-8cca-a8665e063567",
+    "chg_54ad2bc5-7da4-41dc-ab4b-37451c31919d",
+    "chg_eafa7b79-505f-4aef-95ee-64c82253a414",
+    "chg_f70c0a69-a6de-48ab-9c62-2a7958e2c023"
+  ],
+  "primaryActor": {
+    "type": "service-principal",
+    "id": "bf131def-02b5-4e90-8f32-ec4b3abf96db",
+    "displayName": "SP-Execute",
+    "agentIdentified": true,
+    "sessionId": null
+  },
+  "affectedObjectIds": [
+    "45a4b187-c7c6-422a-b82b-48e199f63bb3"
+  ],
+  "changeTypes": [
+    "memberAdded"
+  ],
+  "timeRange": {
+    "start": "2026-04-17T07:40:50.1190533Z",
+    "end": "2026-04-17T07:40:53.097706Z"
+  },
+  "correlationSignals": [
+    "same-actor-service-principal",
+    "same-target-group",
+    "time-cluster-within-3s"
+  ],
+  "incidentCandidateScore": 95,
+  "status": "finalized",
+  "finalizedAt": "2026-04-17T07:40:53.097706Z",
+  "schemaVersion": 1
+}

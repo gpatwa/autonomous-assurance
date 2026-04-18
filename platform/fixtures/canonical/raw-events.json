@@ -1,1 +1,834 @@
-[]
+[
+  {
+    "rawEventId": "raw_a4b2ca5a-d8ec-4e6e-bb5f-bc7078126211",
+    "tenantId": "3725cec5-3e2d-402c-a5a6-460c325d8f87",
+    "sourceSystem": "entra-audit",
+    "rawPayload": {
+      "id": "Directory_8e8c21df-5150-4b18-8aa5-3cf0cb0c7a35_1UF40_159959089",
+      "category": "GroupManagement",
+      "correlationId": "8e8c21df-5150-4b18-8aa5-3cf0cb0c7a35",
+      "result": "success",
+      "resultReason": "",
+      "activityDisplayName": "Add member to group",
+      "activityDateTime": "2026-04-17T07:40:50.1190533Z",
+      "loggedByService": "Core Directory",
+      "operationType": "Assign",
+      "initiatedBy": {
+        "user": null,
+        "app": {
+          "appId": null,
+          "displayName": "SP-Execute",
+          "servicePrincipalId": "bf131def-02b5-4e90-8f32-ec4b3abf96db",
+          "servicePrincipalName": null
+        }
+      },
+      "targetResources": [
+        {
+          "id": "af81a798-4a5a-41ff-bd5b-6ff594d6ceef",
+          "displayName": null,
+          "type": "User",
+          "userPrincipalName": "kq-test-05@patwainc.onmicrosoft.com",
+          "groupType": null,
+          "modifiedProperties": [
+            {
+              "displayName": "Group.ObjectID",
+              "oldValue": null,
+              "newValue": "\"45a4b187-c7c6-422a-b82b-48e199f63bb3\""
+            },
+            {
+              "displayName": "Group.DisplayName",
+              "oldValue": null,
+              "newValue": "\"Finance-Privileged-Access\""
+            },
+            {
+              "displayName": "ActorId.ServicePrincipalNames",
+              "oldValue": null,
+              "newValue": "\"061aeebd-4d44-4db0-8753-6cbf8d2674a4\""
+            },
+            {
+              "displayName": "SPN",
+              "oldValue": null,
+              "newValue": "\"061aeebd-4d44-4db0-8753-6cbf8d2674a4\""
+            }
+          ]
+        },
+        {
+          "id": "45a4b187-c7c6-422a-b82b-48e199f63bb3",
+          "displayName": null,
+          "type": "Group",
+          "userPrincipalName": null,
+          "groupType": "unknownFutureValue",
+          "modifiedProperties": []
+        }
+      ],
+      "additionalDetails": [
+        {
+          "key": "User-Agent",
+          "value": "node"
+        }
+      ]
+    },
+    "ingestedAt": "2026-04-17T07:40:51.119Z",
+    "processingStatus": "normalized",
+    "normalizedChangeIds": [
+      "chg_81478013-6cad-40b7-af39-c7c045b90cf8"
+    ],
+    "schemaVersion": 1
+  },
+  {
+    "rawEventId": "raw_f321f1f2-a242-45ee-8cec-3c431365bcaf",
+    "tenantId": "3725cec5-3e2d-402c-a5a6-460c325d8f87",
+    "sourceSystem": "entra-audit",
+    "rawPayload": {
+      "id": "Directory_8feb8983-a7b7-4ec9-8a10-725547f6f522_AGO60_163730739",
+      "category": "GroupManagement",
+      "correlationId": "8feb8983-a7b7-4ec9-8a10-725547f6f522",
+      "result": "success",
+      "resultReason": "",
+      "activityDisplayName": "Add member to group",
+      "activityDateTime": "2026-04-17T07:40:50.5302996Z",
+      "loggedByService": "Core Directory",
+      "operationType": "Assign",
+      "initiatedBy": {
+        "user": null,
+        "app": {
+          "appId": null,
+          "displayName": "SP-Execute",
+          "servicePrincipalId": "bf131def-02b5-4e90-8f32-ec4b3abf96db",
+          "servicePrincipalName": null
+        }
+      },
+      "targetResources": [
+        {
+          "id": "950dc65b-53ed-4743-a3ed-844509e9c178",
+          "displayName": null,
+          "type": "User",
+          "userPrincipalName": "kq-test-06@patwainc.onmicrosoft.com",
+          "groupType": null,
+          "modifiedProperties": [
+            {
+              "displayName": "Group.ObjectID",
+              "oldValue": null,
+              "newValue": "\"45a4b187-c7c6-422a-b82b-48e199f63bb3\""
+            },
+            {
+              "displayName": "Group.DisplayName",
+              "oldValue": null,
+              "newValue": "\"Finance-Privileged-Access\""
+            },
+            {
+              "displayName": "ActorId.ServicePrincipalNames",
+              "oldValue": null,
+              "newValue": "\"061aeebd-4d44-4db0-8753-6cbf8d2674a4\""
+            },
+            {
+              "displayName": "SPN",
+              "oldValue": null,
+              "newValue": "\"061aeebd-4d44-4db0-8753-6cbf8d2674a4\""
+            }
+          ]
+        },
+        {
+          "id": "45a4b187-c7c6-422a-b82b-48e199f63bb3",
+          "displayName": null,
+          "type": "Group",
+          "userPrincipalName": null,
+          "groupType": "unknownFutureValue",
+          "modifiedProperties": []
+        }
+      ],
+      "additionalDetails": [
+        {
+          "key": "User-Agent",
+          "value": "node"
+        }
+      ]
+    },
+    "ingestedAt": "2026-04-17T07:40:51.530Z",
+    "processingStatus": "normalized",
+    "normalizedChangeIds": [
+      "chg_eb0efe07-5a8f-4922-8c1e-ca14274e829c"
+    ],
+    "schemaVersion": 1
+  },
+  {
+    "rawEventId": "raw_8b477af0-6707-4e72-93b7-72a0f73b10b7",
+    "tenantId": "3725cec5-3e2d-402c-a5a6-460c325d8f87",
+    "sourceSystem": "entra-audit",
+    "rawPayload": {
+      "id": "Directory_02e52efa-3152-4661-83a7-cbf4fce4f7cf_IED35_175932114",
+      "category": "GroupManagement",
+      "correlationId": "02e52efa-3152-4661-83a7-cbf4fce4f7cf",
+      "result": "success",
+      "resultReason": "",
+      "activityDisplayName": "Add member to group",
+      "activityDateTime": "2026-04-17T07:40:50.7823572Z",
+      "loggedByService": "Core Directory",
+      "operationType": "Assign",
+      "initiatedBy": {
+        "user": null,
+        "app": {
+          "appId": null,
+          "displayName": "SP-Execute",
+          "servicePrincipalId": "bf131def-02b5-4e90-8f32-ec4b3abf96db",
+          "servicePrincipalName": null
+        }
+      },
+      "targetResources": [
+        {
+          "id": "c821a169-d6a4-4b30-b735-d532f5ecc639",
+          "displayName": null,
+          "type": "User",
+          "userPrincipalName": "kq-test-07@patwainc.onmicrosoft.com",
+          "groupType": null,
+          "modifiedProperties": [
+            {
+              "displayName": "Group.ObjectID",
+              "oldValue": null,
+              "newValue": "\"45a4b187-c7c6-422a-b82b-48e199f63bb3\""
+            },
+            {
+              "displayName": "Group.DisplayName",
+              "oldValue": null,
+              "newValue": "\"Finance-Privileged-Access\""
+            }
+          ]
+        },
+        {
+          "id": "45a4b187-c7c6-422a-b82b-48e199f63bb3",
+          "displayName": null,
+          "type": "Group",
+          "userPrincipalName": null,
+          "groupType": "unknownFutureValue",
+          "modifiedProperties": []
+        }
+      ],
+      "additionalDetails": [
+        {
+          "key": "User-Agent",
+          "value": "node"
+        }
+      ]
+    },
+    "ingestedAt": "2026-04-17T07:40:51.782Z",
+    "processingStatus": "normalized",
+    "normalizedChangeIds": [
+      "chg_c43fde2f-4763-4ba5-a84d-6e13d52815e9"
+    ],
+    "schemaVersion": 1
+  },
+  {
+    "rawEventId": "raw_ccfb92fc-fad1-487a-b8f3-88a79b04c127",
+    "tenantId": "3725cec5-3e2d-402c-a5a6-460c325d8f87",
+    "sourceSystem": "entra-audit",
+    "rawPayload": {
+      "id": "Directory_3ca28425-5293-48e0-baf6-5aefebeb08e9_21OQH_164243728",
+      "category": "GroupManagement",
+      "correlationId": "3ca28425-5293-48e0-baf6-5aefebeb08e9",
+      "result": "success",
+      "resultReason": "",
+      "activityDisplayName": "Add member to group",
+      "activityDateTime": "2026-04-17T07:40:50.9798449Z",
+      "loggedByService": "Core Directory",
+      "operationType": "Assign",
+      "initiatedBy": {
+        "user": null,
+        "app": {
+          "appId": null,
+          "displayName": "SP-Execute",
+          "servicePrincipalId": "bf131def-02b5-4e90-8f32-ec4b3abf96db",
+          "servicePrincipalName": null
+        }
+      },
+      "targetResources": [
+        {
+          "id": "8ba18a72-ed6e-423d-8676-6d0fc79aef83",
+          "displayName": null,
+          "type": "User",
+          "userPrincipalName": "kq-test-08@patwainc.onmicrosoft.com",
+          "groupType": null,
+          "modifiedProperties": [
+            {
+              "displayName": "Group.ObjectID",
+              "oldValue": null,
+              "newValue": "\"45a4b187-c7c6-422a-b82b-48e199f63bb3\""
+            },
+            {
+              "displayName": "Group.DisplayName",
+              "oldValue": null,
+              "newValue": "\"Finance-Privileged-Access\""
+            },
+            {
+              "displayName": "ActorId.ServicePrincipalNames",
+              "oldValue": null,
+              "newValue": "\"061aeebd-4d44-4db0-8753-6cbf8d2674a4\""
+            },
+            {
+              "displayName": "SPN",
+              "oldValue": null,
+              "newValue": "\"061aeebd-4d44-4db0-8753-6cbf8d2674a4\""
+            }
+          ]
+        },
+        {
+          "id": "45a4b187-c7c6-422a-b82b-48e199f63bb3",
+          "displayName": null,
+          "type": "Group",
+          "userPrincipalName": null,
+          "groupType": "unknownFutureValue",
+          "modifiedProperties": []
+        }
+      ],
+      "additionalDetails": [
+        {
+          "key": "User-Agent",
+          "value": "node"
+        }
+      ]
+    },
+    "ingestedAt": "2026-04-17T07:40:51.979Z",
+    "processingStatus": "normalized",
+    "normalizedChangeIds": [
+      "chg_a3f3b0c8-4fcd-4579-a639-3c3edebf8ab2"
+    ],
+    "schemaVersion": 1
+  },
+  {
+    "rawEventId": "raw_ec6aa532-9850-4240-9575-30c17c36ea26",
+    "tenantId": "3725cec5-3e2d-402c-a5a6-460c325d8f87",
+    "sourceSystem": "entra-audit",
+    "rawPayload": {
+      "id": "Directory_05f7fe47-f6b9-4c22-86ac-078985865c58_DRJHY_79273793",
+      "category": "GroupManagement",
+      "correlationId": "05f7fe47-f6b9-4c22-86ac-078985865c58",
+      "result": "success",
+      "resultReason": "",
+      "activityDisplayName": "Add member to group",
+      "activityDateTime": "2026-04-17T07:40:51.1971697Z",
+      "loggedByService": "Core Directory",
+      "operationType": "Assign",
+      "initiatedBy": {
+        "user": null,
+        "app": {
+          "appId": null,
+          "displayName": "SP-Execute",
+          "servicePrincipalId": "bf131def-02b5-4e90-8f32-ec4b3abf96db",
+          "servicePrincipalName": null
+        }
+      },
+      "targetResources": [
+        {
+          "id": "12665d8d-26c8-4e00-ad84-6fc0717bb023",
+          "displayName": null,
+          "type": "User",
+          "userPrincipalName": "kq-test-09@patwainc.onmicrosoft.com",
+          "groupType": null,
+          "modifiedProperties": [
+            {
+              "displayName": "Group.ObjectID",
+              "oldValue": null,
+              "newValue": "\"45a4b187-c7c6-422a-b82b-48e199f63bb3\""
+            },
+            {
+              "displayName": "Group.DisplayName",
+              "oldValue": null,
+              "newValue": "\"Finance-Privileged-Access\""
+            }
+          ]
+        },
+        {
+          "id": "45a4b187-c7c6-422a-b82b-48e199f63bb3",
+          "displayName": null,
+          "type": "Group",
+          "userPrincipalName": null,
+          "groupType": "unknownFutureValue",
+          "modifiedProperties": []
+        }
+      ],
+      "additionalDetails": [
+        {
+          "key": "User-Agent",
+          "value": "node"
+        }
+      ]
+    },
+    "ingestedAt": "2026-04-17T07:40:52.197Z",
+    "processingStatus": "normalized",
+    "normalizedChangeIds": [
+      "chg_c840da10-20b8-467e-8ea0-96c29e2126a0"
+    ],
+    "schemaVersion": 1
+  },
+  {
+    "rawEventId": "raw_5494317e-5273-434f-b402-143ce293a3e6",
+    "tenantId": "3725cec5-3e2d-402c-a5a6-460c325d8f87",
+    "sourceSystem": "entra-audit",
+    "rawPayload": {
+      "id": "Directory_670fcbbc-2a00-4b93-8109-f1d75a6f62d1_ASP2T_110438731",
+      "category": "GroupManagement",
+      "correlationId": "670fcbbc-2a00-4b93-8109-f1d75a6f62d1",
+      "result": "success",
+      "resultReason": "",
+      "activityDisplayName": "Add member to group",
+      "activityDateTime": "2026-04-17T07:40:51.4766911Z",
+      "loggedByService": "Core Directory",
+      "operationType": "Assign",
+      "initiatedBy": {
+        "user": null,
+        "app": {
+          "appId": null,
+          "displayName": "SP-Execute",
+          "servicePrincipalId": "bf131def-02b5-4e90-8f32-ec4b3abf96db",
+          "servicePrincipalName": null
+        }
+      },
+      "targetResources": [
+        {
+          "id": "89740858-8567-43a3-948d-d94a73c9c1e4",
+          "displayName": null,
+          "type": "User",
+          "userPrincipalName": "kq-test-10@patwainc.onmicrosoft.com",
+          "groupType": null,
+          "modifiedProperties": [
+            {
+              "displayName": "Group.ObjectID",
+              "oldValue": null,
+              "newValue": "\"45a4b187-c7c6-422a-b82b-48e199f63bb3\""
+            },
+            {
+              "displayName": "Group.DisplayName",
+              "oldValue": null,
+              "newValue": "\"Finance-Privileged-Access\""
+            }
+          ]
+        },
+        {
+          "id": "45a4b187-c7c6-422a-b82b-48e199f63bb3",
+          "displayName": null,
+          "type": "Group",
+          "userPrincipalName": null,
+          "groupType": "unknownFutureValue",
+          "modifiedProperties": []
+        }
+      ],
+      "additionalDetails": [
+        {
+          "key": "User-Agent",
+          "value": "node"
+        }
+      ]
+    },
+    "ingestedAt": "2026-04-17T07:40:52.476Z",
+    "processingStatus": "normalized",
+    "normalizedChangeIds": [
+      "chg_5dbaed88-ec46-4845-937c-84b2bd3da96f"
+    ],
+    "schemaVersion": 1
+  },
+  {
+    "rawEventId": "raw_25c4b238-18c3-4c32-bdaf-dbdd9aaaa7bf",
+    "tenantId": "3725cec5-3e2d-402c-a5a6-460c325d8f87",
+    "sourceSystem": "entra-audit",
+    "rawPayload": {
+      "id": "Directory_a14006bf-513a-47b7-b80f-ad7826734d93_KGCSU_111704082",
+      "category": "GroupManagement",
+      "correlationId": "a14006bf-513a-47b7-b80f-ad7826734d93",
+      "result": "success",
+      "resultReason": "",
+      "activityDisplayName": "Add member to group",
+      "activityDateTime": "2026-04-17T07:40:51.6732031Z",
+      "loggedByService": "Core Directory",
+      "operationType": "Assign",
+      "initiatedBy": {
+        "user": null,
+        "app": {
+          "appId": null,
+          "displayName": "SP-Execute",
+          "servicePrincipalId": "bf131def-02b5-4e90-8f32-ec4b3abf96db",
+          "servicePrincipalName": null
+        }
+      },
+      "targetResources": [
+        {
+          "id": "ede86996-7342-43a2-a0d0-48d0c7180374",
+          "displayName": null,
+          "type": "User",
+          "userPrincipalName": "kq-test-11@patwainc.onmicrosoft.com",
+          "groupType": null,
+          "modifiedProperties": [
+            {
+              "displayName": "Group.ObjectID",
+              "oldValue": null,
+              "newValue": "\"45a4b187-c7c6-422a-b82b-48e199f63bb3\""
+            },
+            {
+              "displayName": "Group.DisplayName",
+              "oldValue": null,
+              "newValue": "\"Finance-Privileged-Access\""
+            },
+            {
+              "displayName": "ActorId.ServicePrincipalNames",
+              "oldValue": null,
+              "newValue": "\"061aeebd-4d44-4db0-8753-6cbf8d2674a4\""
+            },
+            {
+              "displayName": "SPN",
+              "oldValue": null,
+              "newValue": "\"061aeebd-4d44-4db0-8753-6cbf8d2674a4\""
+            }
+          ]
+        },
+        {
+          "id": "45a4b187-c7c6-422a-b82b-48e199f63bb3",
+          "displayName": null,
+          "type": "Group",
+          "userPrincipalName": null,
+          "groupType": "unknownFutureValue",
+          "modifiedProperties": []
+        }
+      ],
+      "additionalDetails": [
+        {
+          "key": "User-Agent",
+          "value": "node"
+        }
+      ]
+    },
+    "ingestedAt": "2026-04-17T07:40:52.673Z",
+    "processingStatus": "normalized",
+    "normalizedChangeIds": [
+      "chg_92483fd2-f8b2-4738-9e2a-be6a5cb327af"
+    ],
+    "schemaVersion": 1
+  },
+  {
+    "rawEventId": "raw_c14f045f-fab3-4e0c-8ab5-f304cdf892a4",
+    "tenantId": "3725cec5-3e2d-402c-a5a6-460c325d8f87",
+    "sourceSystem": "entra-audit",
+    "rawPayload": {
+      "id": "Directory_606b2985-3ca3-451f-9866-1b43a54af7ab_EK3BE_147102182",
+      "category": "GroupManagement",
+      "correlationId": "606b2985-3ca3-451f-9866-1b43a54af7ab",
+      "result": "success",
+      "resultReason": "",
+      "activityDisplayName": "Add member to group",
+      "activityDateTime": "2026-04-17T07:40:51.8273043Z",
+      "loggedByService": "Core Directory",
+      "operationType": "Assign",
+      "initiatedBy": {
+        "user": null,
+        "app": {
+          "appId": null,
+          "displayName": "SP-Execute",
+          "servicePrincipalId": "bf131def-02b5-4e90-8f32-ec4b3abf96db",
+          "servicePrincipalName": null
+        }
+      },
+      "targetResources": [
+        {
+          "id": "8b995ad6-5d29-408e-9c3d-95046c0f71d4",
+          "displayName": null,
+          "type": "User",
+          "userPrincipalName": "kq-test-12@patwainc.onmicrosoft.com",
+          "groupType": null,
+          "modifiedProperties": [
+            {
+              "displayName": "Group.ObjectID",
+              "oldValue": null,
+              "newValue": "\"45a4b187-c7c6-422a-b82b-48e199f63bb3\""
+            },
+            {
+              "displayName": "Group.DisplayName",
+              "oldValue": null,
+              "newValue": "\"Finance-Privileged-Access\""
+            }
+          ]
+        },
+        {
+          "id": "45a4b187-c7c6-422a-b82b-48e199f63bb3",
+          "displayName": null,
+          "type": "Group",
+          "userPrincipalName": null,
+          "groupType": "unknownFutureValue",
+          "modifiedProperties": []
+        }
+      ],
+      "additionalDetails": [
+        {
+          "key": "User-Agent",
+          "value": "node"
+        }
+      ]
+    },
+    "ingestedAt": "2026-04-17T07:40:52.827Z",
+    "processingStatus": "normalized",
+    "normalizedChangeIds": [
+      "chg_85efc29f-7520-45ce-864a-a06fab916591"
+    ],
+    "schemaVersion": 1
+  },
+  {
+    "rawEventId": "raw_48a42af7-d6f2-4b4d-b3e8-afa734feb40a",
+    "tenantId": "3725cec5-3e2d-402c-a5a6-460c325d8f87",
+    "sourceSystem": "entra-audit",
+    "rawPayload": {
+      "id": "Directory_243b0d1b-4f68-4c38-8c3b-0219730436dd_AO0SV_205861648",
+      "category": "GroupManagement",
+      "correlationId": "243b0d1b-4f68-4c38-8c3b-0219730436dd",
+      "result": "success",
+      "resultReason": "",
+      "activityDisplayName": "Add member to group",
+      "activityDateTime": "2026-04-17T07:40:52.188394Z",
+      "loggedByService": "Core Directory",
+      "operationType": "Assign",
+      "initiatedBy": {
+        "user": null,
+        "app": {
+          "appId": null,
+          "displayName": "SP-Execute",
+          "servicePrincipalId": "bf131def-02b5-4e90-8f32-ec4b3abf96db",
+          "servicePrincipalName": null
+        }
+      },
+      "targetResources": [
+        {
+          "id": "58df6b76-9937-4ad0-8290-41b40fe9273f",
+          "displayName": null,
+          "type": "User",
+          "userPrincipalName": "kq-test-13@patwainc.onmicrosoft.com",
+          "groupType": null,
+          "modifiedProperties": [
+            {
+              "displayName": "Group.ObjectID",
+              "oldValue": null,
+              "newValue": "\"45a4b187-c7c6-422a-b82b-48e199f63bb3\""
+            },
+            {
+              "displayName": "Group.DisplayName",
+              "oldValue": null,
+              "newValue": "\"Finance-Privileged-Access\""
+            }
+          ]
+        },
+        {
+          "id": "45a4b187-c7c6-422a-b82b-48e199f63bb3",
+          "displayName": null,
+          "type": "Group",
+          "userPrincipalName": null,
+          "groupType": "unknownFutureValue",
+          "modifiedProperties": []
+        }
+      ],
+      "additionalDetails": [
+        {
+          "key": "User-Agent",
+          "value": "node"
+        }
+      ]
+    },
+    "ingestedAt": "2026-04-17T07:40:53.188Z",
+    "processingStatus": "normalized",
+    "normalizedChangeIds": [
+      "chg_fa43ef22-69c6-4ba1-8cca-a8665e063567"
+    ],
+    "schemaVersion": 1
+  },
+  {
+    "rawEventId": "raw_aac5e7e8-dcb8-43de-91bd-18706ea21873",
+    "tenantId": "3725cec5-3e2d-402c-a5a6-460c325d8f87",
+    "sourceSystem": "entra-audit",
+    "rawPayload": {
+      "id": "Directory_8037f5f6-f1f8-4d5c-8dd7-cc5e109c2d53_87YAL_118765008",
+      "category": "GroupManagement",
+      "correlationId": "8037f5f6-f1f8-4d5c-8dd7-cc5e109c2d53",
+      "result": "success",
+      "resultReason": "",
+      "activityDisplayName": "Add member to group",
+      "activityDateTime": "2026-04-17T07:40:52.599656Z",
+      "loggedByService": "Core Directory",
+      "operationType": "Assign",
+      "initiatedBy": {
+        "user": null,
+        "app": {
+          "appId": null,
+          "displayName": "SP-Execute",
+          "servicePrincipalId": "bf131def-02b5-4e90-8f32-ec4b3abf96db",
+          "servicePrincipalName": null
+        }
+      },
+      "targetResources": [
+        {
+          "id": "ad02e062-808f-465f-9e96-357b525605f9",
+          "displayName": null,
+          "type": "User",
+          "userPrincipalName": "kq-test-14@patwainc.onmicrosoft.com",
+          "groupType": null,
+          "modifiedProperties": [
+            {
+              "displayName": "Group.ObjectID",
+              "oldValue": null,
+              "newValue": "\"45a4b187-c7c6-422a-b82b-48e199f63bb3\""
+            },
+            {
+              "displayName": "Group.DisplayName",
+              "oldValue": null,
+              "newValue": "\"Finance-Privileged-Access\""
+            }
+          ]
+        },
+        {
+          "id": "45a4b187-c7c6-422a-b82b-48e199f63bb3",
+          "displayName": null,
+          "type": "Group",
+          "userPrincipalName": null,
+          "groupType": "unknownFutureValue",
+          "modifiedProperties": []
+        }
+      ],
+      "additionalDetails": [
+        {
+          "key": "User-Agent",
+          "value": "node"
+        }
+      ]
+    },
+    "ingestedAt": "2026-04-17T07:40:53.599Z",
+    "processingStatus": "normalized",
+    "normalizedChangeIds": [
+      "chg_54ad2bc5-7da4-41dc-ab4b-37451c31919d"
+    ],
+    "schemaVersion": 1
+  },
+  {
+    "rawEventId": "raw_153b533f-aee4-49b3-aaab-e0d95bf7be81",
+    "tenantId": "3725cec5-3e2d-402c-a5a6-460c325d8f87",
+    "sourceSystem": "entra-audit",
+    "rawPayload": {
+      "id": "Directory_2a39910f-b49b-4369-9b49-7d33107070c7_ZH5EF_118768784",
+      "category": "GroupManagement",
+      "correlationId": "2a39910f-b49b-4369-9b49-7d33107070c7",
+      "result": "success",
+      "resultReason": "",
+      "activityDisplayName": "Add member to group",
+      "activityDateTime": "2026-04-17T07:40:52.843621Z",
+      "loggedByService": "Core Directory",
+      "operationType": "Assign",
+      "initiatedBy": {
+        "user": null,
+        "app": {
+          "appId": null,
+          "displayName": "SP-Execute",
+          "servicePrincipalId": "bf131def-02b5-4e90-8f32-ec4b3abf96db",
+          "servicePrincipalName": null
+        }
+      },
+      "targetResources": [
+        {
+          "id": "53e906fc-1563-4ff0-a215-866458b6317e",
+          "displayName": null,
+          "type": "User",
+          "userPrincipalName": "kq-test-15@patwainc.onmicrosoft.com",
+          "groupType": null,
+          "modifiedProperties": [
+            {
+              "displayName": "Group.ObjectID",
+              "oldValue": null,
+              "newValue": "\"45a4b187-c7c6-422a-b82b-48e199f63bb3\""
+            },
+            {
+              "displayName": "Group.DisplayName",
+              "oldValue": null,
+              "newValue": "\"Finance-Privileged-Access\""
+            }
+          ]
+        },
+        {
+          "id": "45a4b187-c7c6-422a-b82b-48e199f63bb3",
+          "displayName": null,
+          "type": "Group",
+          "userPrincipalName": null,
+          "groupType": "unknownFutureValue",
+          "modifiedProperties": []
+        }
+      ],
+      "additionalDetails": [
+        {
+          "key": "User-Agent",
+          "value": "node"
+        }
+      ]
+    },
+    "ingestedAt": "2026-04-17T07:40:53.843Z",
+    "processingStatus": "normalized",
+    "normalizedChangeIds": [
+      "chg_eafa7b79-505f-4aef-95ee-64c82253a414"
+    ],
+    "schemaVersion": 1
+  },
+  {
+    "rawEventId": "raw_544f60db-1d24-457f-bf5a-59fac020b7ef",
+    "tenantId": "3725cec5-3e2d-402c-a5a6-460c325d8f87",
+    "sourceSystem": "entra-audit",
+    "rawPayload": {
+      "id": "Directory_0ada06dd-0623-418c-86e0-6dab2db29752_E5NZY_110641781",
+      "category": "GroupManagement",
+      "correlationId": "0ada06dd-0623-418c-86e0-6dab2db29752",
+      "result": "success",
+      "resultReason": "",
+      "activityDisplayName": "Add member to group",
+      "activityDateTime": "2026-04-17T07:40:53.097706Z",
+      "loggedByService": "Core Directory",
+      "operationType": "Assign",
+      "initiatedBy": {
+        "user": null,
+        "app": {
+          "appId": null,
+          "displayName": "SP-Execute",
+          "servicePrincipalId": "bf131def-02b5-4e90-8f32-ec4b3abf96db",
+          "servicePrincipalName": null
+        }
+      },
+      "targetResources": [
+        {
+          "id": "b2776df1-ba95-4527-bd6a-76b92d900523",
+          "displayName": null,
+          "type": "User",
+          "userPrincipalName": "kq-test-16@patwainc.onmicrosoft.com",
+          "groupType": null,
+          "modifiedProperties": [
+            {
+              "displayName": "Group.ObjectID",
+              "oldValue": null,
+              "newValue": "\"45a4b187-c7c6-422a-b82b-48e199f63bb3\""
+            },
+            {
+              "displayName": "Group.DisplayName",
+              "oldValue": null,
+              "newValue": "\"Finance-Privileged-Access\""
+            }
+          ]
+        },
+        {
+          "id": "45a4b187-c7c6-422a-b82b-48e199f63bb3",
+          "displayName": null,
+          "type": "Group",
+          "userPrincipalName": null,
+          "groupType": "unknownFutureValue",
+          "modifiedProperties": []
+        }
+      ],
+      "additionalDetails": [
+        {
+          "key": "User-Agent",
+          "value": "node"
+        }
+      ]
+    },
+    "ingestedAt": "2026-04-17T07:40:54.097Z",
+    "processingStatus": "normalized",
+    "normalizedChangeIds": [
+      "chg_f70c0a69-a6de-48ab-9c62-2a7958e2c023"
+    ],
+    "schemaVersion": 1
+  }
+]

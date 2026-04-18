@@ -1,1 +1,922 @@
-[]
+[
+  {
+    "changeId": "chg_81478013-6cad-40b7-af39-c7c045b90cf8",
+    "tenantId": "3725cec5-3e2d-402c-a5a6-460c325d8f87",
+    "source": {
+      "primarySource": "entra-audit",
+      "corroboratingSources": [],
+      "conflictingSources": [],
+      "rawEventIds": [
+        "raw_a4b2ca5a-d8ec-4e6e-bb5f-bc7078126211"
+      ]
+    },
+    "actor": {
+      "type": "service-principal",
+      "id": "bf131def-02b5-4e90-8f32-ec4b3abf96db",
+      "displayName": "SP-Execute",
+      "agentIdentified": true,
+      "sessionId": null
+    },
+    "target": {
+      "objectType": "user",
+      "objectId": "af81a798-4a5a-41ff-bd5b-6ff594d6ceef",
+      "externalId": "af81a798-4a5a-41ff-bd5b-6ff594d6ceef",
+      "displayName": "kq-test-05@patwainc.onmicrosoft.com"
+    },
+    "changeType": "memberAdded",
+    "beforeState": {
+      "state": {
+        "groupId": "45a4b187-c7c6-422a-b82b-48e199f63bb3",
+        "groupDisplayName": "Finance-Privileged-Access",
+        "userId": "af81a798-4a5a-41ff-bd5b-6ff594d6ceef",
+        "isMember": false
+      },
+      "capturedAt": "2026-04-17T07:40:50.1190533Z",
+      "captureSource": "snapshot-diff",
+      "confidence": "reconstructed",
+      "stateHash": "02aeb8dbc23699553f499f25d996e6f8a6b7edc9d8ccb4922f85f0a394164428"
+    },
+    "afterState": {
+      "state": {
+        "groupId": "45a4b187-c7c6-422a-b82b-48e199f63bb3",
+        "groupDisplayName": "Finance-Privileged-Access",
+        "userId": "af81a798-4a5a-41ff-bd5b-6ff594d6ceef",
+        "userPrincipalName": "kq-test-05@patwainc.onmicrosoft.com",
+        "isMember": true,
+        "auditNewValues": {
+          "Group.ObjectID": "45a4b187-c7c6-422a-b82b-48e199f63bb3",
+          "Group.DisplayName": "Finance-Privileged-Access",
+          "ActorId.ServicePrincipalNames": "061aeebd-4d44-4db0-8753-6cbf8d2674a4",
+          "SPN": "061aeebd-4d44-4db0-8753-6cbf8d2674a4"
+        }
+      },
+      "capturedAt": "2026-04-17T07:40:50.1190533Z",
+      "captureSource": "entra-audit",
+      "confidence": "authoritative",
+      "stateHash": "540d4a6ae069f28c8121e5c92e9ddeb7b4b074bd2a626625a085de21a19d6273"
+    },
+    "confidence": {
+      "level": "high",
+      "reasons": [
+        "authoritative-audit-event-observed",
+        "authoritative-after-state-from-audit-newValue",
+        "reconstructed-before-state-from-snapshot (WI-05 finding: audit has no oldValue for group-membership)"
+      ],
+      "missingFields": [
+        "authoritative-before-state"
+      ]
+    },
+    "correlationHints": {
+      "actorSessionId": null,
+      "operationBatchId": null,
+      "timeCluster": "2026-04-17T07:40:50Z"
+    },
+    "selfAction": false,
+    "observedAt": "2026-04-17T07:40:50.1190533Z",
+    "ingestedAt": "2026-04-17T07:40:51.119Z",
+    "bundleId": "bnd_0bac5bb1-ff77-4207-9ff7-a37cbacfd629",
+    "schemaVersion": 1
+  },
+  {
+    "changeId": "chg_eb0efe07-5a8f-4922-8c1e-ca14274e829c",
+    "tenantId": "3725cec5-3e2d-402c-a5a6-460c325d8f87",
+    "source": {
+      "primarySource": "entra-audit",
+      "corroboratingSources": [],
+      "conflictingSources": [],
+      "rawEventIds": [
+        "raw_f321f1f2-a242-45ee-8cec-3c431365bcaf"
+      ]
+    },
+    "actor": {
+      "type": "service-principal",
+      "id": "bf131def-02b5-4e90-8f32-ec4b3abf96db",
+      "displayName": "SP-Execute",
+      "agentIdentified": true,
+      "sessionId": null
+    },
+    "target": {
+      "objectType": "user",
+      "objectId": "950dc65b-53ed-4743-a3ed-844509e9c178",
+      "externalId": "950dc65b-53ed-4743-a3ed-844509e9c178",
+      "displayName": "kq-test-06@patwainc.onmicrosoft.com"
+    },
+    "changeType": "memberAdded",
+    "beforeState": {
+      "state": {
+        "groupId": "45a4b187-c7c6-422a-b82b-48e199f63bb3",
+        "groupDisplayName": "Finance-Privileged-Access",
+        "userId": "950dc65b-53ed-4743-a3ed-844509e9c178",
+        "isMember": false
+      },
+      "capturedAt": "2026-04-17T07:40:50.5302996Z",
+      "captureSource": "snapshot-diff",
+      "confidence": "reconstructed",
+      "stateHash": "6564cb8eecddd73abe4b5bc5e24f289ae4d13b343db30d2bb5178d5cc1bb480f"
+    },
+    "afterState": {
+      "state": {
+        "groupId": "45a4b187-c7c6-422a-b82b-48e199f63bb3",
+        "groupDisplayName": "Finance-Privileged-Access",
+        "userId": "950dc65b-53ed-4743-a3ed-844509e9c178",
+        "userPrincipalName": "kq-test-06@patwainc.onmicrosoft.com",
+        "isMember": true,
+        "auditNewValues": {
+          "Group.ObjectID": "45a4b187-c7c6-422a-b82b-48e199f63bb3",
+          "Group.DisplayName": "Finance-Privileged-Access",
+          "ActorId.ServicePrincipalNames": "061aeebd-4d44-4db0-8753-6cbf8d2674a4",
+          "SPN": "061aeebd-4d44-4db0-8753-6cbf8d2674a4"
+        }
+      },
+      "capturedAt": "2026-04-17T07:40:50.5302996Z",
+      "captureSource": "entra-audit",
+      "confidence": "authoritative",
+      "stateHash": "c6f683ea06e2b42930cfbd7db2422e0a3bfa5c78c57c120bb780c334ecb582f1"
+    },
+    "confidence": {
+      "level": "high",
+      "reasons": [
+        "authoritative-audit-event-observed",
+        "authoritative-after-state-from-audit-newValue",
+        "reconstructed-before-state-from-snapshot (WI-05 finding: audit has no oldValue for group-membership)"
+      ],
+      "missingFields": [
+        "authoritative-before-state"
+      ]
+    },
+    "correlationHints": {
+      "actorSessionId": null,
+      "operationBatchId": null,
+      "timeCluster": "2026-04-17T07:40:50Z"
+    },
+    "selfAction": false,
+    "observedAt": "2026-04-17T07:40:50.5302996Z",
+    "ingestedAt": "2026-04-17T07:40:51.530Z",
+    "bundleId": "bnd_0bac5bb1-ff77-4207-9ff7-a37cbacfd629",
+    "schemaVersion": 1
+  },
+  {
+    "changeId": "chg_c43fde2f-4763-4ba5-a84d-6e13d52815e9",
+    "tenantId": "3725cec5-3e2d-402c-a5a6-460c325d8f87",
+    "source": {
+      "primarySource": "entra-audit",
+      "corroboratingSources": [],
+      "conflictingSources": [],
+      "rawEventIds": [
+        "raw_8b477af0-6707-4e72-93b7-72a0f73b10b7"
+      ]
+    },
+    "actor": {
+      "type": "service-principal",
+      "id": "bf131def-02b5-4e90-8f32-ec4b3abf96db",
+      "displayName": "SP-Execute",
+      "agentIdentified": true,
+      "sessionId": null
+    },
+    "target": {
+      "objectType": "user",
+      "objectId": "c821a169-d6a4-4b30-b735-d532f5ecc639",
+      "externalId": "c821a169-d6a4-4b30-b735-d532f5ecc639",
+      "displayName": "kq-test-07@patwainc.onmicrosoft.com"
+    },
+    "changeType": "memberAdded",
+    "beforeState": {
+      "state": {
+        "groupId": "45a4b187-c7c6-422a-b82b-48e199f63bb3",
+        "groupDisplayName": "Finance-Privileged-Access",
+        "userId": "c821a169-d6a4-4b30-b735-d532f5ecc639",
+        "isMember": false
+      },
+      "capturedAt": "2026-04-17T07:40:50.7823572Z",
+      "captureSource": "snapshot-diff",
+      "confidence": "reconstructed",
+      "stateHash": "6dfde77e35ad3c4ad2152d57a15b0999e8e2d1ef91dceeccc103cafb6e3bf722"
+    },
+    "afterState": {
+      "state": {
+        "groupId": "45a4b187-c7c6-422a-b82b-48e199f63bb3",
+        "groupDisplayName": "Finance-Privileged-Access",
+        "userId": "c821a169-d6a4-4b30-b735-d532f5ecc639",
+        "userPrincipalName": "kq-test-07@patwainc.onmicrosoft.com",
+        "isMember": true,
+        "auditNewValues": {
+          "Group.ObjectID": "45a4b187-c7c6-422a-b82b-48e199f63bb3",
+          "Group.DisplayName": "Finance-Privileged-Access"
+        }
+      },
+      "capturedAt": "2026-04-17T07:40:50.7823572Z",
+      "captureSource": "entra-audit",
+      "confidence": "authoritative",
+      "stateHash": "353697453cd15be89a4bda77750f5231239a165051237863b2de822873add9a0"
+    },
+    "confidence": {
+      "level": "high",
+      "reasons": [
+        "authoritative-audit-event-observed",
+        "authoritative-after-state-from-audit-newValue",
+        "reconstructed-before-state-from-snapshot (WI-05 finding: audit has no oldValue for group-membership)"
+      ],
+      "missingFields": [
+        "authoritative-before-state"
+      ]
+    },
+    "correlationHints": {
+      "actorSessionId": null,
+      "operationBatchId": null,
+      "timeCluster": "2026-04-17T07:40:50Z"
+    },
+    "selfAction": false,
+    "observedAt": "2026-04-17T07:40:50.7823572Z",
+    "ingestedAt": "2026-04-17T07:40:51.782Z",
+    "bundleId": "bnd_0bac5bb1-ff77-4207-9ff7-a37cbacfd629",
+    "schemaVersion": 1
+  },
+  {
+    "changeId": "chg_a3f3b0c8-4fcd-4579-a639-3c3edebf8ab2",
+    "tenantId": "3725cec5-3e2d-402c-a5a6-460c325d8f87",
+    "source": {
+      "primarySource": "entra-audit",
+      "corroboratingSources": [],
+      "conflictingSources": [],
+      "rawEventIds": [
+        "raw_ccfb92fc-fad1-487a-b8f3-88a79b04c127"
+      ]
+    },
+    "actor": {
+      "type": "service-principal",
+      "id": "bf131def-02b5-4e90-8f32-ec4b3abf96db",
+      "displayName": "SP-Execute",
+      "agentIdentified": true,
+      "sessionId": null
+    },
+    "target": {
+      "objectType": "user",
+      "objectId": "8ba18a72-ed6e-423d-8676-6d0fc79aef83",
+      "externalId": "8ba18a72-ed6e-423d-8676-6d0fc79aef83",
+      "displayName": "kq-test-08@patwainc.onmicrosoft.com"
+    },
+    "changeType": "memberAdded",
+    "beforeState": {
+      "state": {
+        "groupId": "45a4b187-c7c6-422a-b82b-48e199f63bb3",
+        "groupDisplayName": "Finance-Privileged-Access",
+        "userId": "8ba18a72-ed6e-423d-8676-6d0fc79aef83",
+        "isMember": false
+      },
+      "capturedAt": "2026-04-17T07:40:50.9798449Z",
+      "captureSource": "snapshot-diff",
+      "confidence": "reconstructed",
+      "stateHash": "9689e6f8f80b8122290865011019cc2b0dbb4bd85055c6e29df58e03ee10856d"
+    },
+    "afterState": {
+      "state": {
+        "groupId": "45a4b187-c7c6-422a-b82b-48e199f63bb3",
+        "groupDisplayName": "Finance-Privileged-Access",
+        "userId": "8ba18a72-ed6e-423d-8676-6d0fc79aef83",
+        "userPrincipalName": "kq-test-08@patwainc.onmicrosoft.com",
+        "isMember": true,
+        "auditNewValues": {
+          "Group.ObjectID": "45a4b187-c7c6-422a-b82b-48e199f63bb3",
+          "Group.DisplayName": "Finance-Privileged-Access",
+          "ActorId.ServicePrincipalNames": "061aeebd-4d44-4db0-8753-6cbf8d2674a4",
+          "SPN": "061aeebd-4d44-4db0-8753-6cbf8d2674a4"
+        }
+      },
+      "capturedAt": "2026-04-17T07:40:50.9798449Z",
+      "captureSource": "entra-audit",
+      "confidence": "authoritative",
+      "stateHash": "634564f052fa865da3977f742c59ce96477367ea5665dfabcd23335f444b6e8c"
+    },
+    "confidence": {
+      "level": "high",
+      "reasons": [
+        "authoritative-audit-event-observed",
+        "authoritative-after-state-from-audit-newValue",
+        "reconstructed-before-state-from-snapshot (WI-05 finding: audit has no oldValue for group-membership)"
+      ],
+      "missingFields": [
+        "authoritative-before-state"
+      ]
+    },
+    "correlationHints": {
+      "actorSessionId": null,
+      "operationBatchId": null,
+      "timeCluster": "2026-04-17T07:40:50Z"
+    },
+    "selfAction": false,
+    "observedAt": "2026-04-17T07:40:50.9798449Z",
+    "ingestedAt": "2026-04-17T07:40:51.979Z",
+    "bundleId": "bnd_0bac5bb1-ff77-4207-9ff7-a37cbacfd629",
+    "schemaVersion": 1
+  },
+  {
+    "changeId": "chg_c840da10-20b8-467e-8ea0-96c29e2126a0",
+    "tenantId": "3725cec5-3e2d-402c-a5a6-460c325d8f87",
+    "source": {
+      "primarySource": "entra-audit",
+      "corroboratingSources": [],
+      "conflictingSources": [],
+      "rawEventIds": [
+        "raw_ec6aa532-9850-4240-9575-30c17c36ea26"
+      ]
+    },
+    "actor": {
+      "type": "service-principal",
+      "id": "bf131def-02b5-4e90-8f32-ec4b3abf96db",
+      "displayName": "SP-Execute",
+      "agentIdentified": true,
+      "sessionId": null
+    },
+    "target": {
+      "objectType": "user",
+      "objectId": "12665d8d-26c8-4e00-ad84-6fc0717bb023",
+      "externalId": "12665d8d-26c8-4e00-ad84-6fc0717bb023",
+      "displayName": "kq-test-09@patwainc.onmicrosoft.com"
+    },
+    "changeType": "memberAdded",
+    "beforeState": {
+      "state": {
+        "groupId": "45a4b187-c7c6-422a-b82b-48e199f63bb3",
+        "groupDisplayName": "Finance-Privileged-Access",
+        "userId": "12665d8d-26c8-4e00-ad84-6fc0717bb023",
+        "isMember": false
+      },
+      "capturedAt": "2026-04-17T07:40:51.1971697Z",
+      "captureSource": "snapshot-diff",
+      "confidence": "reconstructed",
+      "stateHash": "1cec9219686a1461ba7df267189bc95c80eb8b7042361026800c9011d8eb2e7d"
+    },
+    "afterState": {
+      "state": {
+        "groupId": "45a4b187-c7c6-422a-b82b-48e199f63bb3",
+        "groupDisplayName": "Finance-Privileged-Access",
+        "userId": "12665d8d-26c8-4e00-ad84-6fc0717bb023",
+        "userPrincipalName": "kq-test-09@patwainc.onmicrosoft.com",
+        "isMember": true,
+        "auditNewValues": {
+          "Group.ObjectID": "45a4b187-c7c6-422a-b82b-48e199f63bb3",
+          "Group.DisplayName": "Finance-Privileged-Access"
+        }
+      },
+      "capturedAt": "2026-04-17T07:40:51.1971697Z",
+      "captureSource": "entra-audit",
+      "confidence": "authoritative",
+      "stateHash": "426669455758ebdfa47746a79948204529ff2fb792fb32ff927de2cfd16345c9"
+    },
+    "confidence": {
+      "level": "high",
+      "reasons": [
+        "authoritative-audit-event-observed",
+        "authoritative-after-state-from-audit-newValue",
+        "reconstructed-before-state-from-snapshot (WI-05 finding: audit has no oldValue for group-membership)"
+      ],
+      "missingFields": [
+        "authoritative-before-state"
+      ]
+    },
+    "correlationHints": {
+      "actorSessionId": null,
+      "operationBatchId": null,
+      "timeCluster": "2026-04-17T07:40:51Z"
+    },
+    "selfAction": false,
+    "observedAt": "2026-04-17T07:40:51.1971697Z",
+    "ingestedAt": "2026-04-17T07:40:52.197Z",
+    "bundleId": "bnd_0bac5bb1-ff77-4207-9ff7-a37cbacfd629",
+    "schemaVersion": 1
+  },
+  {
+    "changeId": "chg_5dbaed88-ec46-4845-937c-84b2bd3da96f",
+    "tenantId": "3725cec5-3e2d-402c-a5a6-460c325d8f87",
+    "source": {
+      "primarySource": "entra-audit",
+      "corroboratingSources": [],
+      "conflictingSources": [],
+      "rawEventIds": [
+        "raw_5494317e-5273-434f-b402-143ce293a3e6"
+      ]
+    },
+    "actor": {
+      "type": "service-principal",
+      "id": "bf131def-02b5-4e90-8f32-ec4b3abf96db",
+      "displayName": "SP-Execute",
+      "agentIdentified": true,
+      "sessionId": null
+    },
+    "target": {
+      "objectType": "user",
+      "objectId": "89740858-8567-43a3-948d-d94a73c9c1e4",
+      "externalId": "89740858-8567-43a3-948d-d94a73c9c1e4",
+      "displayName": "kq-test-10@patwainc.onmicrosoft.com"
+    },
+    "changeType": "memberAdded",
+    "beforeState": {
+      "state": {
+        "groupId": "45a4b187-c7c6-422a-b82b-48e199f63bb3",
+        "groupDisplayName": "Finance-Privileged-Access",
+        "userId": "89740858-8567-43a3-948d-d94a73c9c1e4",
+        "isMember": false
+      },
+      "capturedAt": "2026-04-17T07:40:51.4766911Z",
+      "captureSource": "snapshot-diff",
+      "confidence": "reconstructed",
+      "stateHash": "1181c7253a3c346c09c2e1fd1b10201ce802f6187bcf9b7c0cb0954c856df40d"
+    },
+    "afterState": {
+      "state": {
+        "groupId": "45a4b187-c7c6-422a-b82b-48e199f63bb3",
+        "groupDisplayName": "Finance-Privileged-Access",
+        "userId": "89740858-8567-43a3-948d-d94a73c9c1e4",
+        "userPrincipalName": "kq-test-10@patwainc.onmicrosoft.com",
+        "isMember": true,
+        "auditNewValues": {
+          "Group.ObjectID": "45a4b187-c7c6-422a-b82b-48e199f63bb3",
+          "Group.DisplayName": "Finance-Privileged-Access"
+        }
+      },
+      "capturedAt": "2026-04-17T07:40:51.4766911Z",
+      "captureSource": "entra-audit",
+      "confidence": "authoritative",
+      "stateHash": "2171f7334b89dec3dbc6ce9142736d314bcea0e9b8713287bfa5adfffb332232"
+    },
+    "confidence": {
+      "level": "high",
+      "reasons": [
+        "authoritative-audit-event-observed",
+        "authoritative-after-state-from-audit-newValue",
+        "reconstructed-before-state-from-snapshot (WI-05 finding: audit has no oldValue for group-membership)"
+      ],
+      "missingFields": [
+        "authoritative-before-state"
+      ]
+    },
+    "correlationHints": {
+      "actorSessionId": null,
+      "operationBatchId": null,
+      "timeCluster": "2026-04-17T07:40:51Z"
+    },
+    "selfAction": false,
+    "observedAt": "2026-04-17T07:40:51.4766911Z",
+    "ingestedAt": "2026-04-17T07:40:52.476Z",
+    "bundleId": "bnd_0bac5bb1-ff77-4207-9ff7-a37cbacfd629",
+    "schemaVersion": 1
+  },
+  {
+    "changeId": "chg_92483fd2-f8b2-4738-9e2a-be6a5cb327af",
+    "tenantId": "3725cec5-3e2d-402c-a5a6-460c325d8f87",
+    "source": {
+      "primarySource": "entra-audit",
+      "corroboratingSources": [],
+      "conflictingSources": [],
+      "rawEventIds": [
+        "raw_25c4b238-18c3-4c32-bdaf-dbdd9aaaa7bf"
+      ]
+    },
+    "actor": {
+      "type": "service-principal",
+      "id": "bf131def-02b5-4e90-8f32-ec4b3abf96db",
+      "displayName": "SP-Execute",
+      "agentIdentified": true,
+      "sessionId": null
+    },
+    "target": {
+      "objectType": "user",
+      "objectId": "ede86996-7342-43a2-a0d0-48d0c7180374",
+      "externalId": "ede86996-7342-43a2-a0d0-48d0c7180374",
+      "displayName": "kq-test-11@patwainc.onmicrosoft.com"
+    },
+    "changeType": "memberAdded",
+    "beforeState": {
+      "state": {
+        "groupId": "45a4b187-c7c6-422a-b82b-48e199f63bb3",
+        "groupDisplayName": "Finance-Privileged-Access",
+        "userId": "ede86996-7342-43a2-a0d0-48d0c7180374",
+        "isMember": false
+      },
+      "capturedAt": "2026-04-17T07:40:51.6732031Z",
+      "captureSource": "snapshot-diff",
+      "confidence": "reconstructed",
+      "stateHash": "6f96060755efc1bd323ef0cdf3235ca6950004409d960956d43eff319cb2d2d8"
+    },
+    "afterState": {
+      "state": {
+        "groupId": "45a4b187-c7c6-422a-b82b-48e199f63bb3",
+        "groupDisplayName": "Finance-Privileged-Access",
+        "userId": "ede86996-7342-43a2-a0d0-48d0c7180374",
+        "userPrincipalName": "kq-test-11@patwainc.onmicrosoft.com",
+        "isMember": true,
+        "auditNewValues": {
+          "Group.ObjectID": "45a4b187-c7c6-422a-b82b-48e199f63bb3",
+          "Group.DisplayName": "Finance-Privileged-Access",
+          "ActorId.ServicePrincipalNames": "061aeebd-4d44-4db0-8753-6cbf8d2674a4",
+          "SPN": "061aeebd-4d44-4db0-8753-6cbf8d2674a4"
+        }
+      },
+      "capturedAt": "2026-04-17T07:40:51.6732031Z",
+      "captureSource": "entra-audit",
+      "confidence": "authoritative",
+      "stateHash": "75281281b14c5bc7cedc523fb94dd32e3d1ce5804c50d71e2d85f814fef32d82"
+    },
+    "confidence": {
+      "level": "high",
+      "reasons": [
+        "authoritative-audit-event-observed",
+        "authoritative-after-state-from-audit-newValue",
+        "reconstructed-before-state-from-snapshot (WI-05 finding: audit has no oldValue for group-membership)"
+      ],
+      "missingFields": [
+        "authoritative-before-state"
+      ]
+    },
+    "correlationHints": {
+      "actorSessionId": null,
+      "operationBatchId": null,
+      "timeCluster": "2026-04-17T07:40:51Z"
+    },
+    "selfAction": false,
+    "observedAt": "2026-04-17T07:40:51.6732031Z",
+    "ingestedAt": "2026-04-17T07:40:52.673Z",
+    "bundleId": "bnd_0bac5bb1-ff77-4207-9ff7-a37cbacfd629",
+    "schemaVersion": 1
+  },
+  {
+    "changeId": "chg_85efc29f-7520-45ce-864a-a06fab916591",
+    "tenantId": "3725cec5-3e2d-402c-a5a6-460c325d8f87",
+    "source": {
+      "primarySource": "entra-audit",
+      "corroboratingSources": [],
+      "conflictingSources": [],
+      "rawEventIds": [
+        "raw_c14f045f-fab3-4e0c-8ab5-f304cdf892a4"
+      ]
+    },
+    "actor": {
+      "type": "service-principal",
+      "id": "bf131def-02b5-4e90-8f32-ec4b3abf96db",
+      "displayName": "SP-Execute",
+      "agentIdentified": true,
+      "sessionId": null
+    },
+    "target": {
+      "objectType": "user",
+      "objectId": "8b995ad6-5d29-408e-9c3d-95046c0f71d4",
+      "externalId": "8b995ad6-5d29-408e-9c3d-95046c0f71d4",
+      "displayName": "kq-test-12@patwainc.onmicrosoft.com"
+    },
+    "changeType": "memberAdded",
+    "beforeState": {
+      "state": {
+        "groupId": "45a4b187-c7c6-422a-b82b-48e199f63bb3",
+        "groupDisplayName": "Finance-Privileged-Access",
+        "userId": "8b995ad6-5d29-408e-9c3d-95046c0f71d4",
+        "isMember": false
+      },
+      "capturedAt": "2026-04-17T07:40:51.8273043Z",
+      "captureSource": "snapshot-diff",
+      "confidence": "reconstructed",
+      "stateHash": "43b462cfdfa4ec7f295afef1be611338b2dcf8c16b1c8461b5f292111018067c"
+    },
+    "afterState": {
+      "state": {
+        "groupId": "45a4b187-c7c6-422a-b82b-48e199f63bb3",
+        "groupDisplayName": "Finance-Privileged-Access",
+        "userId": "8b995ad6-5d29-408e-9c3d-95046c0f71d4",
+        "userPrincipalName": "kq-test-12@patwainc.onmicrosoft.com",
+        "isMember": true,
+        "auditNewValues": {
+          "Group.ObjectID": "45a4b187-c7c6-422a-b82b-48e199f63bb3",
+          "Group.DisplayName": "Finance-Privileged-Access"
+        }
+      },
+      "capturedAt": "2026-04-17T07:40:51.8273043Z",
+      "captureSource": "entra-audit",
+      "confidence": "authoritative",
+      "stateHash": "9c495ca3119999ce42526f495a4f2bdabc0346de2656709b95eae80d4db3157f"
+    },
+    "confidence": {
+      "level": "high",
+      "reasons": [
+        "authoritative-audit-event-observed",
+        "authoritative-after-state-from-audit-newValue",
+        "reconstructed-before-state-from-snapshot (WI-05 finding: audit has no oldValue for group-membership)"
+      ],
+      "missingFields": [
+        "authoritative-before-state"
+      ]
+    },
+    "correlationHints": {
+      "actorSessionId": null,
+      "operationBatchId": null,
+      "timeCluster": "2026-04-17T07:40:51Z"
+    },
+    "selfAction": false,
+    "observedAt": "2026-04-17T07:40:51.8273043Z",
+    "ingestedAt": "2026-04-17T07:40:52.827Z",
+    "bundleId": "bnd_0bac5bb1-ff77-4207-9ff7-a37cbacfd629",
+    "schemaVersion": 1
+  },
+  {
+    "changeId": "chg_fa43ef22-69c6-4ba1-8cca-a8665e063567",
+    "tenantId": "3725cec5-3e2d-402c-a5a6-460c325d8f87",
+    "source": {
+      "primarySource": "entra-audit",
+      "corroboratingSources": [],
+      "conflictingSources": [],
+      "rawEventIds": [
+        "raw_48a42af7-d6f2-4b4d-b3e8-afa734feb40a"
+      ]
+    },
+    "actor": {
+      "type": "service-principal",
+      "id": "bf131def-02b5-4e90-8f32-ec4b3abf96db",
+      "displayName": "SP-Execute",
+      "agentIdentified": true,
+      "sessionId": null
+    },
+    "target": {
+      "objectType": "user",
+      "objectId": "58df6b76-9937-4ad0-8290-41b40fe9273f",
+      "externalId": "58df6b76-9937-4ad0-8290-41b40fe9273f",
+      "displayName": "kq-test-13@patwainc.onmicrosoft.com"
+    },
+    "changeType": "memberAdded",
+    "beforeState": {
+      "state": {
+        "groupId": "45a4b187-c7c6-422a-b82b-48e199f63bb3",
+        "groupDisplayName": "Finance-Privileged-Access",
+        "userId": "58df6b76-9937-4ad0-8290-41b40fe9273f",
+        "isMember": false
+      },
+      "capturedAt": "2026-04-17T07:40:52.188394Z",
+      "captureSource": "snapshot-diff",
+      "confidence": "reconstructed",
+      "stateHash": "8fd7e1d777fbb1211ab05b7ffd418b097f80e66e886cd6ee29e5dc6d8570766b"
+    },
+    "afterState": {
+      "state": {
+        "groupId": "45a4b187-c7c6-422a-b82b-48e199f63bb3",
+        "groupDisplayName": "Finance-Privileged-Access",
+        "userId": "58df6b76-9937-4ad0-8290-41b40fe9273f",
+        "userPrincipalName": "kq-test-13@patwainc.onmicrosoft.com",
+        "isMember": true,
+        "auditNewValues": {
+          "Group.ObjectID": "45a4b187-c7c6-422a-b82b-48e199f63bb3",
+          "Group.DisplayName": "Finance-Privileged-Access"
+        }
+      },
+      "capturedAt": "2026-04-17T07:40:52.188394Z",
+      "captureSource": "entra-audit",
+      "confidence": "authoritative",
+      "stateHash": "09c4587043df8c50954824a8f9532e80523fc00d4ee1316fbb7b91916d537dd2"
+    },
+    "confidence": {
+      "level": "high",
+      "reasons": [
+        "authoritative-audit-event-observed",
+        "authoritative-after-state-from-audit-newValue",
+        "reconstructed-before-state-from-snapshot (WI-05 finding: audit has no oldValue for group-membership)"
+      ],
+      "missingFields": [
+        "authoritative-before-state"
+      ]
+    },
+    "correlationHints": {
+      "actorSessionId": null,
+      "operationBatchId": null,
+      "timeCluster": "2026-04-17T07:40:52Z"
+    },
+    "selfAction": false,
+    "observedAt": "2026-04-17T07:40:52.188394Z",
+    "ingestedAt": "2026-04-17T07:40:53.188Z",
+    "bundleId": "bnd_0bac5bb1-ff77-4207-9ff7-a37cbacfd629",
+    "schemaVersion": 1
+  },
+  {
+    "changeId": "chg_54ad2bc5-7da4-41dc-ab4b-37451c31919d",
+    "tenantId": "3725cec5-3e2d-402c-a5a6-460c325d8f87",
+    "source": {
+      "primarySource": "entra-audit",
+      "corroboratingSources": [],
+      "conflictingSources": [],
+      "rawEventIds": [
+        "raw_aac5e7e8-dcb8-43de-91bd-18706ea21873"
+      ]
+    },
+    "actor": {
+      "type": "service-principal",
+      "id": "bf131def-02b5-4e90-8f32-ec4b3abf96db",
+      "displayName": "SP-Execute",
+      "agentIdentified": true,
+      "sessionId": null
+    },
+    "target": {
+      "objectType": "user",
+      "objectId": "ad02e062-808f-465f-9e96-357b525605f9",
+      "externalId": "ad02e062-808f-465f-9e96-357b525605f9",
+      "displayName": "kq-test-14@patwainc.onmicrosoft.com"
+    },
+    "changeType": "memberAdded",
+    "beforeState": {
+      "state": {
+        "groupId": "45a4b187-c7c6-422a-b82b-48e199f63bb3",
+        "groupDisplayName": "Finance-Privileged-Access",
+        "userId": "ad02e062-808f-465f-9e96-357b525605f9",
+        "isMember": false
+      },
+      "capturedAt": "2026-04-17T07:40:52.599656Z",
+      "captureSource": "snapshot-diff",
+      "confidence": "reconstructed",
+      "stateHash": "86a141c629b749a9d0d2db8f52ffffda358ba801d9aaea9dcbe565431503a69e"
+    },
+    "afterState": {
+      "state": {
+        "groupId": "45a4b187-c7c6-422a-b82b-48e199f63bb3",
+        "groupDisplayName": "Finance-Privileged-Access",
+        "userId": "ad02e062-808f-465f-9e96-357b525605f9",
+        "userPrincipalName": "kq-test-14@patwainc.onmicrosoft.com",
+        "isMember": true,
+        "auditNewValues": {
+          "Group.ObjectID": "45a4b187-c7c6-422a-b82b-48e199f63bb3",
+          "Group.DisplayName": "Finance-Privileged-Access"
+        }
+      },
+      "capturedAt": "2026-04-17T07:40:52.599656Z",
+      "captureSource": "entra-audit",
+      "confidence": "authoritative",
+      "stateHash": "6fb0acb765fc3a8215a15ef588f7e4abd9a5f386623e339ecf4b7aec847b136a"
+    },
+    "confidence": {
+      "level": "high",
+      "reasons": [
+        "authoritative-audit-event-observed",
+        "authoritative-after-state-from-audit-newValue",
+        "reconstructed-before-state-from-snapshot (WI-05 finding: audit has no oldValue for group-membership)"
+      ],
+      "missingFields": [
+        "authoritative-before-state"
+      ]
+    },
+    "correlationHints": {
+      "actorSessionId": null,
+      "operationBatchId": null,
+      "timeCluster": "2026-04-17T07:40:52Z"
+    },
+    "selfAction": false,
+    "observedAt": "2026-04-17T07:40:52.599656Z",
+    "ingestedAt": "2026-04-17T07:40:53.599Z",
+    "bundleId": "bnd_0bac5bb1-ff77-4207-9ff7-a37cbacfd629",
+    "schemaVersion": 1
+  },
+  {
+    "changeId": "chg_eafa7b79-505f-4aef-95ee-64c82253a414",
+    "tenantId": "3725cec5-3e2d-402c-a5a6-460c325d8f87",
+    "source": {
+      "primarySource": "entra-audit",
+      "corroboratingSources": [],
+      "conflictingSources": [],
+      "rawEventIds": [
+        "raw_153b533f-aee4-49b3-aaab-e0d95bf7be81"
+      ]
+    },
+    "actor": {
+      "type": "service-principal",
+      "id": "bf131def-02b5-4e90-8f32-ec4b3abf96db",
+      "displayName": "SP-Execute",
+      "agentIdentified": true,
+      "sessionId": null
+    },
+    "target": {
+      "objectType": "user",
+      "objectId": "53e906fc-1563-4ff0-a215-866458b6317e",
+      "externalId": "53e906fc-1563-4ff0-a215-866458b6317e",
+      "displayName": "kq-test-15@patwainc.onmicrosoft.com"
+    },
+    "changeType": "memberAdded",
+    "beforeState": {
+      "state": {
+        "groupId": "45a4b187-c7c6-422a-b82b-48e199f63bb3",
+        "groupDisplayName": "Finance-Privileged-Access",
+        "userId": "53e906fc-1563-4ff0-a215-866458b6317e",
+        "isMember": false
+      },
+      "capturedAt": "2026-04-17T07:40:52.843621Z",
+      "captureSource": "snapshot-diff",
+      "confidence": "reconstructed",
+      "stateHash": "ec4ebbccafbb3a04b2f7df54bad2aa755dc3541c48be6817d436fd1d078fee54"
+    },
+    "afterState": {
+      "state": {
+        "groupId": "45a4b187-c7c6-422a-b82b-48e199f63bb3",
+        "groupDisplayName": "Finance-Privileged-Access",
+        "userId": "53e906fc-1563-4ff0-a215-866458b6317e",
+        "userPrincipalName": "kq-test-15@patwainc.onmicrosoft.com",
+        "isMember": true,
+        "auditNewValues": {
+          "Group.ObjectID": "45a4b187-c7c6-422a-b82b-48e199f63bb3",
+          "Group.DisplayName": "Finance-Privileged-Access"
+        }
+      },
+      "capturedAt": "2026-04-17T07:40:52.843621Z",
+      "captureSource": "entra-audit",
+      "confidence": "authoritative",
+      "stateHash": "49e851e5c0fcc7541b88fb7a41baae9d3d7010617a07f61c96f90000d9063ec5"
+    },
+    "confidence": {
+      "level": "high",
+      "reasons": [
+        "authoritative-audit-event-observed",
+        "authoritative-after-state-from-audit-newValue",
+        "reconstructed-before-state-from-snapshot (WI-05 finding: audit has no oldValue for group-membership)"
+      ],
+      "missingFields": [
+        "authoritative-before-state"
+      ]
+    },
+    "correlationHints": {
+      "actorSessionId": null,
+      "operationBatchId": null,
+      "timeCluster": "2026-04-17T07:40:52Z"
+    },
+    "selfAction": false,
+    "observedAt": "2026-04-17T07:40:52.843621Z",
+    "ingestedAt": "2026-04-17T07:40:53.843Z",
+    "bundleId": "bnd_0bac5bb1-ff77-4207-9ff7-a37cbacfd629",
+    "schemaVersion": 1
+  },
+  {
+    "changeId": "chg_f70c0a69-a6de-48ab-9c62-2a7958e2c023",
+    "tenantId": "3725cec5-3e2d-402c-a5a6-460c325d8f87",
+    "source": {
+      "primarySource": "entra-audit",
+      "corroboratingSources": [],
+      "conflictingSources": [],
+      "rawEventIds": [
+        "raw_544f60db-1d24-457f-bf5a-59fac020b7ef"
+      ]
+    },
+    "actor": {
+      "type": "service-principal",
+      "id": "bf131def-02b5-4e90-8f32-ec4b3abf96db",
+      "displayName": "SP-Execute",
+      "agentIdentified": true,
+      "sessionId": null
+    },
+    "target": {
+      "objectType": "user",
+      "objectId": "b2776df1-ba95-4527-bd6a-76b92d900523",
+      "externalId": "b2776df1-ba95-4527-bd6a-76b92d900523",
+      "displayName": "kq-test-16@patwainc.onmicrosoft.com"
+    },
+    "changeType": "memberAdded",
+    "beforeState": {
+      "state": {
+        "groupId": "45a4b187-c7c6-422a-b82b-48e199f63bb3",
+        "groupDisplayName": "Finance-Privileged-Access",
+        "userId": "b2776df1-ba95-4527-bd6a-76b92d900523",
+        "isMember": false
+      },
+      "capturedAt": "2026-04-17T07:40:53.097706Z",
+      "captureSource": "snapshot-diff",
+      "confidence": "reconstructed",
+      "stateHash": "073dddec4481960cc6c18251ce4940078d30b6166b7981cbd8fdb9b55eb31b4a"
+    },
+    "afterState": {
+      "state": {
+        "groupId": "45a4b187-c7c6-422a-b82b-48e199f63bb3",
+        "groupDisplayName": "Finance-Privileged-Access",
+        "userId": "b2776df1-ba95-4527-bd6a-76b92d900523",
+        "userPrincipalName": "kq-test-16@patwainc.onmicrosoft.com",
+        "isMember": true,
+        "auditNewValues": {
+          "Group.ObjectID": "45a4b187-c7c6-422a-b82b-48e199f63bb3",
+          "Group.DisplayName": "Finance-Privileged-Access"
+        }
+      },
+      "capturedAt": "2026-04-17T07:40:53.097706Z",
+      "captureSource": "entra-audit",
+      "confidence": "authoritative",
+      "stateHash": "c3be1e60d65e9ef82ff9fd6f6677226531fe976532988f7128e697970978bcf5"
+    },
+    "confidence": {
+      "level": "high",
+      "reasons": [
+        "authoritative-audit-event-observed",
+        "authoritative-after-state-from-audit-newValue",
+        "reconstructed-before-state-from-snapshot (WI-05 finding: audit has no oldValue for group-membership)"
+      ],
+      "missingFields": [
+        "authoritative-before-state"
+      ]
+    },
+    "correlationHints": {
+      "actorSessionId": null,
+      "operationBatchId": null,
+      "timeCluster": "2026-04-17T07:40:53Z"
+    },
+    "selfAction": false,
+    "observedAt": "2026-04-17T07:40:53.097706Z",
+    "ingestedAt": "2026-04-17T07:40:54.097Z",
+    "bundleId": "bnd_0bac5bb1-ff77-4207-9ff7-a37cbacfd629",
+    "schemaVersion": 1
+  }
+]
