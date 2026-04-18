@@ -370,7 +370,7 @@ The ingestion layer does not create incidents. It produces **correlated change b
 | Signal | How It Works | Example |
 |--------|-------------|---------|
 | **Actor session** | Changes with the same `actor.id` and `actor.sessionId` within a time window are grouped | Access Lifecycle Agent, session ses-7f2a, made 12 group membership changes |
-| **Microsoft operation batch** | Changes sharing the same Microsoft `correlationId` or `operationId` | Batch operation that modified group + CA policy in one API call |
+| **Microsoft operation batch** | Changes sharing the same Microsoft `correlationId` or `operationId` | Batch operation that modified group + CA policy in one API call. **WI-05 finding (§23.E): for member-adds fired in rapid succession, Microsoft emits distinct `correlationId` per call, not a shared batch ID. Treat this signal as present-when-emitted, not relied-upon.** |
 | **Target object** | Multiple changes to the same object within a time window | Group membership add + CA policy scope change affecting the same group |
 | **Time cluster** | Changes within a configurable correlation window (default: 5 minutes) from the same actor | Burst of 12 member additions within 3 seconds |
 
@@ -483,6 +483,10 @@ Events that arrive after the initial correlation window are still processed:
 ---
 
 ## 15. Before/After State Reconstruction
+
+> **v1 per-class defaults** (WI-05 evidence): see §23.A. This section
+> describes the general model; the concrete mapping per change class is
+> pinned in §23.A and in `DATA_MODEL_AND_SCHEMA_SPECIFICATION.md §8`.
 
 ### Direct Before/After
 
@@ -657,13 +661,154 @@ Manageable with standard cloud object storage. Delta compression between adjacen
 
 ### Assumptions That Must Hold
 
-1. Entra audit log API continues to provide `directoryAudits` with `modifiedProperties` including `oldValue`/`newValue` for key change types (group membership, CA policy modification).
+1. Entra audit log API continues to provide `directoryAudits` with `modifiedProperties` including `oldValue`/`newValue` for key change types (group membership, CA policy modification). **Updated per WI-05 evidence (§23.A): group-membership audit events carry `newValue` only — `oldValue` is always absent. Before-state for this class is snapshot-derived, not audit-derived. CA policy events do carry both sides. App role assignment is `newValue` only. SP credential metadata carries both.**
 2. Graph change notification subscriptions for groups and users continue to be supported with current semantics.
 3. Microsoft Graph rate limits (10,000 req/10 min) are sufficient for daily ingestion plus operational queries.
 4. Entra audit log retention (30 days) provides sufficient backfill window for gap repair.
 
 ### Prototype/Validate Next
 
-1. **Audit log completeness assessment.** For each v1 object type (group, CA policy, app role, SP), verify which change types generate audit events, which include `oldValue`/`newValue`, and which do not. This directly determines before-state reconstruction requirements.
+1. **Audit log completeness assessment.** ~~For each v1 object type (group, CA policy, app role, SP), verify which change types generate audit events, which include `oldValue`/`newValue`, and which do not. This directly determines before-state reconstruction requirements.~~ **COMPLETE (WI-05, 2026-04-18):** all four v1 change classes produce matchable events; per-class findings in §23 and `docs/SPIKE_REPORT_AUDIT_LOG_COMPLETENESS.md`.
 2. **Webhook reliability measurement.** Register Graph change notifications for groups in a test tenant. Measure delivery rate, latency distribution, and failure/retry patterns over 7 days. Determine whether webhooks are reliable enough as a speed layer.
 3. **Correlation accuracy.** Replay a set of known agent-driven changes through the proposed correlation logic. Measure whether the correlation window and signals correctly group related changes without over-grouping unrelated ones.
+
+---
+
+## 23. WI-05 Implementation Notes (Phase 0 evidence)
+
+Concrete implementation truths captured during the WI-05 audit completeness
+spike on 2026-04-17 / 2026-04-18 against the live Entra test tenant. Full
+report: `docs/SPIKE_REPORT_AUDIT_LOG_COMPLETENESS.md`. These notes override
+the generic assumptions in §15 and the generic correlation guidance in §12
+for the four v1 change classes.
+
+### A. Per-class before-state strategy (v1)
+
+| Change class | Before-state source | Confidence tag | Notes |
+|---|---|---|---|
+| **Group membership** | Snapshot-diff (from trusted baseline) | `reconstructed` | WI-05 observed 0/12 `oldValue` across 12 `Add member to group` events. The baseline snapshot of group membership is the only source for before-state. Audit `newValue` populates after-state only. |
+| **Conditional Access policy** | Audit `oldValue` (complete policy JSON) | `authoritative` | WI-05 observed a single `modifiedProperties` entry of `displayName: "ConditionalAccessPolicy"` carrying the **entire pre-edit policy JSON** in `oldValue` and the entire post-edit policy JSON in `newValue`. Sufficient to round-trip the policy from the audit alone. Snapshot fallback is advisory only. |
+| **App role assignment** | Snapshot-diff | `reconstructed` | WI-05 observed 0/1 `oldValue`. Rich `newValue` (`AppRole.*`, `User.*`, `TargetId.*`). Same shape as group membership. |
+| **SP credential — metadata** | Audit `oldValue` (`KeyDescription` array) | `authoritative` | Both the credential add and remove events carried `KeyDescription.oldValue` and `.newValue` as JSON-array strings of key metadata (`KeyIdentifier`, `KeyType`, `KeyUsage`, `DisplayName`). |
+| **SP credential — secret material** | Never observed | `unavailable` | `secretText` is not in the audit payload. Ingestion must never treat its absence as a failure; it is the expected Microsoft masking behavior. |
+
+Two classes use audit-first before-state (CA policy, SP credential metadata);
+two classes use snapshot-first (group membership, app role assignment).
+Phase 1 ingestion tags `StateSnapshot.confidence` and
+`StateSnapshot.captureSource` per this mapping.
+
+### B. `modifiedProperties` encoding differences
+
+Entra emits values in `modifiedProperties[*].{oldValue,newValue}` under at
+least **two distinct encoding conventions**. Normalization cannot assume
+one universal decoder.
+
+1. **Double-JSON-encoded scalar / array strings** (M1 group membership, M3 app role assignment, M4 SP credential).
+   - Scalar values: `"\"45a4b187-…\""` — outer double-quote layer is JSON encoding; strip once to get the raw value.
+   - Array values: `"[]"` (empty) or `"[\"<serialized-entry>\"]"` (non-empty). The array itself is a JSON string; entries inside may be pseudo-bracket notation (e.g. `"[KeyIdentifier=…,KeyUsage=Verify,DisplayName=…]"`), not true JSON.
+2. **Single JSON encoding of a full object** (M2 Conditional Access policy).
+   - A single `modifiedProperties` entry with `displayName: "ConditionalAccessPolicy"` whose `oldValue` and `newValue` each contain the entire policy as a JSON-encoded object string. Parse with `JSON.parse` directly; no double-decode.
+
+**Discriminator:** branch by `modifiedProperties[*].displayName` (not by
+change class — a future class could use a different encoding). Known
+pairings today:
+
+| `displayName` | Encoding | Change class |
+|---|---|---|
+| `Group.ObjectID`, `Group.DisplayName`, `SPN`, `ActorId.ServicePrincipalNames` | double-JSON scalar | M1 |
+| `AppRole.Id`, `AppRole.Value`, `AppRole.DisplayName`, `User.ObjectID`, `User.UPN`, `TargetId.ServicePrincipalNames`, `AppRoleAssignment.*` | double-JSON scalar | M3 |
+| `KeyDescription` | double-JSON array string | M4 |
+| `Included Updated Properties` | double-JSON scalar (but value is informational only — see §23.G) | M3, M4 companion stubs |
+| `ConditionalAccessPolicy` | full policy JSON string | M2 |
+
+### C. Empty-collection semantics
+
+`"[]"` as a `modifiedProperties` value means **empty set**, not "missing
+data". It carries state: "no prior credentials", "no prior locations
+condition", etc. Normalizers that treat `"[]"` as absent will under-report
+authoritative before-state.
+
+Specifically:
+
+- Distinguish `null` (field truly not in the event) from `""` / `"[]"` /
+  `"\"\""` (field emitted with an empty value).
+- For `KeyDescription` specifically: `oldValue: "[]"` on a credential-add
+  event is the audit saying "prior credential set was empty". That is
+  authoritative before-state.
+
+Analyzer-level impact: the Phase 0 `isUsable()` helper in
+`scripts/run-audit-completeness-spike.ts` currently rejects `"[]"` as
+unusable. A follow-up script change will distinguish `null` from
+empty-set; this is a script-local fix, not an ingestion-design change.
+
+### D. Event classification: `activityDisplayName` is the discriminator
+
+Entra's high-level `category` field is unreliable for classification.
+Example from WI-05: `Add app role assignment grant to user` has
+`category: "UserManagement"`, not `"ApplicationManagement"`. Normalization
+and connector classification must key off `activityDisplayName`;
+`category` is informational only.
+
+Working mapping for the four v1 classes (substring match, case-insensitive):
+
+| Change class | `activityDisplayName` substring |
+|---|---|
+| Group membership | `"add member to group"`, `"remove member from group"` |
+| Conditional Access policy | `"conditional access policy"` (with `category == "Policy"` to disambiguate from other "policy" entities if any) |
+| App role assignment | `"app role assignment"` |
+| SP credential | `"certificates and secrets management"` |
+
+### E. Correlation: no Microsoft batch correlation for member-adds
+
+The canonical scenario originally hypothesised a shared Microsoft
+`correlationId` across the 12 member-add events. **WI-05 invalidated this
+assumption.** Each member-add carries a distinct Microsoft `correlationId`.
+
+Correlation for burst-style member-adds must therefore rely on:
+
+1. **Same actor** — identical `initiatedBy.app.servicePrincipalId` (or
+   `initiatedBy.user.id` for user-driven changes).
+2. **Same target object** — the group ID, captured from
+   `modifiedProperties[displayName=Group.ObjectID].newValue`.
+3. **Tight time clustering** — observed burst spread: 12 events across
+   ~3 seconds. Recommended correlation window: 60 seconds (tolerant of
+   small network jitter, intolerant of unrelated clicks).
+4. **Change type** — `memberAdded` grouped with other `memberAdded`, not
+   mixed with property modifications.
+
+The `correlationHints.operationBatchId` field on `NormalizedChange`
+remains `null` for member-adds produced by this pattern. The Microsoft
+batch signal is still present-when-emitted for some change types (bulk
+API calls), so the field is kept in the schema; the ingestion layer
+populates it only when Microsoft provides it.
+
+### F. Provenance patterns differ between agent-driven and portal-driven changes
+
+- Agent SP driven (M1 / M3 / M4): `initiatedBy.user = null`, `initiatedBy.app = <agent SP>`.
+- Portal / operator driven (M2): `initiatedBy.user = <admin-user>`, `initiatedBy.app = "ADIbizaUX"` (or similar Microsoft portal app).
+
+Detection logic and the "agent-identified" flag on
+`NormalizedChange.actor.agentIdentified` must handle both shapes. Neither
+shape is inherently suspicious — context (sensitivity of target, bulk
+magnitude, change type) decides.
+
+### G. Correlation-stub events to ignore
+
+WI-05 observed two classes of "companion" audit events that fire alongside
+the high-signal events but contribute no independent information. They
+should NOT be double-counted as change observations:
+
+1. **`Update application` without "Certificates and secrets management" suffix.**
+   Fires alongside each `Update application – Certificates and secrets management`
+   event with an empty `modifiedProperties` array. Purpose: an
+   application-object-was-modified stub. Ignore.
+2. **`Update service principal`** (companion to SP credential changes).
+   Fires alongside each credential change with a single
+   `modifiedProperties` entry `Included Updated Properties` containing
+   only `""`. No substantive state. Ignore.
+
+The Phase 0 analyzer's narrow `activityDisplayName` matcher already
+excludes the first of these; the second is matched (via substring "update
+service principal") and contributes to M4's raw match count but adds no
+before/after signal. Normalization should recognize and drop both at the
+connector layer.
