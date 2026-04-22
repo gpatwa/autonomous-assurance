@@ -17,7 +17,10 @@ export type { CorrelateOptions, CorrelateResult } from "./correlate.js";
 export { computeMemberAddedGroupKey } from "./group-key.js";
 export type { GroupKeyContext } from "./group-key.js";
 
-export { buildMemberAddedBundle } from "./member-added-bundle.js";
+export {
+  buildMemberAddedBundle,
+  computeMemberAddedDetectionSignals,
+} from "./member-added-bundle.js";
 export type {
   ScoringPolicy,
   BuildMemberAddedBundleArgs,

@@ -18,6 +18,7 @@
 
 import type {
   CorrelatedChangeBundle,
+  DetectionSignal,
   NormalizedChange,
 } from "@kavachiq/schema";
 
@@ -51,7 +52,12 @@ export function buildMemberAddedBundle(
   const endMs = new Date(last.observedAt).getTime();
   const spreadSec = Math.max(1, Math.ceil((endMs - startMs) / 1000));
 
-  const score = scoreBundle(sorted, groupId, scoringPolicy);
+  const signals = computeMemberAddedDetectionSignals(
+    sorted,
+    groupId,
+    scoringPolicy,
+  );
+  const score = signals.reduce((sum, s) => sum + s.weight, 0);
 
   return {
     bundleId,
@@ -73,28 +79,61 @@ export function buildMemberAddedBundle(
   };
 }
 
-function scoreBundle(
+/**
+ * The four weighted detection signals that a memberAdded bundle carries.
+ * Shared with detection so the incident's classificationRationale.signals
+ * match what drove the bundle's incidentCandidateScore — "carry forward
+ * verbatim, do not recompute".
+ *
+ * Invariant: sum(signals.weight) === bundle.incidentCandidateScore.
+ */
+export function computeMemberAddedDetectionSignals(
   changes: NormalizedChange[],
   groupId: string,
   policy: ScoringPolicy,
-): number {
-  let score = 0;
+): DetectionSignal[] {
+  const signals: DetectionSignal[] = [];
 
-  // Non-human actor: service-principal (+30). memberAdded changes in this
-  // slice are always service-principal-initiated; if ingestion produced
-  // a user-initiated memberAdded, it would not appear here because the
-  // grouping key rejects non-service-principal actors.
-  if (changes[0]!.actor.type === "service-principal") score += 30;
+  // Non-human actor (+30). The group-key filter guarantees
+  // actor.type === "service-principal" for every change that reached a
+  // memberAdded bundle, so this signal always fires in this slice.
+  if (changes[0]!.actor.type === "service-principal") {
+    signals.push({
+      signalType: "non-human-actor",
+      value: "service-principal",
+      weight: 30,
+      source: "entra-audit.initiatedBy.app",
+    });
+  }
 
-  // High-sensitivity target (+35). Defaults to 0 if the group is not on
-  // the sensitivity list; the caller supplies the list.
-  if (policy.highSensitivityGroupIds.has(groupId)) score += 35;
+  // High-sensitivity target (+35).
+  if (policy.highSensitivityGroupIds.has(groupId)) {
+    signals.push({
+      signalType: "target-sensitivity",
+      value: "high",
+      weight: 35,
+      source: "canonical-scenario.sensitivity-list",
+    });
+  }
 
   // Bulk magnitude > 5 (+20).
-  if (changes.length > 5) score += 20;
+  if (changes.length > 5) {
+    signals.push({
+      signalType: "bulk-magnitude",
+      value: changes.length,
+      weight: 20,
+      source: "derived.correlated-bundle.changeCount",
+    });
+  }
 
-  // Change type is membership modification (+10).
-  score += 10;
+  // Change type is membership modification (+10). Always present in this
+  // slice — the group-key filter rejects non-memberAdded changes upstream.
+  signals.push({
+    signalType: "change-type",
+    value: "memberAdded",
+    weight: 10,
+    source: "derived.normalized-change.changeType",
+  });
 
-  return score;
+  return signals;
 }
