@@ -101,7 +101,7 @@ export default function OGImage() {
             }}
           />
           <span style={{ fontSize: "16px", color: "#64748B" }}>
-            kavachiq.com
+            agents.kavachiq.com
           </span>
         </div>
       </div>
