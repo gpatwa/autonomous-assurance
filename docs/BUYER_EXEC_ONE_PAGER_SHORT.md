@@ -14,4 +14,4 @@ Entra users, groups, app registrations, service principals, Conditional Access, 
 **In a demo, you will see:**
 A real agent-driven Entra change, blast-radius mapping across Microsoft 365, recovery sequencing, and trusted-state restoration.
 
-**Next step:** Request a tailored walkthrough at [staging.kavachiq.com](https://staging.kavachiq.com)
+**Next step:** Request a tailored walkthrough at [agents.kavachiq.com](https://agents.kavachiq.com)

@@ -77,7 +77,7 @@ KavachIQ provides the operational answer: understand what changed, assess the bl
 
 ## Next step
 
-**Request a tailored recovery scenario walkthrough at [staging.kavachiq.com](https://staging.kavachiq.com).**
+**Request a tailored recovery scenario walkthrough at [agents.kavachiq.com](https://agents.kavachiq.com).**
 
 We will show you how KavachIQ handles a real agent-driven Entra change in the context of your Microsoft 365 environment.
 

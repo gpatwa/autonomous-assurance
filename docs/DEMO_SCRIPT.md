@@ -1,7 +1,7 @@
 # KavachIQ Demo Script
 
 **Version:** Demo-ready baseline
-**Site:** staging.kavachiq.com
+**Public site:** agents.kavachiq.com  _(internal test env: staging.kavachiq.com — noindex)_
 **Last updated:** April 2026
 
 ---
@@ -22,7 +22,7 @@
 
 Use this when screen-sharing the staging site in a short call or meeting.
 
-**Open staging.kavachiq.com.**
+**Open agents.kavachiq.com.**
 
 ### Hero (10 seconds)
 
@@ -104,7 +104,7 @@ Use this for structured buyer demos, technical evaluations, or detailed investor
 
 "Thank you for the time. Let me show you what KavachIQ does and why it matters for your Entra and Microsoft 365 environment."
 
-Open staging.kavachiq.com. Walk through the hero briefly.
+Open agents.kavachiq.com. Walk through the hero briefly.
 
 "KavachIQ Autonomous Assurance helps enterprises recover from high-impact agent-driven changes. We map blast radius and guide identity-first recovery."
 
