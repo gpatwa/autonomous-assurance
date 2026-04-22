@@ -19,8 +19,18 @@ export type { CanonicalChangeClass } from "./discriminator.js";
 
 export { unwrapScalar } from "./decoder.js";
 
-export { createStubSnapshotProvider, sha256 } from "./snapshot-provider.js";
-export type { SnapshotProvider, GroupMembershipBeforeArgs } from "./snapshot-provider.js";
+export {
+  createFilesystemSnapshotProvider,
+  sha256,
+  BaselineNotFoundError,
+  BaselineTooNewError,
+  BaselineMismatchError,
+} from "./snapshot-provider.js";
+export type {
+  SnapshotProvider,
+  GroupMembershipBeforeArgs,
+  FilesystemSnapshotProviderOptions,
+} from "./snapshot-provider.js";
 
 export { mapMemberAddEvent } from "./member-add.js";
 export type { MemberAddMapperOptions } from "./member-add.js";

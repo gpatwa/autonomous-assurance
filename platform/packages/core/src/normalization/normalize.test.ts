@@ -17,8 +17,9 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import type { NormalizedChange, RawEvent } from "@kavachiq/schema";
 import {
-  createStubSnapshotProvider,
+  createFilesystemSnapshotProvider,
   normalizeRawEvents,
+  type SnapshotProvider,
 } from "./index.js";
 
 // ─── Fixture loading ───────────────────────────────────────────────────────
@@ -33,6 +34,7 @@ const FIXTURE_DIR = resolve(
   "../../../..",
   "fixtures/canonical",
 );
+const BASELINE_ROOT = resolve(FIXTURE_DIR, "baselines");
 const rawEvents = JSON.parse(
   readFileSync(resolve(FIXTURE_DIR, "raw-events.json"), "utf-8"),
 ) as RawEvent[];
@@ -44,6 +46,11 @@ const expectedNormalized = JSON.parse(
 // Real ingestion resolves this from a per-tenant allowlist; here it is
 // hard-coded to the agent SP that produced the canonical events.
 const SP_EXECUTE_ID = "bf131def-02b5-4e90-8f32-ec4b3abf96db";
+const PRE_MEMBER_GROUP_ID = "00000000-0000-0000-0000-000000000099";
+
+function newSnapshotProvider(): SnapshotProvider {
+  return createFilesystemSnapshotProvider({ rootDir: BASELINE_ROOT });
+}
 
 // ─── Helpers ───────────────────────────────────────────────────────────────
 
@@ -70,7 +77,7 @@ test("normalizeRawEvents: loads 12 canonical RawEvents", () => {
 test("normalizeRawEvents: produces 12 NormalizedChanges, 0 skipped", async () => {
   const { normalized, skipped } = await normalizeRawEvents(rawEvents, {
     tenantId: rawEvents[0]!.tenantId,
-    snapshotProvider: createStubSnapshotProvider(),
+    snapshotProvider: newSnapshotProvider(),
     agentIdentifiedActorIds: new Set([SP_EXECUTE_ID]),
   });
   assert.equal(normalized.length, 12);
@@ -80,7 +87,7 @@ test("normalizeRawEvents: produces 12 NormalizedChanges, 0 skipped", async () =>
 test("normalizeRawEvents: output matches canonical fixture (modulo variable IDs)", async () => {
   const { normalized } = await normalizeRawEvents(rawEvents, {
     tenantId: rawEvents[0]!.tenantId,
-    snapshotProvider: createStubSnapshotProvider(),
+    snapshotProvider: newSnapshotProvider(),
     agentIdentifiedActorIds: new Set([SP_EXECUTE_ID]),
   });
 
@@ -100,7 +107,7 @@ test("normalizeRawEvents: output matches canonical fixture (modulo variable IDs)
 test("normalizeRawEvents: bundleId is null in the Phase 1 slice (correlation not run)", async () => {
   const { normalized } = await normalizeRawEvents(rawEvents, {
     tenantId: rawEvents[0]!.tenantId,
-    snapshotProvider: createStubSnapshotProvider(),
+    snapshotProvider: newSnapshotProvider(),
     agentIdentifiedActorIds: new Set([SP_EXECUTE_ID]),
   });
   for (const c of normalized) {
@@ -115,7 +122,7 @@ test("normalizeRawEvents: bundleId is null in the Phase 1 slice (correlation not
 test("normalizeRawEvents: rawEventIds reference the input RawEvents", async () => {
   const { normalized } = await normalizeRawEvents(rawEvents, {
     tenantId: rawEvents[0]!.tenantId,
-    snapshotProvider: createStubSnapshotProvider(),
+    snapshotProvider: newSnapshotProvider(),
     agentIdentifiedActorIds: new Set([SP_EXECUTE_ID]),
   });
   // Each NormalizedChange must reference exactly one RawEvent, and it
@@ -128,7 +135,7 @@ test("normalizeRawEvents: rawEventIds reference the input RawEvents", async () =
 test("normalizeRawEvents: before-state is reconstructed from snapshot, after-state is authoritative from audit", async () => {
   const { normalized } = await normalizeRawEvents(rawEvents, {
     tenantId: rawEvents[0]!.tenantId,
-    snapshotProvider: createStubSnapshotProvider(),
+    snapshotProvider: newSnapshotProvider(),
     agentIdentifiedActorIds: new Set([SP_EXECUTE_ID]),
   });
   for (const c of normalized) {
@@ -144,7 +151,7 @@ test("normalizeRawEvents: before-state is reconstructed from snapshot, after-sta
 test("normalizeRawEvents: actor is agent-identified SP-Execute; selfAction=false", async () => {
   const { normalized } = await normalizeRawEvents(rawEvents, {
     tenantId: rawEvents[0]!.tenantId,
-    snapshotProvider: createStubSnapshotProvider(),
+    snapshotProvider: newSnapshotProvider(),
     agentIdentifiedActorIds: new Set([SP_EXECUTE_ID]),
   });
   for (const c of normalized) {
@@ -158,7 +165,7 @@ test("normalizeRawEvents: actor is agent-identified SP-Execute; selfAction=false
 test("normalizeRawEvents: correlationHints.operationBatchId is null (WI-05 §23.E)", async () => {
   const { normalized } = await normalizeRawEvents(rawEvents, {
     tenantId: rawEvents[0]!.tenantId,
-    snapshotProvider: createStubSnapshotProvider(),
+    snapshotProvider: newSnapshotProvider(),
     agentIdentifiedActorIds: new Set([SP_EXECUTE_ID]),
   });
   for (const c of normalized) {
@@ -169,3 +176,81 @@ test("normalizeRawEvents: correlationHints.operationBatchId is null (WI-05 §23.
     );
   }
 });
+
+// ─── Non-trivial pre-state path: isMember=true (idempotent re-add) ────────
+// Exercises the reconstructed before-state path end-to-end through the
+// normalizer, against a baseline that reports the target user as an
+// existing member of the target group.
+
+test("normalizeRawEvents: idempotent re-add → beforeState.isMember=true when baseline already lists the user", async () => {
+  // Synthesize a RawEvent by cloning the first canonical event and
+  // retargeting it at the synthetic pre-member group, where kq-test-05
+  // is already a member (per platform/fixtures/canonical/baselines).
+  const canonical = rawEvents[0]!;
+  const retargeted = retargetEventToGroup(canonical, {
+    groupId: PRE_MEMBER_GROUP_ID,
+    groupDisplayName: "Synthetic-Pre-Member-Group",
+  });
+
+  const { normalized, skipped } = await normalizeRawEvents([retargeted], {
+    tenantId: canonical.tenantId,
+    snapshotProvider: newSnapshotProvider(),
+    agentIdentifiedActorIds: new Set([SP_EXECUTE_ID]),
+  });
+
+  assert.equal(normalized.length, 1);
+  assert.equal(skipped.length, 0);
+  const change = normalized[0]!;
+
+  const beforeState = change.beforeState!.state as {
+    groupId: string;
+    isMember: boolean;
+    userId: string;
+  };
+  assert.equal(beforeState.isMember, true, "baseline lists this user as a prior member");
+  assert.equal(beforeState.groupId, PRE_MEMBER_GROUP_ID);
+  assert.equal(change.beforeState!.confidence, "reconstructed");
+  assert.equal(change.beforeState!.captureSource, "snapshot-diff");
+
+  // After-state still comes from audit-newValue and still says isMember=true;
+  // the interesting bit is that before and after now agree (no net change).
+  const afterState = change.afterState.state as { isMember: boolean };
+  assert.equal(afterState.isMember, true);
+  assert.notEqual(
+    change.beforeState!.stateHash,
+    change.afterState.stateHash,
+    "beforeState and afterState still hash differently — afterState carries auditNewValues metadata",
+  );
+});
+
+// ─── Synthesis helper ──────────────────────────────────────────────────────
+
+/** Shallow-clone a RawEvent and rewrite its target group in modifiedProperties. */
+function retargetEventToGroup(
+  source: RawEvent,
+  target: { groupId: string; groupDisplayName: string },
+): RawEvent {
+  const payload = source.rawPayload as Record<string, unknown>;
+  const targetResources = (payload.targetResources as Array<Record<string, unknown>>).map(
+    (tr) => {
+      const mp = (tr.modifiedProperties as Array<Record<string, unknown>> | undefined)?.map(
+        (p) => {
+          if (p.displayName === "Group.ObjectID") {
+            return { ...p, newValue: JSON.stringify(target.groupId) };
+          }
+          if (p.displayName === "Group.DisplayName") {
+            return { ...p, newValue: JSON.stringify(target.groupDisplayName) };
+          }
+          return p;
+        },
+      );
+      return { ...tr, ...(mp ? { modifiedProperties: mp } : {}) };
+    },
+  );
+  return {
+    ...source,
+    rawEventId: `raw_synthetic_${target.groupId}`,
+    rawPayload: { ...payload, targetResources },
+    normalizedChangeIds: [],
+  };
+}
