@@ -16,6 +16,7 @@
 import { randomUUID } from "node:crypto";
 import { PlatformError, rootLogger, type Logger } from "@kavachiq/platform";
 import type { NormalizedChange, RawEvent } from "@kavachiq/schema";
+import { mapCaPolicyUpdateEvent } from "./ca-policy-update.js";
 import { classifyEvent } from "./discriminator.js";
 import { mapMemberAddEvent } from "./member-add.js";
 import type { SnapshotProvider } from "./snapshot-provider.js";
@@ -69,6 +70,16 @@ export async function normalizeRawEvents(
         tenantId: opts.tenantId,
         snapshotProvider: opts.snapshotProvider,
         agentIdentifiedActorIds: opts.agentIdentifiedActorIds,
+        newChangeId,
+        bundleIdFor: () => bundleIdFor(payload),
+      });
+      normalized.push(change);
+      continue;
+    }
+
+    if (cls === "conditional-access-change") {
+      const change = mapCaPolicyUpdateEvent(rawEvent, {
+        tenantId: opts.tenantId,
         newChangeId,
         bundleIdFor: () => bundleIdFor(payload),
       });

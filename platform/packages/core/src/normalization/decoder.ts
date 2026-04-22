@@ -39,3 +39,53 @@ export function unwrapScalar(value: string | null): string | null {
   }
   return value;
 }
+
+/**
+ * Parse a single-JSON-encoded full-policy object string (M2 convention).
+ *
+ * The M2 `ConditionalAccessPolicy` modifiedProperty stores the entire
+ * policy state as a JSON-encoded object string. One `JSON.parse` call
+ * returns the complete policy object. Throws if the value is absent,
+ * malformed, or not a JSON object.
+ *
+ *   `'{"id":"…","state":"…"}'` → `{ id: "…", state: "…" }`
+ *   `null`                     → throws
+ *   `'123'`                    → throws (not an object)
+ *
+ * Per WI-05 §23.B this encoding is DISTINCT from M1/M3/M4's double-JSON
+ * convention; do not pipe M2 values through `unwrapScalar`.
+ */
+export function parsePolicyJsonObject(
+  value: string | null,
+  context: { field: string; eventId?: string },
+): Record<string, unknown> {
+  if (value === null || value.length === 0) {
+    throw new Error(
+      `Expected JSON-encoded policy object for field '${context.field}'${
+        context.eventId ? ` on event ${context.eventId}` : ""
+      }; got ${value === null ? "null" : "empty string"}`,
+    );
+  }
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(value);
+  } catch (err) {
+    throw new Error(
+      `Field '${context.field}'${
+        context.eventId ? ` on event ${context.eventId}` : ""
+      } is not valid JSON: ${(err as Error).message}`,
+    );
+  }
+  if (
+    parsed === null ||
+    typeof parsed !== "object" ||
+    Array.isArray(parsed)
+  ) {
+    throw new Error(
+      `Field '${context.field}'${
+        context.eventId ? ` on event ${context.eventId}` : ""
+      } parsed to ${Array.isArray(parsed) ? "array" : typeof parsed}; expected object`,
+    );
+  }
+  return parsed as Record<string, unknown>;
+}

@@ -17,7 +17,7 @@ export type { NormalizeOptions } from "./normalize.js";
 export { classifyEvent } from "./discriminator.js";
 export type { CanonicalChangeClass } from "./discriminator.js";
 
-export { unwrapScalar } from "./decoder.js";
+export { unwrapScalar, parsePolicyJsonObject } from "./decoder.js";
 
 export {
   createFilesystemSnapshotProvider,
@@ -34,3 +34,6 @@ export type {
 
 export { mapMemberAddEvent } from "./member-add.js";
 export type { MemberAddMapperOptions } from "./member-add.js";
+
+export { mapCaPolicyUpdateEvent } from "./ca-policy-update.js";
+export type { CaPolicyUpdateMapperOptions } from "./ca-policy-update.js";

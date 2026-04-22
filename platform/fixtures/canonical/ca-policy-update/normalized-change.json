@@ -1,0 +1,154 @@
+{
+  "changeId": "chg_ca_e442af57-2eaf-4478-8afa-901c4cf0464d",
+  "tenantId": "3725cec5-3e2d-402c-a5a6-460c325d8f87",
+  "source": {
+    "primarySource": "entra-audit",
+    "corroboratingSources": [],
+    "conflictingSources": [],
+    "rawEventIds": [
+      "raw_ca_e442af57-2eaf-4478-8afa-901c4cf0464d"
+    ]
+  },
+  "actor": {
+    "type": "user",
+    "id": "cdd19489-8aee-4264-ac7d-ed544d97d343",
+    "displayName": "Gopal Patwa",
+    "agentIdentified": false,
+    "sessionId": null
+  },
+  "target": {
+    "objectType": "conditionalAccessPolicy",
+    "objectId": "62eb2eec-6157-45f4-abb5-21b2d85b4e29",
+    "externalId": "62eb2eec-6157-45f4-abb5-21b2d85b4e29",
+    "displayName": "Finance-MFA-Bypass"
+  },
+  "changeType": "policyModified",
+  "beforeState": {
+    "state": {
+      "policyId": "62eb2eec-6157-45f4-abb5-21b2d85b4e29",
+      "policyDisplayName": "Finance-MFA-Bypass",
+      "auditPolicyJson": {
+        "id": "62eb2eec-6157-45f4-abb5-21b2d85b4e29",
+        "displayName": "Finance-MFA-Bypass",
+        "createdDateTime": "2026-04-17T06:08:45.7393946+00:00",
+        "state": "enabledForReportingButNotEnforced",
+        "conditions": {
+          "applications": {
+            "includeApplications": [
+              "All"
+            ],
+            "excludeApplications": [],
+            "includeUserActions": [],
+            "includeAuthenticationContextClassReferences": [],
+            "applicationFilter": null
+          },
+          "users": {
+            "includeUsers": [],
+            "excludeUsers": [],
+            "includeGroups": [
+              "45a4b187-c7c6-422a-b82b-48e199f63bb3"
+            ],
+            "excludeGroups": [],
+            "includeRoles": [],
+            "excludeRoles": []
+          },
+          "userRiskLevels": [],
+          "signInRiskLevels": [],
+          "clientAppTypes": [
+            "all"
+          ],
+          "servicePrincipalRiskLevels": []
+        },
+        "grantControls": {
+          "operator": "OR",
+          "builtInControls": [
+            "mfa"
+          ],
+          "customAuthenticationFactors": [],
+          "termsOfUse": []
+        }
+      }
+    },
+    "capturedAt": "2026-04-18T05:35:32.1900991Z",
+    "captureSource": "entra-audit",
+    "confidence": "authoritative",
+    "stateHash": "0227e24a6e1da89aeb831632867ecf6ba8e78d097cb5f969f18966ef923046d3"
+  },
+  "afterState": {
+    "state": {
+      "policyId": "62eb2eec-6157-45f4-abb5-21b2d85b4e29",
+      "policyDisplayName": "Finance-MFA-Bypass",
+      "auditPolicyJson": {
+        "id": "62eb2eec-6157-45f4-abb5-21b2d85b4e29",
+        "displayName": "Finance-MFA-Bypass",
+        "createdDateTime": "2026-04-17T06:08:45.7393946+00:00",
+        "modifiedDateTime": "2026-04-18T05:35:31.2097538+00:00",
+        "state": "enabledForReportingButNotEnforced",
+        "conditions": {
+          "applications": {
+            "includeApplications": [
+              "All"
+            ],
+            "excludeApplications": [],
+            "includeUserActions": [],
+            "includeAuthenticationContextClassReferences": [],
+            "applicationFilter": null
+          },
+          "users": {
+            "includeUsers": [],
+            "excludeUsers": [],
+            "includeGroups": [
+              "45a4b187-c7c6-422a-b82b-48e199f63bb3"
+            ],
+            "excludeGroups": [],
+            "includeRoles": [],
+            "excludeRoles": []
+          },
+          "locations": {
+            "includeLocations": [
+              "All"
+            ],
+            "excludeLocations": []
+          },
+          "userRiskLevels": [],
+          "signInRiskLevels": [],
+          "clientAppTypes": [
+            "all"
+          ],
+          "servicePrincipalRiskLevels": []
+        },
+        "grantControls": {
+          "operator": "OR",
+          "builtInControls": [
+            "mfa"
+          ],
+          "customAuthenticationFactors": [],
+          "termsOfUse": []
+        }
+      }
+    },
+    "capturedAt": "2026-04-18T05:35:32.1900991Z",
+    "captureSource": "entra-audit",
+    "confidence": "authoritative",
+    "stateHash": "abd59e5bf78658d954717ff227c5bfc888278eb184d46f92d148196fa6259101"
+  },
+  "confidence": {
+    "level": "high",
+    "reasons": [
+      "authoritative-audit-event-observed",
+      "authoritative-before-state-from-audit-oldValue",
+      "authoritative-after-state-from-audit-newValue"
+    ],
+    "missingFields": []
+  },
+  "correlationHints": {
+    "actorSessionId": null,
+    "operationBatchId": null,
+    "timeCluster": "2026-04-18T05:35:32Z"
+  },
+  "selfAction": false,
+  "observedAt": "2026-04-18T05:35:32.1900991Z",
+  "ingestedAt": "2026-04-18T05:35:33.190Z",
+  "bundleId": null,
+  "schemaVersion": 1
+}

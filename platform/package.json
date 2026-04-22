@@ -17,7 +17,8 @@
     "test-member-removal": "tsx scripts/test-member-removal.ts",
     "audit-completeness-spike": "tsx scripts/run-audit-completeness-spike.ts",
     "trigger-canonical-mutations": "tsx scripts/trigger-canonical-mutations.ts",
-    "generate-canonical-fixtures": "tsx scripts/generate-canonical-fixtures.ts"
+    "generate-canonical-fixtures": "tsx scripts/generate-canonical-fixtures.ts",
+    "generate-ca-canonical-fixture": "tsx scripts/generate-ca-canonical-fixture.ts"
   },
   "devDependencies": {
     "@types/node": "^20.12.0",

@@ -23,6 +23,9 @@ npm run generate-canonical-fixtures
 | `incident.json` | `Incident` | 1 |
 | `blast-radius.json` | (placeholder — Phase 2) | — |
 | `recovery-plan.json` | (placeholder — Phase 3) | — |
+| `baselines/…` | group-membership baseline snapshots | 2 |
+| `ca-policy-update/raw-event.json` | `RawEvent` (M2 scenario) | 1 |
+| `ca-policy-update/normalized-change.json` | `NormalizedChange` (M2 scenario) | 1 |
 
 ## Source evidence
 
@@ -32,12 +35,37 @@ npm run generate-canonical-fixtures
 | WI-05 completeness matrix | `platform/wi05/audit-completeness-matrix.json` | Confirmed `matchCount: 12, withOldValue: 0, withNewValue: 12, beforeStateAssessment: "absent"` for group-membership — drives the `StateSnapshot.confidence` tagging below |
 | WI-05 spike report | `docs/SPIKE_REPORT_AUDIT_LOG_COMPLETENESS.md §7` | Per-class before-state strategy |
 | Canonical scenario | `docs/CANONICAL_SCENARIO_FIXTURE.md` | Incident classification, sensitivity, scoring |
-| Generator | `platform/scripts/generate-canonical-fixtures.ts` | Single-purpose transform (not a framework) |
+| Generator (M1) | `platform/scripts/generate-canonical-fixtures.ts` | Single-purpose transform (not a framework) |
+| Generator (M2) | `platform/scripts/generate-ca-canonical-fixture.ts` | Single-purpose transform for the CA fixture |
 
-M2 (Conditional Access), M3 (app role assignment), and M4 (SP credential)
-evidence from WI-05 is present in `platform/wi05/raw-events.json` but is
-**not** part of this canonical fixture set. The canonical scenario is
-specifically the 12-member-add trigger.
+M3 (app role assignment) and M4 (SP credential) evidence from WI-05 is
+present in `platform/wi05/raw-events.json` but is **not** part of this
+canonical fixture set yet. M2 (Conditional Access) is included — see the
+next section.
+
+## M2 Conditional Access fixture (`ca-policy-update/`)
+
+Derived from the single real `Update conditional access policy` event
+captured in WI-05 — sample event ID
+`IPCGraph_e442af57-2eaf-4478-8afa-901c4cf0464d_7G376_5282903`
+(spike report §4.2, §9.3). Regenerate with:
+
+```bash
+cd platform
+npm run build --workspace=@kavachiq/core
+npm run generate-ca-canonical-fixture
+```
+
+Per WI-05 §4.2 / §7 both `beforeState` and `afterState` come directly
+from the audit event (`oldValue` / `newValue` of the
+`ConditionalAccessPolicy` modifiedProperty, each a full policy JSON
+object). Both are tagged `confidence: "authoritative"` /
+`captureSource: "entra-audit"`. The fixture is the mapper's
+deterministic output over the real event — **not** invented test data.
+
+The `Update policy` (×2) companion events that fire alongside each CA
+edit are not part of this fixture; WI-05 §6.3 documented them as
+low-signal stubs that the narrow CA matcher ignores.
 
 ## Fields directly from real audit evidence
 

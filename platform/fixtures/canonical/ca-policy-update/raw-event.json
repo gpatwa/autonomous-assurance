@@ -1,0 +1,62 @@
+{
+  "rawEventId": "raw_ca_e442af57-2eaf-4478-8afa-901c4cf0464d",
+  "tenantId": "3725cec5-3e2d-402c-a5a6-460c325d8f87",
+  "sourceSystem": "entra-audit",
+  "rawPayload": {
+    "id": "IPCGraph_e442af57-2eaf-4478-8afa-901c4cf0464d_7G376_5282903",
+    "category": "Policy",
+    "correlationId": "e442af57-2eaf-4478-8afa-901c4cf0464d",
+    "result": "success",
+    "resultReason": "",
+    "activityDisplayName": "Update conditional access policy",
+    "activityDateTime": "2026-04-18T05:35:32.1900991Z",
+    "loggedByService": "Conditional Access",
+    "operationType": "Update",
+    "initiatedBy": {
+      "user": {
+        "id": "cdd19489-8aee-4264-ac7d-ed544d97d343",
+        "displayName": "Gopal Patwa",
+        "userPrincipalName": "GopalPatwa@patwainc.onmicrosoft.com",
+        "ipAddress": "76.132.152.70",
+        "userType": "Member",
+        "agentType": "notAgentic",
+        "homeTenantId": null,
+        "homeTenantName": null
+      },
+      "app": {
+        "appId": "74658136-14ec-4630-ad9b-26e160ff0fc6",
+        "displayName": "ADIbizaUX",
+        "servicePrincipalId": null,
+        "servicePrincipalName": null
+      }
+    },
+    "targetResources": [
+      {
+        "id": "62eb2eec-6157-45f4-abb5-21b2d85b4e29",
+        "displayName": "Finance-MFA-Bypass",
+        "type": "Policy",
+        "userPrincipalName": null,
+        "groupType": null,
+        "modifiedProperties": [
+          {
+            "displayName": "ConditionalAccessPolicy",
+            "oldValue": "{\"id\":\"62eb2eec-6157-45f4-abb5-21b2d85b4e29\",\"displayName\":\"Finance-MFA-Bypass\",\"createdDateTime\":\"2026-04-17T06:08:45.7393946+00:00\",\"state\":\"enabledForReportingButNotEnforced\",\"conditions\":{\"applications\":{\"includeApplications\":[\"All\"],\"excludeApplications\":[],\"includeUserActions\":[],\"includeAuthenticationContextClassReferences\":[],\"applicationFilter\":null},\"users\":{\"includeUsers\":[],\"excludeUsers\":[],\"includeGroups\":[\"45a4b187-c7c6-422a-b82b-48e199f63bb3\"],\"excludeGroups\":[],\"includeRoles\":[],\"excludeRoles\":[]},\"userRiskLevels\":[],\"signInRiskLevels\":[],\"clientAppTypes\":[\"all\"],\"servicePrincipalRiskLevels\":[]},\"grantControls\":{\"operator\":\"OR\",\"builtInControls\":[\"mfa\"],\"customAuthenticationFactors\":[],\"termsOfUse\":[]}}",
+            "newValue": "{\"id\":\"62eb2eec-6157-45f4-abb5-21b2d85b4e29\",\"displayName\":\"Finance-MFA-Bypass\",\"createdDateTime\":\"2026-04-17T06:08:45.7393946+00:00\",\"modifiedDateTime\":\"2026-04-18T05:35:31.2097538+00:00\",\"state\":\"enabledForReportingButNotEnforced\",\"conditions\":{\"applications\":{\"includeApplications\":[\"All\"],\"excludeApplications\":[],\"includeUserActions\":[],\"includeAuthenticationContextClassReferences\":[],\"applicationFilter\":null},\"users\":{\"includeUsers\":[],\"excludeUsers\":[],\"includeGroups\":[\"45a4b187-c7c6-422a-b82b-48e199f63bb3\"],\"excludeGroups\":[],\"includeRoles\":[],\"excludeRoles\":[]},\"locations\":{\"includeLocations\":[\"All\"],\"excludeLocations\":[]},\"userRiskLevels\":[],\"signInRiskLevels\":[],\"clientAppTypes\":[\"all\"],\"servicePrincipalRiskLevels\":[]},\"grantControls\":{\"operator\":\"OR\",\"builtInControls\":[\"mfa\"],\"customAuthenticationFactors\":[],\"termsOfUse\":[]}}"
+          }
+        ]
+      }
+    ],
+    "additionalDetails": [
+      {
+        "key": "Category",
+        "value": "Conditional Access"
+      }
+    ]
+  },
+  "ingestedAt": "2026-04-18T05:35:33.190Z",
+  "processingStatus": "normalized",
+  "normalizedChangeIds": [
+    "chg_ca_e442af57-2eaf-4478-8afa-901c4cf0464d"
+  ],
+  "schemaVersion": 1
+}
