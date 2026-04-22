@@ -48,7 +48,7 @@ const SP_EXECUTE_ID = "bf131def-02b5-4e90-8f32-ec4b3abf96db";
 // ─── Helpers ───────────────────────────────────────────────────────────────
 
 /** Strip fields that only a later pipeline stage populates. */
-function stripVariableFields(c: NormalizedChange): Omit<NormalizedChange, "changeId" | "bundleId"> & {
+function stripVariableFields(c: NormalizedChange): Omit<NormalizedChange, "changeId" | "bundleId" | "source"> & {
   source: Omit<NormalizedChange["source"], "rawEventIds">;
 } {
   const { changeId: _changeId, bundleId: _bundleId, source, ...rest } = c;
