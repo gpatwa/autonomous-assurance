@@ -107,6 +107,60 @@ NEXT_PUBLIC_SITE_ORIGIN=https://agents.kavachiq.com
 5. **Social preview recache.** After DNS cutover, refresh the OG image cache on LinkedIn / X / Slack (each has its own re-scrape mechanism).
 6. **Old links.** Audit any existing external references (LinkedIn posts, investor decks, partner pages) and update them to `agents.kavachiq.com`. If `staging.kavachiq.com` was indexed, a 410 or noindex on its home is cleaner than a redirect — redirecting staging → agents would conflate the two hostnames in Search Console.
 
+## Deploy checklist (concrete commands)
+
+Run `npm run verify:seo` after each deploy to prove the contracts in this doc hold against the real URL. Zero exit = all 16 assertions pass; non-zero = drift, with a per-check diff in the output.
+
+### Step 1 — staging deploy (non-public, noindex)
+
+```bash
+# In the staging deploy config (Azure App Service / Vercel / etc.):
+#   set NEXT_PUBLIC_SITE_ORIGIN=https://staging.kavachiq.com
+# Trigger a deploy.
+
+# Then from any machine with network access to staging:
+SITE_URL=https://staging.kavachiq.com npm run verify:seo
+```
+
+Expected: `PASS`. Key assertions specific to this step:
+
+- `robots.txt` serves `Disallow: /` with no sitemap declaration.
+- `<meta name="robots">` is `noindex, nofollow`.
+- Canonical is `https://staging.kavachiq.com` (self), **not** the public origin.
+- `og:url` matches the staging origin, not the public one.
+- If `sitemap.xml` is served, its URLs do not advertise the public origin.
+
+### Step 2 — public deploy + Search Console
+
+```bash
+# DNS: agents.kavachiq.com CNAME/ALIAS → public host.
+# TLS: cert for agents.kavachiq.com.
+# Prod deploy config:
+#   leave NEXT_PUBLIC_SITE_ORIGIN unset  (defaults to https://agents.kavachiq.com)
+#   OR set it explicitly to https://agents.kavachiq.com
+# Trigger the production deploy.
+
+npm run verify:seo    # defaults to SITE_URL=https://agents.kavachiq.com
+```
+
+Expected: `PASS`. Key assertions specific to this step:
+
+- `robots.txt`: `Allow: /`, `Disallow: /demo`, `Disallow: /api/`, `Sitemap: https://agents.kavachiq.com/sitemap.xml`, `Host: https://agents.kavachiq.com`.
+- `sitemap.xml`: valid `<urlset>` listing `/` and `/platform` at the public origin, with no staging/preview/localhost URLs leaking in.
+- `<meta name="robots">`: `index, follow`.
+- `<link rel="canonical">` and `og:url`: `https://agents.kavachiq.com`.
+- `og:site_name`: `KavachIQ Autonomous Assurance`.
+- JSON-LD: `@type: WebSite`, `name: KavachIQ Autonomous Assurance`, `publisher.name: KavachIQ`, `publisher.url: https://kavachiq.com`.
+
+After `verify:seo` passes against the live public host:
+
+1. Add `https://agents.kavachiq.com` as a property in Google Search Console.
+2. Verify ownership (DNS TXT / HTML tag — whichever method you already use for `kavachiq.com`).
+3. Submit `https://agents.kavachiq.com/sitemap.xml` in the Sitemaps section.
+4. Request indexing on the home and `/platform` (optional — speeds up first crawl).
+5. Re-scrape OG preview on LinkedIn Post Inspector, X Card Validator, and Slack (paste the URL into a DM).
+6. Update external references: LinkedIn company page, investor deck, partner pages. Prefer 410 over 301 for the old `staging.kavachiq.com` root if it was ever publicly indexed.
+
 ## Deferred (not in this pass)
 
 - Blog / resource pages on the agents subdomain.

@@ -25,12 +25,23 @@ export const SITE_NAME = "KavachIQ Autonomous Assurance";
 export const PARENT_BRAND_URL = "https://kavachiq.com";
 
 /**
- * Resolved site origin. Reads `NEXT_PUBLIC_SITE_ORIGIN` at build time;
- * falls back to the public production origin. Trailing slashes are
- * stripped so downstream code can freely concat paths.
+ * Resolved site origin.
+ *
+ * Resolution order:
+ *   1. `NEXT_PUBLIC_SITE_ORIGIN` env var (the canonical source of truth).
+ *   2. `NODE_ENV === "production"` → public production origin. This is
+ *      the safety default so a missing env var in prod does NOT noindex.
+ *   3. Otherwise (dev / preview) → `http://localhost:3000`. Ensures a
+ *      plain `npm run dev` never emits `index, follow` or a canonical
+ *      pointing at the real public hostname.
+ *
+ * Trailing slashes are stripped so downstream code can freely concat paths.
  */
 export const SITE_ORIGIN: string = (
-  process.env.NEXT_PUBLIC_SITE_ORIGIN ?? PUBLIC_PRODUCTION_ORIGIN
+  process.env.NEXT_PUBLIC_SITE_ORIGIN ??
+  (process.env.NODE_ENV === "production"
+    ? PUBLIC_PRODUCTION_ORIGIN
+    : "http://localhost:3000")
 ).replace(/\/+$/, "");
 
 /** True only when the resolved origin is the public production hostname. */
