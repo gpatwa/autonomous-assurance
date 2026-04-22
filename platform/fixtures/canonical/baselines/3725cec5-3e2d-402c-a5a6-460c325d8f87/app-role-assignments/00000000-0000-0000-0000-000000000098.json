@@ -1,0 +1,13 @@
+{
+  "tenantId": "3725cec5-3e2d-402c-a5a6-460c325d8f87",
+  "servicePrincipalId": "00000000-0000-0000-0000-000000000098",
+  "servicePrincipalDisplayName": "Synthetic-Pre-Assigned-App",
+  "capturedAt": "2026-04-17T07:00:00.000Z",
+  "assignments": [
+    {
+      "appRoleId": "00000000-0000-0000-0000-000000000000",
+      "principalId": "82238b1d-1f1f-478d-b8db-76314cdeaae9",
+      "principalType": "User"
+    }
+  ]
+}

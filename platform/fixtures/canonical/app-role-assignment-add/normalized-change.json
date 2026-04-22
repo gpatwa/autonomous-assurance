@@ -1,0 +1,87 @@
+{
+  "changeId": "chg_m3_74c794fb-6e3f-4f04-848c-3fd432db28f1",
+  "tenantId": "3725cec5-3e2d-402c-a5a6-460c325d8f87",
+  "source": {
+    "primarySource": "entra-audit",
+    "corroboratingSources": [],
+    "conflictingSources": [],
+    "rawEventIds": [
+      "raw_m3_74c794fb-6e3f-4f04-848c-3fd432db28f1"
+    ]
+  },
+  "actor": {
+    "type": "service-principal",
+    "id": "5b459613-2158-484f-a28a-61fd04b1b595",
+    "displayName": "SP-Setup",
+    "agentIdentified": true,
+    "sessionId": null
+  },
+  "target": {
+    "objectType": "servicePrincipal",
+    "objectId": "cb9d0b62-9b5a-4614-8e0f-cb73f57f23b0",
+    "externalId": "cb9d0b62-9b5a-4614-8e0f-cb73f57f23b0",
+    "displayName": "KavachiqTest-App-01"
+  },
+  "changeType": "assignmentAdded",
+  "beforeState": {
+    "state": {
+      "servicePrincipalId": "cb9d0b62-9b5a-4614-8e0f-cb73f57f23b0",
+      "servicePrincipalDisplayName": "KavachiqTest-App-01",
+      "appRoleId": "00000000-0000-0000-0000-000000000000",
+      "principalId": "82238b1d-1f1f-478d-b8db-76314cdeaae9",
+      "principalType": "User",
+      "isAssigned": false
+    },
+    "capturedAt": "2026-04-17T07:43:06.4437897Z",
+    "captureSource": "snapshot-diff",
+    "confidence": "reconstructed",
+    "stateHash": "9aaead6c8f5ce2e20e936d8c127d639cd97ff3ca5fae36acd352bc336c4a43d6"
+  },
+  "afterState": {
+    "state": {
+      "servicePrincipalId": "cb9d0b62-9b5a-4614-8e0f-cb73f57f23b0",
+      "servicePrincipalDisplayName": "KavachiqTest-App-01",
+      "principalId": "82238b1d-1f1f-478d-b8db-76314cdeaae9",
+      "principalType": "User",
+      "principalDisplayName": "kq-test-17@patwainc.onmicrosoft.com",
+      "appRoleId": "00000000-0000-0000-0000-000000000000",
+      "isAssigned": true,
+      "auditNewValues": {
+        "AppRole.Id": "00000000-0000-0000-0000-000000000000",
+        "AppRole.Value": "",
+        "AppRole.DisplayName": "",
+        "AppRoleAssignment.CreatedDateTime": "2026-04-17T07:43:06.28379Z",
+        "AppRoleAssignment.LastModifiedDateTime": "2026-04-17T07:43:06.28379Z",
+        "User.ObjectID": "82238b1d-1f1f-478d-b8db-76314cdeaae9",
+        "User.UPN": "kq-test-17@patwainc.onmicrosoft.com",
+        "User.PUID": "10032005D041AF2F",
+        "TargetId.ServicePrincipalNames": "940e722d-b4e8-4f72-b55b-aea429b86a87"
+      }
+    },
+    "capturedAt": "2026-04-17T07:43:06.4437897Z",
+    "captureSource": "entra-audit",
+    "confidence": "authoritative",
+    "stateHash": "a231dba15a308e1c08176a2c54c70b562b58da85796e62c4e78f42b96b2111f8"
+  },
+  "confidence": {
+    "level": "high",
+    "reasons": [
+      "authoritative-audit-event-observed",
+      "authoritative-after-state-from-audit-newValue",
+      "reconstructed-before-state-from-snapshot (WI-05 finding: audit has no oldValue for app-role-assignment)"
+    ],
+    "missingFields": [
+      "authoritative-before-state"
+    ]
+  },
+  "correlationHints": {
+    "actorSessionId": null,
+    "operationBatchId": null,
+    "timeCluster": "2026-04-17T07:43:06Z"
+  },
+  "selfAction": false,
+  "observedAt": "2026-04-17T07:43:06.4437897Z",
+  "ingestedAt": "2026-04-17T07:43:07.443Z",
+  "bundleId": null,
+  "schemaVersion": 1
+}

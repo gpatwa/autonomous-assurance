@@ -29,6 +29,8 @@ export {
 export type {
   SnapshotProvider,
   GroupMembershipBeforeArgs,
+  AppRoleAssignmentBeforeArgs,
+  BaselineSubjectKind,
   FilesystemSnapshotProviderOptions,
 } from "./snapshot-provider.js";
 
@@ -37,3 +39,6 @@ export type { MemberAddMapperOptions } from "./member-add.js";
 
 export { mapCaPolicyUpdateEvent } from "./ca-policy-update.js";
 export type { CaPolicyUpdateMapperOptions } from "./ca-policy-update.js";
+
+export { mapAppRoleAssignmentAddEvent } from "./app-role-assignment.js";
+export type { AppRoleAssignmentMapperOptions } from "./app-role-assignment.js";

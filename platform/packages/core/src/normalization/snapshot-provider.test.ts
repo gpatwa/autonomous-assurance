@@ -3,12 +3,15 @@
  *
  * Exercises the real baseline adapter against
  * `platform/fixtures/canonical/baselines/`. Covers:
- *   - isMember: false (canonical privileged group — empty member set)
- *   - isMember: true  (synthetic pre-member group — idempotent re-add path)
- *   - missing baseline file → BaselineNotFoundError
- *   - asOf preceding the baseline capture → BaselineTooNewError
- *   - mismatched tenant/group in the file → BaselineMismatchError
- *   - cache: two calls for the same (tenant, group) read disk once
+ *   Group membership (M1):
+ *     - isMember: false (canonical privileged group — empty member set)
+ *     - isMember: true  (synthetic pre-member group — idempotent re-add path)
+ *     - missing / too-new / mismatched baseline errors
+ *     - per-(tenant, group) cache
+ *   App-role assignment (M3):
+ *     - isAssigned: false (canonical target SP — no prior assignment)
+ *     - isAssigned: true  (synthetic pre-assigned app — idempotent re-grant path)
+ *     - missing baseline file → BaselineNotFoundError (subjectKind tag)
  *
  * Run from platform/ root:
  *   npm test --workspace=@kavachiq/core
@@ -239,5 +242,96 @@ test("snapshot-provider: caches file reads per (tenant, group)", async () => {
     );
   } finally {
     rmSync(tmp, { recursive: true, force: true });
+  }
+});
+
+// ─── M3: app-role-assignment ──────────────────────────────────────────────
+
+const M3_CANONICAL_SP_ID = "cb9d0b62-9b5a-4614-8e0f-cb73f57f23b0"; // KavachiqTest-App-01
+const M3_PRE_ASSIGNED_SP_ID = "00000000-0000-0000-0000-000000000098"; // synthetic
+const M3_USER_ID = "82238b1d-1f1f-478d-b8db-76314cdeaae9"; // kq-test-17
+const DEFAULT_ACCESS_ROLE_ID = "00000000-0000-0000-0000-000000000000";
+
+test("snapshot-provider: canonical target SP → isAssigned=false (no prior assignment)", async () => {
+  const provider = createFilesystemSnapshotProvider({ rootDir: BASELINE_ROOT });
+  const snap = await provider.getAppRoleAssignmentBefore({
+    tenantId: TENANT_ID,
+    servicePrincipalId: M3_CANONICAL_SP_ID,
+    servicePrincipalDisplayName: "KavachiqTest-App-01",
+    appRoleId: DEFAULT_ACCESS_ROLE_ID,
+    principalId: M3_USER_ID,
+    principalType: "User",
+    asOf: "2026-04-17T07:43:06.4437897Z",
+  });
+  assert.equal(snap.confidence, "reconstructed");
+  assert.equal(snap.captureSource, "snapshot-diff");
+  assert.deepEqual(snap.state, {
+    servicePrincipalId: M3_CANONICAL_SP_ID,
+    servicePrincipalDisplayName: "KavachiqTest-App-01",
+    appRoleId: DEFAULT_ACCESS_ROLE_ID,
+    principalId: M3_USER_ID,
+    principalType: "User",
+    isAssigned: false,
+  });
+});
+
+test("snapshot-provider: synthetic pre-assigned SP → isAssigned=true (idempotent re-grant path)", async () => {
+  const provider = createFilesystemSnapshotProvider({ rootDir: BASELINE_ROOT });
+  const snap = await provider.getAppRoleAssignmentBefore({
+    tenantId: TENANT_ID,
+    servicePrincipalId: M3_PRE_ASSIGNED_SP_ID,
+    servicePrincipalDisplayName: "Synthetic-Pre-Assigned-App",
+    appRoleId: DEFAULT_ACCESS_ROLE_ID,
+    principalId: M3_USER_ID, // listed in this baseline's assignments
+    principalType: "User",
+    asOf: "2026-04-17T08:00:00.000Z",
+  });
+  assert.equal(snap.state.isAssigned, true);
+  assert.equal(snap.confidence, "reconstructed");
+  const expectedHash = sha256(
+    JSON.stringify({
+      servicePrincipalId: M3_PRE_ASSIGNED_SP_ID,
+      servicePrincipalDisplayName: "Synthetic-Pre-Assigned-App",
+      appRoleId: DEFAULT_ACCESS_ROLE_ID,
+      principalId: M3_USER_ID,
+      principalType: "User",
+      isAssigned: true,
+    }),
+  );
+  assert.equal(snap.stateHash, expectedHash);
+});
+
+test("snapshot-provider: synthetic pre-assigned SP → isAssigned=false for a different (appRole, principal) pair", async () => {
+  const provider = createFilesystemSnapshotProvider({ rootDir: BASELINE_ROOT });
+  const snap = await provider.getAppRoleAssignmentBefore({
+    tenantId: TENANT_ID,
+    servicePrincipalId: M3_PRE_ASSIGNED_SP_ID,
+    servicePrincipalDisplayName: "Synthetic-Pre-Assigned-App",
+    appRoleId: "11111111-1111-1111-1111-111111111111", // different role
+    principalId: M3_USER_ID,
+    principalType: "User",
+    asOf: "2026-04-17T08:00:00.000Z",
+  });
+  assert.equal(snap.state.isAssigned, false);
+});
+
+test("snapshot-provider: missing app-role-assignment baseline throws BaselineNotFoundError (with subjectKind)", async () => {
+  const provider = createFilesystemSnapshotProvider({ rootDir: BASELINE_ROOT });
+  try {
+    await provider.getAppRoleAssignmentBefore({
+      tenantId: TENANT_ID,
+      servicePrincipalId: "ffffffff-ffff-ffff-ffff-ffffffffffff",
+      servicePrincipalDisplayName: "Does-Not-Exist",
+      appRoleId: DEFAULT_ACCESS_ROLE_ID,
+      principalId: M3_USER_ID,
+      principalType: "User",
+      asOf: "2026-04-17T08:00:00.000Z",
+    });
+    assert.fail("expected BaselineNotFoundError");
+  } catch (err) {
+    assert.ok(err instanceof BaselineNotFoundError);
+    // subjectKind disambiguates which class the missing baseline was for.
+    const details = (err as BaselineNotFoundError & { details?: { subjectKind?: string } }).details;
+    assert.equal(details?.subjectKind, "app-role-assignment");
   }
 });

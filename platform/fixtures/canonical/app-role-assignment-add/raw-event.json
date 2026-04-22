@@ -1,0 +1,109 @@
+{
+  "rawEventId": "raw_m3_74c794fb-6e3f-4f04-848c-3fd432db28f1",
+  "tenantId": "3725cec5-3e2d-402c-a5a6-460c325d8f87",
+  "sourceSystem": "entra-audit",
+  "rawPayload": {
+    "id": "Directory_74c794fb-6e3f-4f04-848c-3fd432db28f1_425JC_33677233",
+    "category": "UserManagement",
+    "correlationId": "74c794fb-6e3f-4f04-848c-3fd432db28f1",
+    "result": "success",
+    "resultReason": "",
+    "activityDisplayName": "Add app role assignment grant to user",
+    "activityDateTime": "2026-04-17T07:43:06.4437897Z",
+    "loggedByService": "Core Directory",
+    "operationType": "Assign",
+    "initiatedBy": {
+      "user": null,
+      "app": {
+        "appId": null,
+        "displayName": "SP-Setup",
+        "servicePrincipalId": "5b459613-2158-484f-a28a-61fd04b1b595",
+        "servicePrincipalName": null
+      }
+    },
+    "targetResources": [
+      {
+        "id": "cb9d0b62-9b5a-4614-8e0f-cb73f57f23b0",
+        "displayName": "KavachiqTest-App-01",
+        "type": "ServicePrincipal",
+        "userPrincipalName": null,
+        "groupType": null,
+        "modifiedProperties": [
+          {
+            "displayName": "AppRole.Id",
+            "oldValue": null,
+            "newValue": "\"00000000-0000-0000-0000-000000000000\""
+          },
+          {
+            "displayName": "AppRole.Value",
+            "oldValue": null,
+            "newValue": "\"\""
+          },
+          {
+            "displayName": "AppRole.DisplayName",
+            "oldValue": null,
+            "newValue": "\"\""
+          },
+          {
+            "displayName": "AppRoleAssignment.CreatedDateTime",
+            "oldValue": null,
+            "newValue": "\"2026-04-17T07:43:06.28379Z\""
+          },
+          {
+            "displayName": "AppRoleAssignment.LastModifiedDateTime",
+            "oldValue": null,
+            "newValue": "\"2026-04-17T07:43:06.28379Z\""
+          },
+          {
+            "displayName": "User.ObjectID",
+            "oldValue": null,
+            "newValue": "\"82238b1d-1f1f-478d-b8db-76314cdeaae9\""
+          },
+          {
+            "displayName": "User.UPN",
+            "oldValue": null,
+            "newValue": "\"kq-test-17@patwainc.onmicrosoft.com\""
+          },
+          {
+            "displayName": "User.PUID",
+            "oldValue": null,
+            "newValue": "\"10032005D041AF2F\""
+          },
+          {
+            "displayName": "TargetId.ServicePrincipalNames",
+            "oldValue": null,
+            "newValue": "\"940e722d-b4e8-4f72-b55b-aea429b86a87\""
+          }
+        ]
+      },
+      {
+        "id": "82238b1d-1f1f-478d-b8db-76314cdeaae9",
+        "displayName": null,
+        "type": "User",
+        "userPrincipalName": "kq-test-17@patwainc.onmicrosoft.com",
+        "groupType": null,
+        "modifiedProperties": []
+      }
+    ],
+    "additionalDetails": [
+      {
+        "key": "User-Agent",
+        "value": "node"
+      },
+      {
+        "key": "AppId",
+        "value": "940e722d-b4e8-4f72-b55b-aea429b86a87"
+      },
+      {
+        "key": "ServicePrincipalProvisioningType",
+        "value": "Other"
+      }
+    ]
+  },
+  "ingestedAt": "2026-04-17T07:43:07.443Z",
+  "processingStatus": "normalized",
+  "normalizedChangeIds": [
+    "chg_m3_74c794fb-6e3f-4f04-848c-3fd432db28f1"
+  ],
+  "schemaVersion": 1
+}

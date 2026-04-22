@@ -18,7 +18,8 @@
     "audit-completeness-spike": "tsx scripts/run-audit-completeness-spike.ts",
     "trigger-canonical-mutations": "tsx scripts/trigger-canonical-mutations.ts",
     "generate-canonical-fixtures": "tsx scripts/generate-canonical-fixtures.ts",
-    "generate-ca-canonical-fixture": "tsx scripts/generate-ca-canonical-fixture.ts"
+    "generate-ca-canonical-fixture": "tsx scripts/generate-ca-canonical-fixture.ts",
+    "generate-m3-canonical-fixture": "tsx scripts/generate-m3-canonical-fixture.ts"
   },
   "devDependencies": {
     "@types/node": "^20.12.0",

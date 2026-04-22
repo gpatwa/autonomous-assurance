@@ -16,6 +16,7 @@
 import { randomUUID } from "node:crypto";
 import { PlatformError, rootLogger, type Logger } from "@kavachiq/platform";
 import type { NormalizedChange, RawEvent } from "@kavachiq/schema";
+import { mapAppRoleAssignmentAddEvent } from "./app-role-assignment.js";
 import { mapCaPolicyUpdateEvent } from "./ca-policy-update.js";
 import { classifyEvent } from "./discriminator.js";
 import { mapMemberAddEvent } from "./member-add.js";
@@ -80,6 +81,18 @@ export async function normalizeRawEvents(
     if (cls === "conditional-access-change") {
       const change = mapCaPolicyUpdateEvent(rawEvent, {
         tenantId: opts.tenantId,
+        newChangeId,
+        bundleIdFor: () => bundleIdFor(payload),
+      });
+      normalized.push(change);
+      continue;
+    }
+
+    if (cls === "app-role-assignment-change") {
+      const change = await mapAppRoleAssignmentAddEvent(rawEvent, {
+        tenantId: opts.tenantId,
+        snapshotProvider: opts.snapshotProvider,
+        agentIdentifiedActorIds: opts.agentIdentifiedActorIds,
         newChangeId,
         bundleIdFor: () => bundleIdFor(payload),
       });

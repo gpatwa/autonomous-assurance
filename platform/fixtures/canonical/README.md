@@ -23,9 +23,11 @@ npm run generate-canonical-fixtures
 | `incident.json` | `Incident` | 1 |
 | `blast-radius.json` | (placeholder — Phase 2) | — |
 | `recovery-plan.json` | (placeholder — Phase 3) | — |
-| `baselines/…` | group-membership baseline snapshots | 2 |
+| `baselines/…` | group-membership + app-role-assignment baseline snapshots | 4 |
 | `ca-policy-update/raw-event.json` | `RawEvent` (M2 scenario) | 1 |
 | `ca-policy-update/normalized-change.json` | `NormalizedChange` (M2 scenario) | 1 |
+| `app-role-assignment-add/raw-event.json` | `RawEvent` (M3 scenario) | 1 |
+| `app-role-assignment-add/normalized-change.json` | `NormalizedChange` (M3 scenario) | 1 |
 
 ## Source evidence
 
@@ -37,11 +39,12 @@ npm run generate-canonical-fixtures
 | Canonical scenario | `docs/CANONICAL_SCENARIO_FIXTURE.md` | Incident classification, sensitivity, scoring |
 | Generator (M1) | `platform/scripts/generate-canonical-fixtures.ts` | Single-purpose transform (not a framework) |
 | Generator (M2) | `platform/scripts/generate-ca-canonical-fixture.ts` | Single-purpose transform for the CA fixture |
+| Generator (M3) | `platform/scripts/generate-m3-canonical-fixture.ts` | Single-purpose transform for the app-role-assignment fixture |
 
-M3 (app role assignment) and M4 (SP credential) evidence from WI-05 is
-present in `platform/wi05/raw-events.json` but is **not** part of this
-canonical fixture set yet. M2 (Conditional Access) is included — see the
-next section.
+M4 (SP credential) evidence from WI-05 is present in
+`platform/wi05/raw-events.json` but is **not** part of this canonical
+fixture set yet. M2 (Conditional Access) and M3 (app-role-assignment)
+are included — see the sections below.
 
 ## M2 Conditional Access fixture (`ca-policy-update/`)
 
@@ -66,6 +69,37 @@ deterministic output over the real event — **not** invented test data.
 The `Update policy` (×2) companion events that fire alongside each CA
 edit are not part of this fixture; WI-05 §6.3 documented them as
 low-signal stubs that the narrow CA matcher ignores.
+
+## M3 app-role-assignment fixture (`app-role-assignment-add/`)
+
+Derived from the single real `Add app role assignment grant to user`
+event captured in WI-05 — sample event ID
+`Directory_74c794fb-6e3f-4f04-848c-3fd432db28f1_425JC_33677233`
+(spike report §4.3, §9.3). Regenerate with:
+
+```bash
+cd platform
+npm run build --workspace=@kavachiq/core
+npm run generate-m3-canonical-fixture
+```
+
+Per WI-05 §4.3 / §7 M3 has the same shape as M1: the single audit event
+carries 9 populated `newValue` fields (role, principal, target SP)
+and zero usable `oldValue` entries. `beforeState` is therefore
+reconstructed from the app-role-assignment baseline at
+`fixtures/canonical/baselines/{tenantId}/app-role-assignments/{spId}.json`
+(`confidence: "reconstructed"` / `captureSource: "snapshot-diff"`);
+`afterState` is tagged `confidence: "authoritative"` /
+`captureSource: "entra-audit"`. The fixture is the mapper's
+deterministic output over the real event — **not** invented test data.
+
+Notes derived directly from WI-05:
+  - `AppRole.Value` and `AppRole.DisplayName` are legitimate empty
+    strings for the default-access role (`00000000-…`). Not missing.
+  - Category is `UserManagement`, NOT `ApplicationManagement`; the
+    discriminator keys on `activityDisplayName`, not category.
+  - Accompanying `Update service principal` stubs are ignored by the
+    narrow M3 matcher (WI-05 §6.3).
 
 ## Fields directly from real audit evidence
 
