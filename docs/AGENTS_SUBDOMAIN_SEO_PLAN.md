@@ -107,6 +107,8 @@ NEXT_PUBLIC_SITE_ORIGIN=https://agents.kavachiq.com
 5. **Social preview recache.** After DNS cutover, refresh the OG image cache on LinkedIn / X / Slack (each has its own re-scrape mechanism).
 6. **Old links.** Audit any existing external references (LinkedIn posts, investor decks, partner pages) and update them to `agents.kavachiq.com`. If `staging.kavachiq.com` was indexed, a 410 or noindex on its home is cleaner than a redirect — redirecting staging → agents would conflate the two hostnames in Search Console.
 
+> For full provisioning / rebuild / rollback procedure see the sibling doc: [`AGENTS_SUBDOMAIN_DEPLOY_RUNBOOK.md`](AGENTS_SUBDOMAIN_DEPLOY_RUNBOOK.md). This SEO plan covers the **why** (parent-brand / product-surface IA); the runbook covers the **how** (Azure + Cloudflare resource layout, exact `az` commands, rollback, drift detection).
+
 ## Deploy checklist (concrete commands)
 
 Run `npm run verify:seo` after each deploy to prove the contracts in this doc hold against the real URL. Zero exit = all 16 assertions pass; non-zero = drift, with a per-check diff in the output.
