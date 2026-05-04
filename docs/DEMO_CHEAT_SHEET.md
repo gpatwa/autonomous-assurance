@@ -4,6 +4,36 @@
 
 ---
 
+## 0. Pre-demo checklist
+
+Run this every time. The whole point is to make the live-demo failure modes (stale build, broken interaction, leaked tab, surprise notification) impossible.
+
+**T-30 min — technical readiness**
+
+- [ ] `SITE_URL=https://agents.kavachiq.com npm run verify:seo` → expect `✅ PASS (16/16)`. Anything less = production drift; pause the demo until reconciled (see `AGENTS_SUBDOMAIN_DEPLOY_RUNBOOK.md` § Drift detection).
+- [ ] Hard-refresh `https://agents.kavachiq.com` (Cmd-Shift-R) and `https://agents.kavachiq.com/demo` to confirm the *current* deployed build serves cleanly — first-load CDN warming counts.
+- [ ] Click through `/demo` end-to-end: Overview → Blast Radius (drill into Finance-Confidential) → Recovery Plan (expand step 1) → Resolution. The verify script can't catch interactive regressions; only your eyes can.
+
+**T-5 min — presenter setup**
+
+- [ ] Use a **fresh browser profile or incognito window** for the demo tab. No autocomplete history, no logged-in side accounts, no extension chrome.
+- [ ] **Close every other browser tab and window** in the profile you're sharing. URL-bar autocomplete is the most common leak.
+- [ ] Slack / Teams / Outlook / Calendar → **Do Not Disturb** (or quit). Notifications during a demo are unprofessional and sometimes confidential.
+- [ ] Test screen share inside the actual conferencing tool *before* the customer joins. Confirm only the demo window is visible, not your full desktop.
+
+**T-0 — just before joining**
+
+- [ ] This cheat sheet and `DEMO_SCRIPT.md` open on a **second screen or in a window you are NOT sharing**. Never on the demo tab.
+- [ ] Audio / mic check inside the conferencing tool.
+
+**If something fails live**
+
+- [ ] If the live site times out or 5xxs: switch to the recorded `/demo` walkthrough screen-capture (keep one in `~/demos/`).
+- [ ] If `/demo` interaction breaks mid-call: continue verbally with the talking points (§5 below), promise a tailored walkthrough, close the call early — don't fight a broken UI on stage.
+- [ ] After the call: file the failure against the repo with the timestamp + failing tab; investigate before the next demo.
+
+---
+
 ## 1. 30-second opener
 
 "We help enterprises recover from high-impact agent-driven changes in Microsoft Entra and Microsoft 365. When an agent changes an identity and that change cascades into permissions, data, and downstream systems, KavachIQ maps the blast radius and guides recovery in the right order."

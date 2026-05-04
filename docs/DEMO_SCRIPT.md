@@ -2,7 +2,7 @@
 
 **Version:** Demo-ready baseline
 **Public site:** agents.kavachiq.com  _(internal test env: staging.kavachiq.com — noindex)_
-**Last updated:** April 2026
+**Last updated:** 2026-05-04 (public URL switched to `agents.kavachiq.com`; pre-demo checklist now in `DEMO_CHEAT_SHEET.md`)
 
 ---
 
