@@ -2,6 +2,8 @@
 
 *Internal use. Print or keep open during calls.*
 
+> **One-page version:** [`DEMO_PRESENTER_CARD.md`](DEMO_PRESENTER_CARD.md) — compressed for mid-call reference. This file is the source of truth; the card is a derived view.
+
 ---
 
 ## 0. Pre-demo checklist
