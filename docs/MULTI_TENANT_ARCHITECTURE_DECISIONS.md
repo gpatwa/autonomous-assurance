@@ -1,8 +1,9 @@
 # Multi-tenant architecture — decision proposal (5 → 200+ customers)
 
-**Status:** **DRAFT — awaiting review and sign-off.** Nothing in this doc has been built. No infrastructure has been provisioned. This is a proposal; the canonical record only after every decision below is signed off (see §Sign-off).
+**Status:** ✅ **APPROVED 2026-05-05.** All decisions D1-D8, S1, N1-N10, and open questions Q1-Q7 signed off. This is now the canonical architectural record. Implementation may begin against the week-by-week plan in §6. Subsequent revisions to this doc go through the same sign-off block at the bottom.
 
 **Author:** Principal/Staff engineering review, 2026-05-04
+**Approved by:** Repository owner, 2026-05-05 (signal: "Agree with all")
 **Sibling docs:**
 - `docs/MVP_IMPLEMENTATION_ROADMAP.md` — phases (this doc shapes Phase 1.5 / Phase 5 infra)
 - `docs/AGENTS_SUBDOMAIN_DEPLOY_RUNBOOK.md` — current Azure layout (marketing site only; this doc adds the platform plane)
@@ -34,30 +35,30 @@ This doc covers two layers: **structural decisions** (D1-D8 — what we build) a
 
 | # | Decision | Recommended | Reversibility | Sign-off |
 |---|---|---|---|---|
-| D1 | Tenant identity model | Multi-tenant Microsoft app | **Hard** (forces re-onboard) | ☐ |
-| D2 | Per-tenant data isolation | Postgres RLS + per-tenant DEK for credentials | **Hard** (rewrite every query) | ☐ |
-| D3 | Storage layer | Postgres (state) + Blob (raw archive) | **Hard** (data migration) | ☐ |
-| D4 | Job orchestration | Azure Service Bus + Container Apps | **Hard** (rewrite worker entry points) | ☐ |
-| D5 | Operator auth | Microsoft Entra External ID; federated SSO option per-customer | Medium | ☐ |
-| D6 | Region strategy | Single region (Central US), designed for multi-region | Medium | ☐ |
-| D7 | Observability | OpenTelemetry + Azure Application Insights, day one | Easy | ☐ |
-| D8 | Code preservation | Strangler Fig — wrap `@kavachiq/core`, do not rewrite | Hard (architecturally) | ☐ |
-| S1 | Sequencing | Option B: skip Sprint 0, ship production architecture in 6 weeks | Strategic | ☐ |
+| D1 | Tenant identity model | Multi-tenant Microsoft app | **Hard** (forces re-onboard) | ✅ |
+| D2 | Per-tenant data isolation | Postgres RLS + per-tenant DEK for credentials | **Hard** (rewrite every query) | ✅ |
+| D3 | Storage layer | Postgres (state) + Blob (raw archive) | **Hard** (data migration) | ✅ |
+| D4 | Job orchestration | Azure Service Bus + Container Apps | **Hard** (rewrite worker entry points) | ✅ |
+| D5 | Operator auth | Microsoft Entra External ID; federated SSO option per-customer | Medium | ✅ |
+| D6 | Region strategy | Single region (Central US), designed for multi-region | Medium | ✅ |
+| D7 | Observability | OpenTelemetry + Azure Application Insights, day one | Easy | ✅ |
+| D8 | Code preservation | Strangler Fig — wrap `@kavachiq/core`, do not rewrite | Hard (architecturally) | ✅ |
+| S1 | Sequencing | Option B: skip Sprint 0, ship production architecture in 6 weeks | Strategic | ✅ |
 
 ### Runtime / non-functional decisions
 
 | # | Decision | Recommended | Reversibility | Sign-off |
 |---|---|---|---|---|
-| N1 | Idempotency keys | Deterministic IDs derived from immutable inputs; UNIQUE constraints | **Hard** (data dedup retrofit) | ☐ |
-| N2 | Delivery + handlers | At-least-once delivery; idempotent handlers; `INSERT … ON CONFLICT DO NOTHING` | **Hard** (rewrite every handler) | ☐ |
-| N3 | Cross-service events | Outbox pattern — same DB transaction writes entity + outbox row | Medium | ☐ |
-| N4 | Polling state | Per-tenant delta token in Postgres; transactional commit with Blob archive | Medium | ☐ |
-| N5 | Correlation state | **Stateless batch** for v1 (pull last-K-min from DB, run, write); stateful sliding-window deferred | Easy | ☐ |
-| N6 | External call resilience | Circuit breaker + retry with jitter + DLQ; per-downstream config | Easy | ☐ |
-| N7 | Per-tenant fairness | Service Bus session-keyed by `tenant_id`; bounded prefetch; per-tenant token-bucket rate limit | Medium | ☐ |
-| N8 | Autoscale | Container Apps KEDA scalers — queue length for workers, HTTP RPS for API; per-worker-type scaling profile | Easy | ☐ |
-| N9 | Liveness / shutdown | Liveness + readiness probes; SIGTERM drain + bounded grace period | Easy | ☐ |
-| N10 | Replay & schema evolution | Blob is immutable source of truth; reprocess any window; `schemaVersion` per entity, forward-compatible reads | Hard (replay must be designed-in) | ☐ |
+| N1 | Idempotency keys | Deterministic IDs derived from immutable inputs; UNIQUE constraints | **Hard** (data dedup retrofit) | ✅ |
+| N2 | Delivery + handlers | At-least-once delivery; idempotent handlers; `INSERT … ON CONFLICT DO NOTHING` | **Hard** (rewrite every handler) | ✅ |
+| N3 | Cross-service events | Outbox pattern — same DB transaction writes entity + outbox row | Medium | ✅ |
+| N4 | Polling state | Per-tenant delta token in Postgres; transactional commit with Blob archive | Medium | ✅ |
+| N5 | Correlation state | **Stateless batch** for v1 (pull last-K-min from DB, run, write); stateful sliding-window deferred | Easy | ✅ |
+| N6 | External call resilience | Circuit breaker + retry with jitter + DLQ; per-downstream config | Easy | ✅ |
+| N7 | Per-tenant fairness | Service Bus session-keyed by `tenant_id`; bounded prefetch; per-tenant token-bucket rate limit | Medium | ✅ |
+| N8 | Autoscale | Container Apps KEDA scalers — queue length for workers, HTTP RPS for API; per-worker-type scaling profile | Easy | ✅ |
+| N9 | Liveness / shutdown | Liveness + readiness probes; SIGTERM drain + bounded grace period | Easy | ✅ |
+| N10 | Replay & schema evolution | Blob is immutable source of truth; reprocess any window; `schemaVersion` per entity, forward-compatible reads | Hard (replay must be designed-in) | ✅ |
 
 Easy-to-reverse decisions are listed in §11 and explicitly deferred.
 
@@ -88,7 +89,7 @@ Easy-to-reverse decisions are listed in §11 and explicitly deferred.
 - AppSource publication requires Microsoft review. **NOT** required for direct private invitation links — defer publication until self-serve onboarding is desired.
 - Scopes are namespaced and additive. We start with read-only (`AuditLog.Read.All`, `Directory.Read.All`); each Phase 4 write scope is a separate consent prompt — customers love this — staged trust.
 
-**Sign-off needed:** ☐
+**Sign-off:** ✅ Approved 2026-05-05
 
 ---
 
@@ -116,7 +117,7 @@ Easy-to-reverse decisions are listed in §11 and explicitly deferred.
 - Application code must reliably set `app.tenant_id` at every connection acquisition. Enforcement: a connection-pool middleware that refuses to hand out a connection without `app.tenant_id` set.
 - Cross-tenant analytics queries (e.g., "incidents in last 24h across all tenants") run as a privileged service identity that bypasses RLS — separate role.
 
-**Sign-off needed:** ☐
+**Sign-off:** ✅ Approved 2026-05-05
 
 ---
 
@@ -147,7 +148,7 @@ Easy-to-reverse decisions are listed in §11 and explicitly deferred.
 - Postgres Flexible Server has a 16TB ceiling per instance. At 200 customers each producing ~100MB/year of normalized data, we're at ~20GB/year for the hot path — three orders of magnitude under the ceiling.
 - Backup retention 35 days on Flex Server is sufficient; longer-term archival is the Blob copy.
 
-**Sign-off needed:** ☐
+**Sign-off:** ✅ Approved 2026-05-05
 
 ---
 
@@ -179,7 +180,7 @@ Easy-to-reverse decisions are listed in §11 and explicitly deferred.
 
 **Cost to reverse:** if we picked "no queue", every worker entry point gets rewritten. Adding the queue layer mid-flight is the textbook cause of multi-tenant outages.
 
-**Sign-off needed:** ☐
+**Sign-off:** ✅ Approved 2026-05-05
 
 ---
 
@@ -205,7 +206,7 @@ Easy-to-reverse decisions are listed in §11 and explicitly deferred.
 
 **Cost to reverse:** medium. Migrating from External ID to a different IdP is 2-3 weeks of code change plus a customer-side migration prompt.
 
-**Sign-off needed:** ☐
+**Sign-off:** ✅ Approved 2026-05-05
 
 ---
 
@@ -229,7 +230,7 @@ Easy-to-reverse decisions are listed in §11 and explicitly deferred.
 
 **Cost to reverse:** medium. Code change + data migration if we didn't design for it.
 
-**Sign-off needed:** ☐
+**Sign-off:** ✅ Approved 2026-05-05
 
 ---
 
@@ -256,7 +257,7 @@ Easy-to-reverse decisions are listed in §11 and explicitly deferred.
 
 **Cost to reverse:** easy. OTel can swap backends with config.
 
-**Sign-off needed:** ☐
+**Sign-off:** ✅ Approved 2026-05-05
 
 ---
 
@@ -286,7 +287,7 @@ Easy-to-reverse decisions are listed in §11 and explicitly deferred.
 
 **Cost to reverse:** architectural commitment. Reversing means rewriting the core, which we'd never do.
 
-**Sign-off needed:** ☐
+**Sign-off:** ✅ Approved 2026-05-05
 
 ---
 
@@ -322,7 +323,7 @@ The four properties this section guarantees:
 
 **Cost to reverse:** painful. Retrofitting deterministic IDs onto a system with random IDs and accumulated duplicates means a data dedup pass + ID rewrites. Get it right at customer 1.
 
-**Sign-off needed:** ☐
+**Sign-off:** ✅ Approved 2026-05-05
 
 ---
 
@@ -342,7 +343,7 @@ The four properties this section guarantees:
 
 **Rationale:** distributed systems guarantee at-least-once delivery; "exactly-once effect" is the application's responsibility. With deterministic IDs (N1) + UNIQUE constraints + ON CONFLICT, exactly-once effect is free.
 
-**Sign-off needed:** ☐
+**Sign-off:** ✅ Approved 2026-05-05
 
 ---
 
@@ -363,7 +364,7 @@ The four properties this section guarantees:
 
 **Rationale:** outbox pattern is the standard solution to "transactional event publishing" in distributed systems. Used by Stripe, Shopify, every multi-tenant SaaS at scale.
 
-**Sign-off needed:** ☐
+**Sign-off:** ✅ Approved 2026-05-05
 
 ---
 
@@ -387,7 +388,7 @@ The four properties this section guarantees:
 
 **Rationale:** polling state must survive every restart. Postgres is the right store; transactional commit with downstream effects (Blob archive, outbox) makes the whole step atomic.
 
-**Sign-off needed:** ☐
+**Sign-off:** ✅ Approved 2026-05-05
 
 ---
 
@@ -406,7 +407,7 @@ The four properties this section guarantees:
 
 **Cost to reverse:** easy. Stateful streaming correlator is a wrapper around the same `correlateNormalizedChanges`; both can coexist behind the same outbox emission pattern.
 
-**Sign-off needed:** ☐
+**Sign-off:** ✅ Approved 2026-05-05
 
 ---
 
@@ -430,7 +431,7 @@ The four properties this section guarantees:
 
 **Rationale:** external dependencies fail. The platform's job is to fail gracefully and recover, not crash or amplify the outage.
 
-**Sign-off needed:** ☐
+**Sign-off:** ✅ Approved 2026-05-05
 
 ---
 
@@ -452,7 +453,7 @@ The four properties this section guarantees:
 
 **Cost to reverse:** medium. Adding sessions to an existing non-session queue is a queue config change + worker code change to honor sessions. Possible but disruptive.
 
-**Sign-off needed:** ☐
+**Sign-off:** ✅ Approved 2026-05-05
 
 ---
 
@@ -482,7 +483,7 @@ The four properties this section guarantees:
 - **Postgres connection storms** during scale-up — every new replica acquires connections at startup. Mitigation: connection pooler (PgBouncer in transaction mode) sits between workers and Postgres, multiplexes.
 - **Cold starts** ~2-5s. Acceptable for queue messages (they wait), tolerable for API (first request slow). Min-1-replica on API avoids it.
 
-**Sign-off needed:** ☐
+**Sign-off:** ✅ Approved 2026-05-05
 
 ---
 
@@ -502,7 +503,7 @@ The four properties this section guarantees:
 
 **Rationale:** orchestrators kill replicas frequently (deploys, scale-down, host migration). Without graceful shutdown, in-flight messages get redelivered (handled by N2 idempotency, but creates noise). With graceful shutdown, redelivery is a rare exception.
 
-**Sign-off needed:** ☐
+**Sign-off:** ✅ Approved 2026-05-05
 
 ---
 
@@ -533,7 +534,7 @@ The four properties this section guarantees:
 
 **Cost to reverse:** painful. Designing replay in retroactively means re-architecting writes, deduplication, schema. Get it right at customer 1.
 
-**Sign-off needed:** ☐
+**Sign-off:** ✅ Approved 2026-05-05
 
 ---
 
@@ -553,7 +554,7 @@ We have two sequencing options:
 
 **Customer signal received: 6-8 weeks of patience confirmed.** Option B is the right call.
 
-**Sign-off needed:** ☐ Option A / ☐ Option B
+**Sign-off:** ✅ Option B selected, 2026-05-05
 
 ---
 
@@ -648,17 +649,17 @@ Naming exclusions so reviewers can confirm scope:
 
 ---
 
-## 10. Open questions for reviewers
+## 10. Open questions — resolved 2026-05-05
 
-These are unresolved and need a decision before week 1 kicks off:
+All seven were signed off as part of "Agree with all". Recorded answers:
 
-1. **Postgres provider region/SKU.** Confirm Central US matches the existing marketing infra and the design partner's expected data residency. If the partner is non-US, we should choose region accordingly.
-2. **`apps/console/` — same repo or separate?** Recommend same repo (monorepo), same Next.js app at root with route segregation between marketing (public) and `/console` (auth-walled). Splits later if team or build times grow. Alternative: separate repo. Reviewer call.
-3. **External ID tenant — separate from our own Entra?** Recommend yes — operator-identity tenant is a separate Entra tenant from our own corporate Entra. Cleaner blast radius if either is compromised.
-4. **Service Bus vs Storage Queues for v1.** Both are queue-based. Service Bus is the recommended default; Storage Queues is the cheaper fallback. Pick one. **Note:** N7 (per-tenant fairness) requires Service Bus sessions; Storage Queues does not support sessions. If choosing Storage Queues, N7 needs a different implementation (per-tenant queue or app-level partition).
-5. **Bicep vs Terraform for `infra/`.** Recommend Bicep — Azure-native, no state backend needed, deployments tracked in ARM. Terraform is more portable if we ever multi-cloud, but we're Azure-only for the foreseeable future. Reviewer call.
-6. **Customer-tenant region detection.** Customer's tenant data may live in any Microsoft region. Our customer-facing region is where we run; we don't store customer's Microsoft data outside our region. OK to pin every customer to our deployment region for v1.
-7. **Connection pooler — PgBouncer or Postgres-native?** If autoscaling adds replica count beyond ~20, native Postgres connection limits get hit. PgBouncer (transaction pooling) is the standard answer; adds an operational component. Alternative: stay below the limit by careful per-replica connection-pool sizing. Reviewer call — depends on expected concurrency.
+1. **Postgres provider region/SKU.** ✅ **Central US, B1ms tier**. Matches existing marketing infra. Reconsider if a future customer requires EU residency (triggers D6 multi-region path).
+2. **`apps/console/` — same repo or separate?** ✅ **Same repo (monorepo).** Same Next.js app at root with route segregation: `/`, `/platform`, `/demo`, `/evidence` stay public; `/console` is auth-walled. Splits later if team or build times grow.
+3. **External ID tenant — separate from our own Entra?** ✅ **Yes — separate Entra tenant for operator identity**. Cleaner blast radius. Requires manual creation in the Azure portal (cannot be created via `az` CLI); blocks week 5 (operator login flow).
+4. **Service Bus vs Storage Queues for v1.** ✅ **Azure Service Bus, Standard tier.** Required for N7 per-tenant session-keyed fairness. ~$10/mo cost accepted.
+5. **Bicep vs Terraform for `infra/`.** ✅ **Bicep.** Azure-native, no state backend, deployments tracked in ARM. Reconsider if/when multi-cloud becomes a real concern.
+6. **Customer-tenant region detection.** ✅ **Pin every customer to deployment region for v1**. Customer's Microsoft tenant data lives wherever Microsoft hosts it; KavachIQ's processed data lives in our region. v1 is Central US for all.
+7. **Connection pooler — PgBouncer or Postgres-native?** ✅ **Native pool sizing for v1.** Each Container Apps replica caps its pool at 5 connections; KEDA max replicas × 5 stays under Postgres B1ms `max_connections=100`. Add PgBouncer when autoscale thresholds force it (likely at customer 20-30 with bursty load).
 
 ---
 
@@ -721,47 +722,47 @@ A Principal review names risks the recommended path doesn't eliminate:
 
 ---
 
-## 14. Sign-off
+## 14. Sign-off — APPROVED 2026-05-05
 
-This document becomes the canonical architectural record only after every checkbox below is signed off. Reviewer can disagree on any specific decision; the doc gets revised and re-circulated. **Implementation does not begin** until D1-D8, S1, N1-N10, and the open questions are agreed.
+This document is the canonical architectural record. Implementation may begin against the week-by-week plan in §6. Subsequent material revisions go through this same sign-off block.
 
 ```
 Structural decisions
-[ ] D1  Multi-tenant Microsoft app, day one
-[ ] D2  Postgres RLS + per-tenant DEK
-[ ] D3  Postgres (state) + Blob (raw archive)
-[ ] D4  Azure Service Bus + Container Apps   (or Storage Queues fallback)
-[ ] D5  Microsoft Entra External ID
-[ ] D6  Single region, designed for multi-region
-[ ] D7  OpenTelemetry + Application Insights
-[ ] D8  Strangler Fig — wrap @kavachiq/core
+[x] D1  Multi-tenant Microsoft app, day one
+[x] D2  Postgres RLS + per-tenant DEK
+[x] D3  Postgres (state) + Blob (raw archive)
+[x] D4  Azure Service Bus + Container Apps (Service Bus chosen, see Q4)
+[x] D5  Microsoft Entra External ID
+[x] D6  Single region (Central US), designed for multi-region
+[x] D7  OpenTelemetry + Application Insights
+[x] D8  Strangler Fig — wrap @kavachiq/core
 
 Sequencing
-[ ] S1  Sequencing: Option B (skip Sprint 0)
+[x] S1  Option B (skip Sprint 0; 6-week production-architecture build)
 
 Non-functional requirements
-[ ] N1  Deterministic IDs / idempotency keys
-[ ] N2  At-least-once delivery + idempotent handlers
-[ ] N3  Outbox pattern for cross-service events
-[ ] N4  Polling state durability (delta tokens in Postgres)
-[ ] N5  Stateless batch correlation for v1
-[ ] N6  Circuit breaker + retry with jitter on external calls
-[ ] N7  Per-tenant fairness (Service Bus sessions + token bucket)
-[ ] N8  Autoscale (KEDA scalers per worker type)
-[ ] N9  Liveness/readiness/graceful shutdown
-[ ] N10 Replay (Blob source of truth) + schema evolution
+[x] N1  Deterministic IDs / idempotency keys
+[x] N2  At-least-once delivery + idempotent handlers
+[x] N3  Outbox pattern for cross-service events
+[x] N4  Polling state durability (delta tokens in Postgres)
+[x] N5  Stateless batch correlation for v1
+[x] N6  Circuit breaker + retry with jitter on external calls
+[x] N7  Per-tenant fairness (Service Bus sessions + token bucket)
+[x] N8  Autoscale (KEDA scalers per worker type)
+[x] N9  Liveness/readiness/graceful shutdown
+[x] N10 Replay (Blob source of truth) + schema evolution
 
-Open questions
-[ ] Q1  Postgres region/SKU
-[ ] Q2  apps/console same repo or separate
-[ ] Q3  separate Entra tenant for operator identity
-[ ] Q4  Service Bus vs Storage Queues for v1
-[ ] Q5  Bicep vs Terraform for infra/
-[ ] Q6  customer-tenant region detection
-[ ] Q7  PgBouncer vs native connection pooling
+Open questions resolved (see §10)
+[x] Q1  Postgres: Central US, B1ms
+[x] Q2  apps/console: same repo (monorepo)
+[x] Q3  External ID: separate Entra tenant
+[x] Q4  Queue: Azure Service Bus, Standard tier
+[x] Q5  IaC: Bicep
+[x] Q6  Region: pin all customers to deployment region for v1
+[x] Q7  Connection pool: native pool sizing for v1; add PgBouncer when forced
 ```
 
-Approver: _________  Date: _________
+Approver: Repository owner  Date: 2026-05-05
 
 ---
 
