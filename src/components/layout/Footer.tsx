@@ -9,6 +9,7 @@ const footerLinks = {
   ],
   Company: [
     { label: "Why KavachIQ", href: "/#why-kavachiq" },
+    { label: "Engineering evidence", href: "/evidence" },
     { label: "Request a Demo", href: "#request-demo" },
   ],
 };
