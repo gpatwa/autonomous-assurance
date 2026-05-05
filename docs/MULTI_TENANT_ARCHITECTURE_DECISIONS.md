@@ -17,16 +17,20 @@
 We have:
 - A working `@kavachiq/core` Phase 1 pipeline (normalize → correlate → detect) tested against real WI-05 audit evidence (67 tests, 3 of 4 change classes shipped).
 - A live marketing site at `agents.kavachiq.com` with a fixture-driven `/demo` and an `/evidence` page.
-- A design partner with a non-prod Microsoft Entra tenant willing to point at our system.
+- A design partner with a non-prod Microsoft Entra tenant willing to point at our system, with a 6-8 week patience window confirmed.
 - Stub services for `@kavachiq/api`, `@kavachiq/workers`, `@kavachiq/execution`. Zero production storage, zero queueing, zero per-tenant credential plumbing.
 
 We are about to write the runtime that takes the existing pure-function pipeline and runs it against real customer tenants. **Every architectural decision made here will be revisited at customer 30+ if we get it wrong.** Some decisions are 1 week to revisit, some are 12. This doc names which is which and recommends a path for each.
 
 **The brief, restated:** design a platform that can carry us from 5 customers (where we are now) to 200+ without an incremental rewrite. Get the irreversible decisions right; defer everything else.
 
+This doc covers two layers: **structural decisions** (D1-D8 — what we build) and **runtime / non-functional decisions** (N1-N10 — how it behaves under load, failure, and replay). Both are required for sign-off.
+
 ---
 
 ## 2. Decision summary
+
+### Structural decisions
 
 | # | Decision | Recommended | Reversibility | Sign-off |
 |---|---|---|---|---|
@@ -40,11 +44,26 @@ We are about to write the runtime that takes the existing pure-function pipeline
 | D8 | Code preservation | Strangler Fig — wrap `@kavachiq/core`, do not rewrite | Hard (architecturally) | ☐ |
 | S1 | Sequencing | Option B: skip Sprint 0, ship production architecture in 6 weeks | Strategic | ☐ |
 
-Easy-to-reverse decisions are listed in §10 and explicitly deferred.
+### Runtime / non-functional decisions
+
+| # | Decision | Recommended | Reversibility | Sign-off |
+|---|---|---|---|---|
+| N1 | Idempotency keys | Deterministic IDs derived from immutable inputs; UNIQUE constraints | **Hard** (data dedup retrofit) | ☐ |
+| N2 | Delivery + handlers | At-least-once delivery; idempotent handlers; `INSERT … ON CONFLICT DO NOTHING` | **Hard** (rewrite every handler) | ☐ |
+| N3 | Cross-service events | Outbox pattern — same DB transaction writes entity + outbox row | Medium | ☐ |
+| N4 | Polling state | Per-tenant delta token in Postgres; transactional commit with Blob archive | Medium | ☐ |
+| N5 | Correlation state | **Stateless batch** for v1 (pull last-K-min from DB, run, write); stateful sliding-window deferred | Easy | ☐ |
+| N6 | External call resilience | Circuit breaker + retry with jitter + DLQ; per-downstream config | Easy | ☐ |
+| N7 | Per-tenant fairness | Service Bus session-keyed by `tenant_id`; bounded prefetch; per-tenant token-bucket rate limit | Medium | ☐ |
+| N8 | Autoscale | Container Apps KEDA scalers — queue length for workers, HTTP RPS for API; per-worker-type scaling profile | Easy | ☐ |
+| N9 | Liveness / shutdown | Liveness + readiness probes; SIGTERM drain + bounded grace period | Easy | ☐ |
+| N10 | Replay & schema evolution | Blob is immutable source of truth; reprocess any window; `schemaVersion` per entity, forward-compatible reads | Hard (replay must be designed-in) | ☐ |
+
+Easy-to-reverse decisions are listed in §11 and explicitly deferred.
 
 ---
 
-## 3. The decisions
+## 3. Structural decisions (D1-D8)
 
 ### D1. Tenant identity model — multi-tenant Microsoft app
 
@@ -105,7 +124,7 @@ Easy-to-reverse decisions are listed in §10 and explicitly deferred.
 
 **Chosen:**
 
-- **Azure Database for PostgreSQL Flexible Server**: state. Tables: `tenants`, `incidents`, `correlated_change_bundles`, `normalized_changes`, `baselines` (snapshot metadata), `sensitivity_lists`, `operator_users`, `operator_action_audit`, `tenant_credentials` (encrypted), `polling_state` (delta tokens). Indexed for the Phase 1 access patterns.
+- **Azure Database for PostgreSQL Flexible Server**: state. Tables: `tenants`, `incidents`, `correlated_change_bundles`, `normalized_changes`, `baselines` (snapshot metadata), `sensitivity_lists`, `operator_users`, `operator_action_audit`, `tenant_credentials` (encrypted), `polling_state` (delta tokens), `outbox` (cross-service event publishing — see N3). Indexed for the Phase 1 access patterns.
 - **Azure Blob Storage Standard**: raw audit event archive (`RawEvent[]` JSON files), large baseline state JSONs (group memberships, app role assignments), classification-rationale archives. Per-tenant container with lifecycle policies. Append-only, immutable, cheap. The legal record of "what did Microsoft tell us happened in this tenant."
 
 **Rejected alternatives:**
@@ -140,10 +159,10 @@ Easy-to-reverse decisions are listed in §10 and explicitly deferred.
   - `poll-tenant` — global cron enqueues one message per active tenant per polling interval.
   - `process-events` — emitted by polling workers after archiving raw events.
   - `notify-operator` — emitted on incident materialization.
-- **Session-keyed delivery** with `tenant_id` as the session ID — ensures FIFO per tenant and natural rate limiting (one tenant can't starve others).
-- **Workers run on Azure Container Apps** with scale-to-zero. One worker pool per queue type. Replicas scale on queue length.
+- **Session-keyed delivery** with `tenant_id` as the session ID — ensures FIFO per tenant and natural rate limiting (one tenant can't starve others). See N7.
+- **Workers run on Azure Container Apps** with scale-to-zero. One worker pool per queue type. Replicas scale on queue length via KEDA — see N8.
 - **Dead-letter queues** with operator alerting when messages enter them.
-- **Retry policy** with exponential backoff, max 5 attempts, then DLQ.
+- **Retry policy** with exponential backoff, max 5 attempts, then DLQ. See N6.
 
 **Rejected alternatives:**
 
@@ -271,7 +290,254 @@ Easy-to-reverse decisions are listed in §10 and explicitly deferred.
 
 ---
 
-## 4. Sequencing — Option B: skip Sprint 0
+## 4. Non-functional requirements (N1-N10)
+
+The structural decisions in §3 say **what** we build. The NFRs in this section say **how it behaves** under load, failure, and replay. NFRs are equally non-negotiable; missing one of these at customer 30 typically causes a multi-day outage or data-integrity incident.
+
+The four properties this section guarantees:
+
+- **Fault tolerance** — Microsoft Graph 429s, customer tenant outages, Postgres failover, Service Bus broker hiccups, Container Apps replica restarts must not corrupt data or lose work.
+- **Idempotency** — every operation can be safely retried; "exactly-once effect" via "at-least-once delivery + idempotency keys."
+- **Resilience** — graceful degradation, circuit breakers, per-tenant fairness, autoscaling, graceful shutdown.
+- **State management** — explicit contracts on what state lives where, durability guarantees, replay capability.
+
+---
+
+### N1. Idempotency keys — deterministic IDs from immutable inputs
+
+**Chosen:**
+
+- Every entity that originates from external input has a **deterministic ID** derived from its immutable identity:
+  - `RawEvent.rawEventId = "raw_" + sha256(tenant_id + ":" + microsoft_event_id)` — Microsoft Graph events have stable IDs; same event ingested twice produces the same `rawEventId`.
+  - `NormalizedChange.changeId = "chg_" + sha256(tenant_id + ":" + raw_event_id + ":" + change_class + ":" + target_object_id)` — same RawEvent normalized again produces the same `changeId`.
+  - `CorrelatedChangeBundle.bundleId` and `Incident.incidentId` can stay random UUIDs **but** have UNIQUE constraints on their natural keys (`(tenant_id, change_ids_hash)` for bundles; `(tenant_id, bundle_id)` for incidents). Same bundle promoted twice = same incident, second insert fails the UNIQUE constraint and the handler treats it as success.
+- **Postgres UNIQUE constraints** on every natural key. Database is the final guard.
+
+**Rejected alternatives:**
+
+- **Random UUIDs everywhere, dedup in app code.** Application-layer dedup races; databases catch the cases code misses.
+- **Microsoft event ID as primary key directly.** Coupling — Microsoft can change ID format; we need a stable internal namespace.
+
+**Rationale:** at-least-once delivery (N2) plus idempotent handlers requires stable, derivable identity. The platform must be safe to re-run from any point. Reprocessing a week of audit data must produce the same incidents — not duplicates.
+
+**Cost to reverse:** painful. Retrofitting deterministic IDs onto a system with random IDs and accumulated duplicates means a data dedup pass + ID rewrites. Get it right at customer 1.
+
+**Sign-off needed:** ☐
+
+---
+
+### N2. Delivery + handlers — at-least-once + idempotent
+
+**Chosen:**
+
+- **Service Bus delivery:** at-least-once. Messages are redelivered on consumer crash, on ack timeout, on retry exhaustion. Consumers MUST be idempotent.
+- **All write handlers:** `INSERT … ON CONFLICT DO NOTHING` for new rows; `INSERT … ON CONFLICT DO UPDATE` for upserts; `MERGE` for compound updates. No naked `INSERT` against a table that has a UNIQUE constraint.
+- **Service Bus message-ID dedup window** (10-min built-in) reduces but does not eliminate duplicates. The database is the final dedup layer.
+- **Test invariant:** every handler is run by a test that delivers the same message twice. Output must be identical.
+
+**Rejected alternatives:**
+
+- **Exactly-once delivery via two-phase commit.** Distributed 2PC across Service Bus + Postgres + Blob is heavyweight and brittle. The "at-least-once + idempotent" pattern is industry standard.
+- **"Just don't retry."** Silently drops work on transient failures. Worst possible outcome.
+
+**Rationale:** distributed systems guarantee at-least-once delivery; "exactly-once effect" is the application's responsibility. With deterministic IDs (N1) + UNIQUE constraints + ON CONFLICT, exactly-once effect is free.
+
+**Sign-off needed:** ☐
+
+---
+
+### N3. Cross-service events — outbox pattern
+
+**Chosen:**
+
+- When a service writes an entity AND wants to emit an event (e.g., pipeline-worker creates an `Incident` and wants `notify-operator` to fire), it does **both writes in the same Postgres transaction**:
+  1. `INSERT INTO incidents (…)` — the entity
+  2. `INSERT INTO outbox (event_type, payload, created_at, published_at IS NULL)` — the outbox row
+- A separate **outbox-publisher** worker (or a small in-process publisher loop) reads `outbox WHERE published_at IS NULL`, emits to Service Bus, marks `published_at = now()`. Backoff on Service Bus failures; dead-letter on persistent failure.
+- **Survives every failure mode**: pipeline-worker crashes between Incident insert and Service Bus emit → outbox row exists, publisher retries. Service Bus is down → publisher backs off, retries when it recovers.
+
+**Rejected alternatives:**
+
+- **Insert + emit-to-Service-Bus in the same handler.** Crash between operations = inserted Incident with no notification. Customer never knows. Common cause of "we have the incident but nobody got paged."
+- **Change Data Capture (Debezium / Postgres logical replication).** Operationally heavyweight; outbox pattern achieves the same correctness with less infra.
+
+**Rationale:** outbox pattern is the standard solution to "transactional event publishing" in distributed systems. Used by Stripe, Shopify, every multi-tenant SaaS at scale.
+
+**Sign-off needed:** ☐
+
+---
+
+### N4. Polling state durability — per-tenant delta tokens in Postgres
+
+**Chosen:**
+
+- Per-tenant `polling_state` table: `tenant_id, last_delta_token, last_poll_started_at, last_poll_completed_at, last_event_observed_at`.
+- Polling worker flow:
+  1. Read `last_delta_token` for tenant.
+  2. Call Microsoft Graph `/auditLogs/directoryAudits?$deltatoken=…`.
+  3. Write `RawEvent[]` JSON to Blob (immutable, atomic at object level).
+  4. Postgres transaction: insert `RawEvent` rows referencing the Blob URL + update `polling_state.last_delta_token`. Commit.
+  5. Enqueue `process-events` message via outbox (N3).
+- **Crash anywhere**: re-poll same delta window. Microsoft event IDs (N1) dedup the redelivered events. No data loss, no duplicates.
+
+**Rejected alternatives:**
+
+- **Delta token in memory.** Lost on worker restart; full re-poll from scratch. Acceptable at 1 customer, painful at 30 (full re-poll = 30 days of events × 30 tenants = throttling).
+- **Delta token in Service Bus message.** Couples message lifetime to state lifetime; Service Bus messages are not durable beyond their retention period.
+
+**Rationale:** polling state must survive every restart. Postgres is the right store; transactional commit with downstream effects (Blob archive, outbox) makes the whole step atomic.
+
+**Sign-off needed:** ☐
+
+---
+
+### N5. Correlation state — stateless batch for v1, stateful sliding-window deferred
+
+**Chosen for v1:** stateless batch correlation. Every N seconds (default 60s), a `correlator` worker:
+1. Pulls `normalized_changes WHERE bundle_id IS NULL AND tenant_id = ? AND observed_at > now() - INTERVAL '5 minutes'`.
+2. Calls existing `correlateNormalizedChanges` (pure function, unchanged from `@kavachiq/core`).
+3. Writes resulting `CorrelatedChangeBundle` rows. Updates `normalized_changes.bundle_id`.
+
+**Latency:** event → bundle = up to 60s (one correlation cycle) + processing time. Acceptable for shadow-mode pilot. At 5+ customers we measure real latency and tune the interval.
+
+**Deferred (Phase 2+):** stateful sliding-window correlator. Workers maintain per-tenant in-memory windows; events stream in via Service Bus; bundles emit when windows close. Latency drops to ~5-10s, but adds: state externalization (Redis or Postgres), worker affinity (one tenant pinned to one worker for window consistency), graceful state handoff on scaling.
+
+**Rationale:** stateless batch is simpler, has no new state to manage, and is sufficient until Phase 4 execution work creates a hard latency requirement. The pure-function design of `correlateNormalizedChanges` makes upgrading to streaming correlation later a wrapper change, not a core rewrite.
+
+**Cost to reverse:** easy. Stateful streaming correlator is a wrapper around the same `correlateNormalizedChanges`; both can coexist behind the same outbox emission pattern.
+
+**Sign-off needed:** ☐
+
+---
+
+### N6. External call resilience — circuit breaker + retry with jitter
+
+**Chosen:**
+
+- Every external call (Microsoft Graph, Slack webhook, Resend email, Key Vault) wrapped in:
+  - **Timeout** — aggressive per-call timeout (Graph: 30s; Slack: 10s; Key Vault: 5s).
+  - **Retry policy** — exponential backoff with full jitter (`min(cap, base * 2^attempt) ± random_jitter`), max 3 attempts in-handler.
+  - **Circuit breaker** (e.g., `opossum`): after 5 sustained failures within 30s, circuit opens for 30s. Calls during open circuit fail-fast, do not block worker pool.
+  - **DLQ on retry exhaustion** — Service Bus message moves to DLQ with full failure context. Operator alerted. Replay tool exists.
+- **Per-downstream config** — Microsoft Graph 429 handling honors `Retry-After` header; other downstreams use the standard policy.
+- **Transient vs permanent classification** — 429, 503, 504, network reset = transient (retry). 401, 403 = permanent for this credential (do not retry; flag credential rotation needed); ack message and surface alert.
+
+**Rejected alternatives:**
+
+- **Naive retry without jitter.** Synchronizes retries across workers, magnifies the original outage. Anti-pattern.
+- **No circuit breaker.** A sustained downstream failure burns through worker pool capacity. Customer A's Graph throttle starves customer B.
+- **Infinite retry.** Eventually fills the queue; consumes resources without progress. DLQ + alert > infinite retry.
+
+**Rationale:** external dependencies fail. The platform's job is to fail gracefully and recover, not crash or amplify the outage.
+
+**Sign-off needed:** ☐
+
+---
+
+### N7. Per-tenant fairness — Service Bus session-keyed delivery + token-bucket rate limit
+
+**Chosen:**
+
+- **Service Bus session ID = `tenant_id`.** Sessions provide FIFO per session and natural fairness — workers process tenants round-robin, no single tenant can starve others.
+- **Per-session prefetch capped** at small number (e.g., 4 messages). One tenant's burst doesn't pin a worker for minutes.
+- **Per-tenant token-bucket rate limit at the application layer.** Tracks ops/min per tenant; blocks excessive load with backoff. Configurable per tenant (defaults: 100 ops/min normalize, 1000 ops/min Graph polling).
+- **Quota tracking in Postgres** (low-frequency writes) for cross-restart durability + per-tenant metrics.
+
+**Rejected alternatives:**
+
+- **Per-tenant queue.** N customers = N queues. Operationally painful (provisioning, monitoring, capacity). Sessions on a shared queue achieve the same isolation without the operational overhead.
+- **No per-tenant fairness.** One tenant with a runaway agent floods our pipeline; every other customer's incidents are delayed.
+
+**Rationale:** at customer 30, one tenant generating 100x the events of others is the norm, not the exception. Fairness is non-negotiable infrastructure.
+
+**Cost to reverse:** medium. Adding sessions to an existing non-session queue is a queue config change + worker code change to honor sessions. Possible but disruptive.
+
+**Sign-off needed:** ☐
+
+---
+
+### N8. Autoscale — KEDA scalers per worker type
+
+**Chosen:**
+
+- **Container Apps autoscaling via KEDA** (built-in):
+  - **Polling worker**: scales on cron schedule (one tick = N messages enqueued = scale up). Min 0, max 10 replicas. Replica processes one tenant per message; scales linearly with active tenant count.
+  - **Pipeline worker**: scales on `process-events` queue **session count** + queue depth. Min 0, max 20 replicas. Each replica handles one session (one tenant) at a time. Replica count tracks concurrent active tenants.
+  - **Notification worker**: scales on `notify-operator` queue depth. Min 0, max 5 replicas. Mostly idle.
+  - **API**: scales on HTTP RPS via Container Apps' built-in HTTP scaler. Min 1 replica (no cold-start for operator clicks), max 10 replicas.
+  - **Console (Next.js)**: served from existing App Service; B1 plan absorbs current load. Migrate to Container Apps + scale-to-zero when traffic warrants.
+- **Cooldown** 5 min before scale-down to avoid thrashing.
+- **Postgres connection pool sized to max-replica scenario.** Max replicas × max-conn-per-replica must fit Postgres `max_connections` (default 100 on Flex B1ms; tier up if needed).
+
+**Rejected alternatives:**
+
+- **Fixed-size worker pool.** Wastes capacity at low load, throttles at high load. Container Apps consumption pricing makes scale-to-zero strictly better.
+- **Aggressive autoscale (no cooldown).** Thrash on bursty load; replicas come up and immediately scale down before they're useful.
+- **Predictive autoscale.** Premature optimization at 5-50 customers. Reactive on queue depth is sufficient.
+
+**Rationale:** queue depth is the correct scaling signal for async workers. HTTP RPS is correct for API. Per-worker-type independent scaling means polling delays don't affect API latency and vice versa.
+
+**Caveats:**
+
+- **Postgres connection storms** during scale-up — every new replica acquires connections at startup. Mitigation: connection pooler (PgBouncer in transaction mode) sits between workers and Postgres, multiplexes.
+- **Cold starts** ~2-5s. Acceptable for queue messages (they wait), tolerable for API (first request slow). Min-1-replica on API avoids it.
+
+**Sign-off needed:** ☐
+
+---
+
+### N9. Liveness, readiness, and graceful shutdown
+
+**Chosen:**
+
+- **Every service exposes**:
+  - `/health/live` — process is alive (always 200 unless deadlocked). Container Apps restarts on failure.
+  - `/health/ready` — service can take traffic: Postgres pool healthy, Service Bus connection open, Key Vault reachable. 503 if not. Container Apps removes from rotation.
+- **Graceful shutdown** on SIGTERM:
+  1. Stop accepting new messages / requests (mark not-ready).
+  2. Wait for in-flight work to complete with bounded grace period (60s default).
+  3. Flush logs + telemetry.
+  4. Exit clean.
+- **Container Apps `terminationGracePeriodSeconds: 90`** (default 30 — too short for some pipeline operations).
+
+**Rationale:** orchestrators kill replicas frequently (deploys, scale-down, host migration). Without graceful shutdown, in-flight messages get redelivered (handled by N2 idempotency, but creates noise). With graceful shutdown, redelivery is a rare exception.
+
+**Sign-off needed:** ☐
+
+---
+
+### N10. Replay & schema evolution — Blob is the source of truth
+
+**Chosen:**
+
+- **Blob raw event archive is the immutable source of truth.** Every audit event Microsoft Graph returned to us is preserved verbatim, forever. Lifecycle: hot tier 30 days → cool tier 90 days → archive tier indefinitely.
+- **Reprocessing is a first-class operation.** A `reprocess-tenant` operator command:
+  1. Picks a time window: `(tenant_id, from, to)`.
+  2. Reads RawEvents from Blob.
+  3. Re-runs the entire pipeline (normalize → correlate → detect) under current code + current sensitivity list + current baseline.
+  4. Writes results idempotently (N1 + N2 means duplicates are no-ops; legitimately changed outputs replace prior versions via UPSERT).
+  5. Audit-logged in `operator_action_audit` (who reprocessed, when, why).
+- **Reprocessing is required for**: classification rule changes (e.g., new high-sensitivity group added → re-classify last 30 days); platform bug fixes (e.g., M3 mapper bug → re-normalize); customer requests ("can you re-run last quarter under the new policy?").
+- **Schema evolution**:
+  - Every entity has `schemaVersion: number`. Already established in `@kavachiq/schema`.
+  - **Forward-compatible reads**: every reader handles current and current-1 schema versions. Migrations are eventual, not big-bang.
+  - **Writes always emit current version.** Old data drifts forward via reprocessing or batch migration jobs as needed.
+  - No table-wide schema migration tool that requires downtime. Migrations are additive (new columns nullable; old columns deprecated then dropped after replay).
+
+**Rejected alternatives:**
+
+- **Compute-derived data only stored, raws discarded.** Cannot reprocess. Cannot recover from a normalization bug discovered after the fact. Cannot re-classify under a policy change. Operationally bankrupting at customer 30.
+- **Big-bang schema migrations.** Downtime; rollback risk; multiplies by tenant count. Forward-compatible reads scale to 200+ tenants without coordination.
+
+**Rationale:** an audit-recovery platform that can't replay audit data against new rules is broken-by-design. Replay is **the** key capability that earns customer trust over time.
+
+**Cost to reverse:** painful. Designing replay in retroactively means re-architecting writes, deduplication, schema. Get it right at customer 1.
+
+**Sign-off needed:** ☐
+
+---
+
+## 5. Sequencing — Option B: skip Sprint 0
 
 We have two sequencing options:
 
@@ -285,42 +551,44 @@ We have two sequencing options:
 
 **Recommended: Option B.** The 4-week customer wait is worth not living in a tactical mode that we'll migrate out of anyway. Customer trust survives "we're being deliberate"; customer trust does not survive "we're swapping the system you just got working."
 
-If customer pressure forces Option A: we can do it, but be **explicit with the design partner** that Sprint 0 is a tactical shadow that gets re-platformed at week 8. Their data flows through; the storage and orchestration get rebuilt underneath.
+**Customer signal received: 6-8 weeks of patience confirmed.** Option B is the right call.
 
 **Sign-off needed:** ☐ Option A / ☐ Option B
 
 ---
 
-## 5. Week-by-week build plan (assuming Option B)
+## 6. Week-by-week build plan (assuming Option B)
 
-| Week | Deliverable | Verification |
-|---|---|---|
-| **1** | Multi-tenant Microsoft app registered. Consent URL working against test tenant. Postgres Flex deployed. Schema for `tenants`, `incidents`, `normalized_changes` with RLS policies. Local dev → DB connection via managed identity. | `psql` connect, RLS policy fires on a contrived multi-tenant test |
-| **2** | Service Bus deployed (3 queues + DLQs). Container Apps environment deployed. Empty `pipeline-worker` container reads a message, runs the existing `@kavachiq/core` pipeline against a fixture, writes one Incident to Postgres. | End-to-end: enqueue message → see incident in DB |
-| **3** | `polling-worker` reads Microsoft Graph audit events using delta tokens. Archives `RawEvent[]` to Blob. Enqueues `process-events`. End-to-end against existing test tenant (`patwainc.onmicrosoft.com`). | Live tenant → incidents in Postgres |
-| **4** | API service: GET /incidents (RLS-filtered). External ID configured. `/console` route in operator app: list incidents, drill into one. Slack notification on incident-created. | Operator logs in, sees their tenant's incidents |
-| **5** | `/onboard` route: customer admin clicks consent URL, callback registers tenant, baseline-bootstrap job pulls initial group-membership snapshot for high-sensitivity groups. **First real customer onboarded.** | Customer admin completes onboarding flow end-to-end |
-| **6** | Hardening: OTel tracing end-to-end. Per-tenant metrics dashboard in App Insights. `operator_action_audit` table populated on every API call. Per-tenant DEK in Key Vault. Runbook update. | OTel trace from poll to notify visible; audit table has rows |
+NFR work runs in parallel with structural work — most of N1-N10 is shape-of-the-code, not separate effort. The 6-week plan below names where each NFR lands.
+
+| Week | Deliverable | NFRs landed | Verification |
+|---|---|---|---|
+| **1** | Multi-tenant Microsoft app registered. Consent URL working against test tenant. Postgres Flex deployed. Schema for `tenants`, `incidents`, `normalized_changes`, `polling_state`, `outbox`, `operator_action_audit` with RLS policies + UNIQUE constraints. Local dev → DB connection via managed identity. | N1 (deterministic IDs in schema), N4 (polling_state table) | `psql` connect, RLS policy fires on a contrived multi-tenant test, UNIQUE constraint rejects duplicate insert |
+| **2** | Service Bus deployed (3 queues + DLQs + sessions). Container Apps environment + KEDA scalers. Empty `pipeline-worker` reads a session-keyed message, runs `@kavachiq/core` pipeline, writes one Incident + outbox row. Health probes + graceful shutdown. | N2, N3, N7 (sessions), N8 (KEDA), N9 | End-to-end: enqueue session-keyed message → see incident in DB + outbox row |
+| **3** | `polling-worker` reads Microsoft Graph audit events using delta tokens. Archives `RawEvent[]` to Blob. Enqueues `process-events`. Circuit breaker + retry on Graph calls. End-to-end against existing test tenant. | N4 (delta tokens in Postgres), N6 (circuit breaker), N10 (Blob as source of truth) | Live tenant → incidents in Postgres; kill polling worker mid-cycle → resume cleanly with no duplicates |
+| **4** | API service: GET /incidents (RLS-filtered). External ID configured. `/console` route in operator app. Outbox publisher emitting `notify-operator` → Slack webhook. Stateless batch correlator running every 60s. | N5 (stateless correlation) | Operator logs in, sees their tenant's incidents; Slack notification fires |
+| **5** | `/onboard` route: customer admin clicks consent URL, callback registers tenant, baseline-bootstrap job pulls initial group-membership snapshot for high-sensitivity groups. **First real customer onboarded.** Replay tool documented. | N10 (replay) | Customer admin completes onboarding flow end-to-end; reprocess-tenant command runs against test tenant, idempotent |
+| **6** | Hardening: OTel tracing end-to-end. Per-tenant metrics dashboard in App Insights. `operator_action_audit` populated on every API call. Per-tenant DEK in Key Vault. Per-tenant token-bucket rate limit. Runbook update. | (D7 finalized; N7 rate limits; backup/restore drill) | OTel trace from poll to notify visible; first quarterly backup-restore drill scheduled |
 
 **Floor: 6 weeks to production-architecture customer onboarded.** Calendar time may stretch with customer-side delays (consent, security review).
 
 ---
 
-## 6. Code structure (target)
+## 7. Code structure (target)
 
 ```
 platform/
 ├── packages/
 │   ├── schema/        existing — audit `tenant_id` requirement on every entity
-│   ├── platform/      existing — add OTel hooks
+│   ├── platform/      existing — add OTel hooks, circuit-breaker primitives
 │   ├── core/          existing — UNCHANGED. Pure functions stay pure.
-│   ├── orchestration/ NEW — per-tenant pipeline driver
-│   ├── storage/       NEW — Postgres (RLS-aware) + Blob clients
+│   ├── orchestration/ NEW — per-tenant pipeline driver, outbox publisher
+│   ├── storage/       NEW — Postgres (RLS-aware) + Blob clients, connection pool middleware
 │   ├── auth/          NEW — External ID JWT, managed-identity helpers
-│   ├── workers/       fill in — pollers, pipeline driver, notify
-│   ├── api/           fill in — REST + WebSocket
+│   ├── workers/       fill in — pollers, correlator, pipeline driver, notify
+│   ├── api/           fill in — REST + WebSocket, health endpoints
 │   ├── execution/     stays stub for Phase 4
-│   └── cli/           operations tooling (existing scripts move here over time)
+│   └── cli/           operations tooling — reprocess-tenant, dlq-replay, baseline-refresh
 ├── fixtures/
 │   └── canonical/     existing — becomes integration test corpus
 ├── scripts/           existing — operations runbooks
@@ -339,13 +607,13 @@ The marketing site (current repo root, with `/demo` and `/evidence`) **stays unc
 
 ---
 
-## 7. Cost model (estimates, Azure Central US, May 2026 pricing)
+## 8. Cost model (estimates, Azure Central US, May 2026 pricing)
 
 | Component | 5 customers | 50 customers | 200 customers |
 |---|---|---|---|
 | Postgres Flex | B1ms ~$13/mo | D2s_v3 ~$120/mo | E4s_v3 ~$430/mo |
 | Service Bus | Standard ~$10/mo | Standard ~$10/mo | Standard ~$30/mo |
-| Container Apps | Free tier | $50-100/mo | $300-500/mo |
+| Container Apps (autoscaled) | Free tier | $50-100/mo | $300-500/mo |
 | Blob Storage | ~$5/mo | ~$50/mo | ~$200/mo |
 | App Insights | Free tier | $30/mo | $100/mo |
 | Key Vault | ~$2/mo | ~$5/mo | ~$15/mo |
@@ -358,9 +626,11 @@ The marketing site (current repo root, with `/demo` and `/evidence`) **stays unc
 
 Marginal cost per customer is ~$5-10/mo at any scale. Compared with software ARR per customer this is rounding error. Architecture decisions in this doc do not optimize for cost per dollar — they optimize for "doesn't need rewriting."
 
+Container Apps consumption-billing means scale-to-zero workers cost ~$0/mo at idle. Only the always-on API pays a baseline. Cost grows with active usage, not provisioned capacity.
+
 ---
 
-## 8. What this proposal explicitly does NOT do
+## 9. What this proposal explicitly does NOT do
 
 Naming exclusions so reviewers can confirm scope:
 
@@ -372,23 +642,27 @@ Naming exclusions so reviewers can confirm scope:
 - **Customer-facing dashboards beyond incident list.** Operator console with incidents is enough through 10+ customers. Custom dashboards = post-revenue.
 - **Detection rule customization per tenant.** Phase 2/3 work; today's classification weights are fine.
 - **Webhooks instead of polling for Graph audit events.** Polling for v1; webhooks add complexity (renewal handshakes, validation, failure modes). Migrate to webhooks at customer 5+ if 5-min latency is a complaint.
+- **Stateful streaming correlator.** N5 deferred until latency-sensitive Phase 4 work creates a real requirement.
+- **Chaos engineering / fault injection.** Operationally appropriate post-pilot. The architecture supports it; the practice waits for stable load.
+- **Cross-region failover.** Single-region with multi-region readiness; failover drills come with the second region's deployment.
 
 ---
 
-## 9. Open questions for reviewers
+## 10. Open questions for reviewers
 
 These are unresolved and need a decision before week 1 kicks off:
 
 1. **Postgres provider region/SKU.** Confirm Central US matches the existing marketing infra and the design partner's expected data residency. If the partner is non-US, we should choose region accordingly.
 2. **`apps/console/` — same repo or separate?** Recommend same repo (monorepo), same Next.js app at root with route segregation between marketing (public) and `/console` (auth-walled). Splits later if team or build times grow. Alternative: separate repo. Reviewer call.
 3. **External ID tenant — separate from our own Entra?** Recommend yes — operator-identity tenant is a separate Entra tenant from our own corporate Entra. Cleaner blast radius if either is compromised.
-4. **Service Bus vs Storage Queues for v1.** Both are queue-based. Service Bus is the recommended default; Storage Queues is the cheaper fallback. Pick one.
+4. **Service Bus vs Storage Queues for v1.** Both are queue-based. Service Bus is the recommended default; Storage Queues is the cheaper fallback. Pick one. **Note:** N7 (per-tenant fairness) requires Service Bus sessions; Storage Queues does not support sessions. If choosing Storage Queues, N7 needs a different implementation (per-tenant queue or app-level partition).
 5. **Bicep vs Terraform for `infra/`.** Recommend Bicep — Azure-native, no state backend needed, deployments tracked in ARM. Terraform is more portable if we ever multi-cloud, but we're Azure-only for the foreseeable future. Reviewer call.
 6. **Customer-tenant region detection.** Customer's tenant data may live in any Microsoft region. Our customer-facing region is where we run; we don't store customer's Microsoft data outside our region. OK to pin every customer to our deployment region for v1.
+7. **Connection pooler — PgBouncer or Postgres-native?** If autoscaling adds replica count beyond ~20, native Postgres connection limits get hit. PgBouncer (transaction pooling) is the standard answer; adds an operational component. Alternative: stay below the limit by careful per-replica connection-pool sizing. Reviewer call — depends on expected concurrency.
 
 ---
 
-## 10. Easy-to-reverse decisions — explicitly deferred
+## 11. Easy-to-reverse decisions — explicitly deferred
 
 Listed so reviewers don't waste time pushing back on these now:
 
@@ -398,13 +672,16 @@ Listed so reviewers don't waste time pushing back on these now:
 | Specific UI layout for `/console` | First operator session | Iterate from feedback |
 | Detection scoring weights | After 100 real incidents | Tune from data |
 | Polling interval (5min default) | Customer feedback | Config value |
+| Correlation interval (60s default) | Latency complaints | Config value |
 | Specific Bicep vs Terraform tool | Open question above | Both work; pick later |
 | CI/CD platform | Team > 1 person | Laptop deploy works |
 | Specific webhook subscription | Customer #5 | Polling is fine for v1 |
+| Specific autoscale thresholds | After load profiling | KEDA values are tuneable |
+| Specific circuit-breaker tuning | After observed downstream patterns | `opossum` config |
 
 ---
 
-## 11. Risks called out
+## 12. Risks called out
 
 A Principal review names risks the recommended path doesn't eliminate:
 
@@ -413,11 +690,15 @@ A Principal review names risks the recommended path doesn't eliminate:
 - **R3 — Service Bus session-based delivery cost.** Standard tier required for sessions; Basic doesn't support them. Adds ~$10/mo at minimum scale. Acceptable.
 - **R4 — RLS performance under load.** Postgres RLS adds query overhead. Mitigation: profile under realistic load before customer 10. Cache-friendly query patterns; index on `tenant_id` first.
 - **R5 — Customer-side admin churn.** If the customer admin who granted consent leaves, consent persists, but we may lose the human contact. Mitigation: require two admins on customer side at onboarding; document in DPA.
-- **R6 — Microsoft Graph throttling.** Audit log polling has rate limits. Mitigation: per-tenant exponential backoff; surface via metrics; alert at sustained throttling.
+- **R6 — Microsoft Graph throttling.** Audit log polling has rate limits. Mitigation: per-tenant exponential backoff (N6); surface via metrics; alert at sustained throttling.
+- **R7 — Postgres connection storms during scale-up.** Each new Container Apps replica acquires connections. Without pooling, max replicas × per-replica pool > Postgres `max_connections` = denial of service to ourselves. Mitigation: PgBouncer (Open question 7); or careful per-replica pool sizing; profile under autoscale event.
+- **R8 — Outbox publisher backlog.** If Service Bus is down for hours, outbox grows unbounded. Mitigation: alert on outbox size > threshold; bound retry duration; surface stuck outbox rows for ops triage.
+- **R9 — Replay correctness bugs.** Reprocessing under new rules can produce different incidents than original. Mitigation: every incident records the rule-version it was created under; reprocessing creates new versions linked to old (not silent overwrite).
+- **R10 — Cold-start API on first hit of the day.** Min-1 replica avoids; but if we drop to scale-to-zero on API to save cost, first operator click is 2-5s slow. Mitigation: keep API at min-1 replica.
 
 ---
 
-## 12. What changes in the existing repo if this is approved
+## 13. What changes in the existing repo if this is approved
 
 **Adds (no removals):**
 
@@ -425,13 +706,13 @@ A Principal review names risks the recommended path doesn't eliminate:
 - `infra/` directory with Bicep modules (week 1+)
 - `platform/packages/{orchestration,storage,auth}/` (weeks 2-4)
 - `apps/console/` (week 4-5)
-- Schema changes to existing entities to enforce `tenant_id` (week 1)
+- Schema changes to existing entities to enforce `tenant_id` + UNIQUE constraints (week 1)
 
 **Stays the same:**
 
 - `@kavachiq/core` — unchanged
-- `@kavachiq/platform` — minor OTel additions
-- `@kavachiq/schema` — `tenant_id` audit
+- `@kavachiq/platform` — minor OTel + circuit-breaker additions
+- `@kavachiq/schema` — `tenant_id` audit + `schemaVersion` already in place
 - Marketing site (`/`, `/platform`, `/demo`, `/evidence`)
 - All existing fixtures
 - All existing tests
@@ -440,11 +721,12 @@ A Principal review names risks the recommended path doesn't eliminate:
 
 ---
 
-## 13. Sign-off
+## 14. Sign-off
 
-This document becomes the canonical architectural record only after every checkbox below is signed off. Reviewer can disagree on any specific decision; the doc gets revised and re-circulated. **Implementation does not begin** until D1-D8 + S1 are agreed.
+This document becomes the canonical architectural record only after every checkbox below is signed off. Reviewer can disagree on any specific decision; the doc gets revised and re-circulated. **Implementation does not begin** until D1-D8, S1, N1-N10, and the open questions are agreed.
 
 ```
+Structural decisions
 [ ] D1  Multi-tenant Microsoft app, day one
 [ ] D2  Postgres RLS + per-tenant DEK
 [ ] D3  Postgres (state) + Blob (raw archive)
@@ -453,14 +735,30 @@ This document becomes the canonical architectural record only after every checkb
 [ ] D6  Single region, designed for multi-region
 [ ] D7  OpenTelemetry + Application Insights
 [ ] D8  Strangler Fig — wrap @kavachiq/core
+
+Sequencing
 [ ] S1  Sequencing: Option B (skip Sprint 0)
 
-[ ] Open question 1 — Postgres region/SKU
-[ ] Open question 2 — apps/console same repo or separate
-[ ] Open question 3 — separate Entra tenant for operator identity
-[ ] Open question 4 — Service Bus vs Storage Queues for v1
-[ ] Open question 5 — Bicep vs Terraform for infra/
-[ ] Open question 6 — customer-tenant region detection
+Non-functional requirements
+[ ] N1  Deterministic IDs / idempotency keys
+[ ] N2  At-least-once delivery + idempotent handlers
+[ ] N3  Outbox pattern for cross-service events
+[ ] N4  Polling state durability (delta tokens in Postgres)
+[ ] N5  Stateless batch correlation for v1
+[ ] N6  Circuit breaker + retry with jitter on external calls
+[ ] N7  Per-tenant fairness (Service Bus sessions + token bucket)
+[ ] N8  Autoscale (KEDA scalers per worker type)
+[ ] N9  Liveness/readiness/graceful shutdown
+[ ] N10 Replay (Blob source of truth) + schema evolution
+
+Open questions
+[ ] Q1  Postgres region/SKU
+[ ] Q2  apps/console same repo or separate
+[ ] Q3  separate Entra tenant for operator identity
+[ ] Q4  Service Bus vs Storage Queues for v1
+[ ] Q5  Bicep vs Terraform for infra/
+[ ] Q6  customer-tenant region detection
+[ ] Q7  PgBouncer vs native connection pooling
 ```
 
 Approver: _________  Date: _________
@@ -469,32 +767,38 @@ Approver: _________  Date: _________
 
 ## Appendix A — Strangler Fig pattern, illustrated
 
-The existing pure functions live unchanged at the bottom. Tenant-aware orchestration is layered on top.
+The existing pure functions live unchanged at the bottom. Tenant-aware orchestration is layered on top. The orchestration layer is where N1-N10 are enforced.
 
 ```
-┌────────────────────────────────────────────────────────┐
-│ pipeline-worker (Container Apps)                       │
-│   1. dequeue message { tenant_id, raw_event_blob_url } │
-│   2. set Postgres app.tenant_id from message           │
-│   3. tenantCtx = await loadTenantContext(tenant_id)    │
-│      // creds, baselines, sensitivity list             │
-│   4. raws = await blobClient.read(blob_url)            │
-│   5. ─── existing @kavachiq/core, untouched ───        │
-│        normalized = await normalizeRawEvents(raws, {   │
-│          snapshotProvider: tenantCtx.snapshotProvider, │
-│          ...                                           │
-│        })                                              │
-│        bundles = correlateNormalizedChanges(           │
-│          normalized, { scoringPolicy: tenantCtx.… })   │
-│        for bundle of bundles:                          │
-│          if bundle.score >= 80:                        │
-│            incident = promoteBundleToIncident(...)     │
-│            await db.incidents.insert(incident)         │
-│   6. ack message                                       │
-└────────────────────────────────────────────────────────┘
+┌────────────────────────────────────────────────────────────┐
+│ pipeline-worker (Container Apps, KEDA-scaled)              │
+│   1. dequeue session-keyed message {tenant_id, blob_url}   │
+│   2. set Postgres app.tenant_id from message               │
+│      → RLS engages (D2, N1 UNIQUE constraints)             │
+│   3. tenantCtx = await loadTenantContext(tenant_id)        │
+│      // creds (per-tenant DEK), baselines, sensitivity     │
+│   4. raws = await blobClient.read(blob_url)                │
+│      → Blob is source of truth (N10 replay possible)       │
+│   5. ─── existing @kavachiq/core, untouched ───            │
+│        normalized = await normalizeRawEvents(raws, {       │
+│          snapshotProvider: tenantCtx.snapshotProvider,     │
+│        })                                                  │
+│        bundles = correlateNormalizedChanges(               │
+│          normalized, { scoringPolicy: tenantCtx.… })       │
+│        for bundle in bundles:                              │
+│          if bundle.score >= 80:                            │
+│            incident = promoteBundleToIncident(...)         │
+│   6. db.transaction(() => {                                │
+│        INSERT INTO incidents ON CONFLICT DO NOTHING (N1+N2)│
+│        INSERT INTO outbox (event_type, payload) (N3)       │
+│      })                                                    │
+│   7. ack message (Service Bus)                             │
+│      // crash before ack = redelivery; idempotent (N2)     │
+│      // graceful SIGTERM completes step 6 before exit (N9) │
+└────────────────────────────────────────────────────────────┘
 ```
 
-Lines 5-end of `@kavachiq/core` are byte-for-byte the existing code. Lines 1-4 and 6 are the new orchestration. The 67 existing tests still test lines 5-end in isolation.
+Lines 5 of `@kavachiq/core` are byte-for-byte the existing code. Lines 1-4 and 6-7 are the new orchestration where the NFRs are enforced. The 67 existing tests still test line 5 in isolation; new integration tests cover lines 1-7.
 
 ---
 
@@ -504,6 +808,6 @@ This doc is **infrastructure**, not features. Phase 2 (blast radius), Phase 3 (r
 
 The decisions in this doc are sufficient to carry Phase 2-4 features when they're built. Specifically:
 
-- **Phase 2 blast-radius** writes to Postgres (`blast_radius_results` table — added in that pass), reads from `incidents` and `normalized_changes`. RLS scoped automatically.
-- **Phase 3 recovery planning** writes `recovery_plans`, reads from `blast_radius_results`. Same.
-- **Phase 4 execution** is a separate service (`@kavachiq/execution`) per the existing architecture lock — read/write trust boundary — but consumes the same Service Bus pattern, same RLS-scoped Postgres reads, same OTel tracing. The "separate execution service" lock in `ENGINEERING_BOOTSTRAP_DECISIONS.md` is honored.
+- **Phase 2 blast-radius** writes to Postgres (`blast_radius_results` table — added in that pass), reads from `incidents` and `normalized_changes`. RLS scoped automatically. Idempotency via N1 patterns.
+- **Phase 3 recovery planning** writes `recovery_plans`, reads from `blast_radius_results`. Same N1-N10 properties apply.
+- **Phase 4 execution** is a separate service (`@kavachiq/execution`) per the existing architecture lock — read/write trust boundary — but consumes the same Service Bus pattern, same RLS-scoped Postgres reads, same OTel tracing, same outbox emission, same per-tenant fairness. The "separate execution service" lock in `ENGINEERING_BOOTSTRAP_DECISIONS.md` is honored. Phase 4 will likely promote N5 from stateless batch correlation to stateful streaming correlator to meet execution-latency SLAs.
