@@ -20,6 +20,7 @@ import { mapAppRoleAssignmentAddEvent } from "./app-role-assignment.js";
 import { mapCaPolicyUpdateEvent } from "./ca-policy-update.js";
 import { classifyEvent } from "./discriminator.js";
 import { mapMemberAddEvent } from "./member-add.js";
+import { mapSpCredentialChangeEvent } from "./sp-credential-change.js";
 import type { SnapshotProvider } from "./snapshot-provider.js";
 
 export interface NormalizeOptions {
@@ -92,6 +93,17 @@ export async function normalizeRawEvents(
       const change = await mapAppRoleAssignmentAddEvent(rawEvent, {
         tenantId: opts.tenantId,
         snapshotProvider: opts.snapshotProvider,
+        agentIdentifiedActorIds: opts.agentIdentifiedActorIds,
+        newChangeId,
+        bundleIdFor: () => bundleIdFor(payload),
+      });
+      normalized.push(change);
+      continue;
+    }
+
+    if (cls === "sp-credential-change") {
+      const change = mapSpCredentialChangeEvent(rawEvent, {
+        tenantId: opts.tenantId,
         agentIdentifiedActorIds: opts.agentIdentifiedActorIds,
         newChangeId,
         bundleIdFor: () => bundleIdFor(payload),

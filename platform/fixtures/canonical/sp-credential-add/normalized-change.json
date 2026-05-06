@@ -1,0 +1,76 @@
+{
+  "changeId": "chg_m4_add_e03bcb0a-1ddc-464c-8b06-ae1925455351",
+  "tenantId": "3725cec5-3e2d-402c-a5a6-460c325d8f87",
+  "source": {
+    "primarySource": "entra-audit",
+    "corroboratingSources": [],
+    "conflictingSources": [],
+    "rawEventIds": [
+      "raw_m4_add_e03bcb0a-1ddc-464c-8b06-ae1925455351"
+    ]
+  },
+  "actor": {
+    "type": "service-principal",
+    "id": "5b459613-2158-484f-a28a-61fd04b1b595",
+    "displayName": "SP-Setup",
+    "agentIdentified": true,
+    "sessionId": null
+  },
+  "target": {
+    "objectType": "application",
+    "objectId": "14579378-8d77-4b37-af78-baf5db8269d9",
+    "externalId": "14579378-8d77-4b37-af78-baf5db8269d9",
+    "displayName": "KavachiqTest-App-01"
+  },
+  "changeType": "credentialAdded",
+  "beforeState": {
+    "state": {
+      "applicationId": "14579378-8d77-4b37-af78-baf5db8269d9",
+      "applicationDisplayName": "KavachiqTest-App-01",
+      "credentials": []
+    },
+    "capturedAt": "2026-04-17T07:43:07.0421781Z",
+    "captureSource": "entra-audit",
+    "confidence": "authoritative",
+    "stateHash": "41b8044a7bf50fe6e60d2c9cd950d20a6badf15018e32f2836eab2f91fc0e7e6"
+  },
+  "afterState": {
+    "state": {
+      "applicationId": "14579378-8d77-4b37-af78-baf5db8269d9",
+      "applicationDisplayName": "KavachiqTest-App-01",
+      "credentials": [
+        {
+          "keyIdentifier": "c7890f61-2f17-478f-bc60-60fd19c09588",
+          "keyType": "Password",
+          "keyUsage": "Verify",
+          "displayName": "kavachiq-wi05-spike"
+        }
+      ]
+    },
+    "capturedAt": "2026-04-17T07:43:07.0421781Z",
+    "captureSource": "entra-audit",
+    "confidence": "authoritative",
+    "stateHash": "91da23e4bb4e17870852316455ea8ae053fbecd3f20d482488bd3fff1acdec01"
+  },
+  "confidence": {
+    "level": "high",
+    "reasons": [
+      "authoritative-audit-event-observed",
+      "authoritative-before-state-from-audit-oldValue",
+      "authoritative-after-state-from-audit-newValue"
+    ],
+    "missingFields": [
+      "secretText"
+    ]
+  },
+  "correlationHints": {
+    "actorSessionId": null,
+    "operationBatchId": null,
+    "timeCluster": "2026-04-17T07:43:07Z"
+  },
+  "selfAction": false,
+  "observedAt": "2026-04-17T07:43:07.0421781Z",
+  "ingestedAt": "2026-04-17T07:43:08.042Z",
+  "bundleId": null,
+  "schemaVersion": 1
+}

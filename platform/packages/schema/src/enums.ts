@@ -25,7 +25,9 @@ export type ChangeType =
   | "assignmentAdded"
   | "assignmentRemoved"
   | "policyModified"
-  | "permissionChanged";
+  | "permissionChanged"
+  | "credentialAdded"
+  | "credentialRemoved";
 
 export type SourceSystem =
   | "entra-audit"

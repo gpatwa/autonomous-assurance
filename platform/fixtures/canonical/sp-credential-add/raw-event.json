@@ -1,0 +1,62 @@
+{
+  "rawEventId": "raw_m4_add_e03bcb0a-1ddc-464c-8b06-ae1925455351",
+  "tenantId": "3725cec5-3e2d-402c-a5a6-460c325d8f87",
+  "sourceSystem": "entra-audit",
+  "rawPayload": {
+    "id": "Directory_e03bcb0a-1ddc-464c-8b06-ae1925455351_JL2EI_22074709",
+    "category": "ApplicationManagement",
+    "correlationId": "e03bcb0a-1ddc-464c-8b06-ae1925455351",
+    "result": "success",
+    "resultReason": "",
+    "activityDisplayName": "Update application – Certificates and secrets management ",
+    "activityDateTime": "2026-04-17T07:43:07.0421781Z",
+    "loggedByService": "Core Directory",
+    "operationType": "Update",
+    "initiatedBy": {
+      "user": null,
+      "app": {
+        "appId": null,
+        "displayName": "SP-Setup",
+        "servicePrincipalId": "5b459613-2158-484f-a28a-61fd04b1b595",
+        "servicePrincipalName": null
+      }
+    },
+    "targetResources": [
+      {
+        "id": "14579378-8d77-4b37-af78-baf5db8269d9",
+        "displayName": "KavachiqTest-App-01",
+        "type": "Application",
+        "userPrincipalName": null,
+        "groupType": null,
+        "modifiedProperties": [
+          {
+            "displayName": "KeyDescription",
+            "oldValue": "[]",
+            "newValue": "[\"[KeyIdentifier=c7890f61-2f17-478f-bc60-60fd19c09588,KeyType=Password,KeyUsage=Verify,DisplayName=kavachiq-wi05-spike]\"]"
+          },
+          {
+            "displayName": "Included Updated Properties",
+            "oldValue": null,
+            "newValue": "\"KeyDescription\""
+          }
+        ]
+      }
+    ],
+    "additionalDetails": [
+      {
+        "key": "User-Agent",
+        "value": "node"
+      },
+      {
+        "key": "AppId",
+        "value": "940e722d-b4e8-4f72-b55b-aea429b86a87"
+      }
+    ]
+  },
+  "ingestedAt": "2026-04-17T07:43:08.042Z",
+  "processingStatus": "normalized",
+  "normalizedChangeIds": [
+    "chg_m4_add_e03bcb0a-1ddc-464c-8b06-ae1925455351"
+  ],
+  "schemaVersion": 1
+}

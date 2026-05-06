@@ -1,0 +1,76 @@
+{
+  "changeId": "chg_m4_remove_9c774394-f42a-4e95-a05d-ea3da13d89ad",
+  "tenantId": "3725cec5-3e2d-402c-a5a6-460c325d8f87",
+  "source": {
+    "primarySource": "entra-audit",
+    "corroboratingSources": [],
+    "conflictingSources": [],
+    "rawEventIds": [
+      "raw_m4_remove_9c774394-f42a-4e95-a05d-ea3da13d89ad"
+    ]
+  },
+  "actor": {
+    "type": "service-principal",
+    "id": "5b459613-2158-484f-a28a-61fd04b1b595",
+    "displayName": "SP-Setup",
+    "agentIdentified": true,
+    "sessionId": null
+  },
+  "target": {
+    "objectType": "application",
+    "objectId": "14579378-8d77-4b37-af78-baf5db8269d9",
+    "externalId": "14579378-8d77-4b37-af78-baf5db8269d9",
+    "displayName": "KavachiqTest-App-01"
+  },
+  "changeType": "credentialRemoved",
+  "beforeState": {
+    "state": {
+      "applicationId": "14579378-8d77-4b37-af78-baf5db8269d9",
+      "applicationDisplayName": "KavachiqTest-App-01",
+      "credentials": [
+        {
+          "keyIdentifier": "c7890f61-2f17-478f-bc60-60fd19c09588",
+          "keyType": "Password",
+          "keyUsage": "Verify",
+          "displayName": "kavachiq-wi05-spike"
+        }
+      ]
+    },
+    "capturedAt": "2026-04-17T07:43:47.0167443Z",
+    "captureSource": "entra-audit",
+    "confidence": "authoritative",
+    "stateHash": "91da23e4bb4e17870852316455ea8ae053fbecd3f20d482488bd3fff1acdec01"
+  },
+  "afterState": {
+    "state": {
+      "applicationId": "14579378-8d77-4b37-af78-baf5db8269d9",
+      "applicationDisplayName": "KavachiqTest-App-01",
+      "credentials": []
+    },
+    "capturedAt": "2026-04-17T07:43:47.0167443Z",
+    "captureSource": "entra-audit",
+    "confidence": "authoritative",
+    "stateHash": "41b8044a7bf50fe6e60d2c9cd950d20a6badf15018e32f2836eab2f91fc0e7e6"
+  },
+  "confidence": {
+    "level": "high",
+    "reasons": [
+      "authoritative-audit-event-observed",
+      "authoritative-before-state-from-audit-oldValue",
+      "authoritative-after-state-from-audit-newValue"
+    ],
+    "missingFields": [
+      "secretText"
+    ]
+  },
+  "correlationHints": {
+    "actorSessionId": null,
+    "operationBatchId": null,
+    "timeCluster": "2026-04-17T07:43:47Z"
+  },
+  "selfAction": false,
+  "observedAt": "2026-04-17T07:43:47.0167443Z",
+  "ingestedAt": "2026-04-17T07:43:48.016Z",
+  "bundleId": null,
+  "schemaVersion": 1
+}

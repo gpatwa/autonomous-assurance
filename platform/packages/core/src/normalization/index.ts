@@ -17,7 +17,8 @@ export type { NormalizeOptions } from "./normalize.js";
 export { classifyEvent } from "./discriminator.js";
 export type { CanonicalChangeClass } from "./discriminator.js";
 
-export { unwrapScalar, parsePolicyJsonObject } from "./decoder.js";
+export { unwrapScalar, parsePolicyJsonObject, parseKeyDescriptionArray } from "./decoder.js";
+export type { ParsedKeyDescriptionEntry } from "./decoder.js";
 
 export {
   createFilesystemSnapshotProvider,
@@ -42,3 +43,6 @@ export type { CaPolicyUpdateMapperOptions } from "./ca-policy-update.js";
 
 export { mapAppRoleAssignmentAddEvent } from "./app-role-assignment.js";
 export type { AppRoleAssignmentMapperOptions } from "./app-role-assignment.js";
+
+export { mapSpCredentialChangeEvent } from "./sp-credential-change.js";
+export type { SpCredentialChangeMapperOptions } from "./sp-credential-change.js";

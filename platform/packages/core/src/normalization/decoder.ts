@@ -40,6 +40,96 @@ export function unwrapScalar(value: string | null): string | null {
   return value;
 }
 
+// ─── M4 KeyDescription array decoder ─────────────────────────────────────────
+
+/**
+ * Parsed entry from the `KeyDescription` modifiedProperty (M4).
+ *
+ * WI-05 §4.4: each entry in the serialised array is a bracket-delimited
+ * comma-separated key=value string, e.g.
+ *   "[KeyIdentifier=c7890f61-…,KeyType=Password,KeyUsage=Verify,DisplayName=kavachiq-wi05-spike]"
+ *
+ * `secretText` is intentionally absent from Entra audit events and is NEVER
+ * stored, reconstructed, or surfaced by the platform.
+ */
+export interface ParsedKeyDescriptionEntry {
+  keyIdentifier: string | null;
+  keyType: string | null;
+  keyUsage: string | null;
+  displayName: string | null;
+}
+
+/**
+ * Decode the `KeyDescription` array string from an M4 audit event.
+ *
+ *   `null`         → `[]`  (absent; caller distinguishes from empty)
+ *   `"[]"`         → `[]`  (empty set — no credentials; valid state, not missing)
+ *   `"[\"[K=v,…]\"]"` → `[{ keyIdentifier, keyType, … }]`
+ *
+ * Throws if the outer JSON is malformed.
+ */
+export function parseKeyDescriptionArray(
+  value: string | null,
+  context: { field: string; eventId?: string },
+): ParsedKeyDescriptionEntry[] {
+  if (value === null || value === "[]") return [];
+
+  let entries: unknown;
+  try {
+    entries = JSON.parse(value);
+  } catch (err) {
+    const loc = context.eventId ? ` on event ${context.eventId}` : "";
+    throw new Error(
+      `Field '${context.field}'${loc} is not valid JSON: ${(err as Error).message}`,
+    );
+  }
+
+  if (!Array.isArray(entries)) {
+    const loc = context.eventId ? ` on event ${context.eventId}` : "";
+    throw new Error(
+      `Field '${context.field}'${loc} expected JSON array, got ${typeof entries}`,
+    );
+  }
+
+  return (entries as unknown[]).map((entry, i) => {
+    if (typeof entry !== "string") {
+      throw new Error(
+        `Field '${context.field}' entry[${i}] expected string, got ${typeof entry}`,
+      );
+    }
+    return parseKeyDescriptionEntry(entry);
+  });
+}
+
+function parseKeyDescriptionEntry(entry: string): ParsedKeyDescriptionEntry {
+  // Strip outer brackets: "[K=v,…]" → "K=v,…"
+  const inner = entry.startsWith("[") && entry.endsWith("]")
+    ? entry.slice(1, -1)
+    : entry;
+
+  const result: ParsedKeyDescriptionEntry = {
+    keyIdentifier: null,
+    keyType: null,
+    keyUsage: null,
+    displayName: null,
+  };
+
+  for (const part of inner.split(",")) {
+    const eqIdx = part.indexOf("=");
+    if (eqIdx === -1) continue;
+    const key = part.slice(0, eqIdx).trim();
+    const val = part.slice(eqIdx + 1).trim() || null;
+    switch (key) {
+      case "KeyIdentifier": result.keyIdentifier = val; break;
+      case "KeyType":       result.keyType       = val; break;
+      case "KeyUsage":      result.keyUsage      = val; break;
+      case "DisplayName":   result.displayName   = val; break;
+    }
+  }
+
+  return result;
+}
+
 /**
  * Parse a single-JSON-encoded full-policy object string (M2 convention).
  *
