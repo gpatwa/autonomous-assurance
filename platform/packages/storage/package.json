@@ -11,9 +11,11 @@
   },
   "dependencies": {
     "@kavachiq/schema": "*",
-    "@kavachiq/platform": "*"
+    "@kavachiq/platform": "*",
+    "pg": "^8.13.0"
   },
   "devDependencies": {
+    "@types/pg": "^8.11.10",
     "typescript": "^5.7.0"
   }
 }
