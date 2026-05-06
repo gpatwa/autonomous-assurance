@@ -10,7 +10,9 @@
   },
   "dependencies": {
     "@kavachiq/schema": "*",
-    "@kavachiq/core": "*"
+    "@kavachiq/core": "*",
+    "@kavachiq/storage": "*",
+    "@kavachiq/platform": "*"
   },
   "devDependencies": {
     "typescript": "^5.7.0"

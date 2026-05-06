@@ -97,3 +97,48 @@ export async function findIncidentById(
   );
   return result.rows[0]?.payload ?? null;
 }
+
+export interface ListIncidentsOpts {
+  limit?: number;
+  offset?: number;
+  severity?: string;
+}
+
+export interface ListIncidentsResult {
+  incidents: Incident[];
+  total: number;
+}
+
+/** List incidents descending by detected_at, RLS-scoped. */
+export async function listIncidents(
+  client: PoolClient,
+  opts: ListIncidentsOpts = {},
+): Promise<ListIncidentsResult> {
+  const limit = Math.min(opts.limit ?? 50, 200);
+  const offset = opts.offset ?? 0;
+  const params: unknown[] = [];
+  const where: string[] = [];
+
+  if (opts.severity) {
+    params.push(opts.severity);
+    where.push(`severity = $${params.length}`);
+  }
+
+  const whereClause = where.length ? `WHERE ${where.join(" AND ")}` : "";
+
+  const countRow = await client.query<{ c: string }>(
+    `SELECT count(*)::text AS c FROM incidents ${whereClause}`,
+    params,
+  );
+  const total = parseInt(countRow.rows[0]!.c, 10);
+
+  params.push(limit, offset);
+  const rows = await client.query<{ payload: Incident }>(
+    `SELECT payload FROM incidents ${whereClause}
+     ORDER BY detected_at DESC
+     LIMIT $${params.length - 1} OFFSET $${params.length}`,
+    params,
+  );
+
+  return { incidents: rows.rows.map((r) => r.payload), total };
+}

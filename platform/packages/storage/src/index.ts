@@ -33,7 +33,10 @@ export {
 export {
   findIncidentById,
   insertIncident,
+  listIncidents,
   type InsertIncidentResult,
+  type ListIncidentsOpts,
+  type ListIncidentsResult,
 } from "./incidents.js";
 
 export {
@@ -54,7 +57,10 @@ export {
 
 export {
   insertNormalizedChange,
+  listNormalizedChanges,
   type InsertChangeResult,
+  type ListChangesOpts,
+  type ListChangesResult,
 } from "./normalized-changes.js";
 
 export {

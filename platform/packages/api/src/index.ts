@@ -1,8 +1,11 @@
 /**
- * API server entrypoint.
+ * KavachIQ REST API — public surface.
  *
- * Exposes the KavachIQ REST and WebSocket APIs for the dashboard,
- * incident management, and remediation plan review/approval workflows.
+ * `createApiServer` — factory for in-process use (tests, smoke scripts).
+ * `runApiServer`    — process entrypoint for the Container App image.
  */
 
-export {};
+export { createApiServer } from "./server.js";
+export type { ApiServer, ApiServerOptions } from "./server.js";
+
+export { runApiServer } from "./run-api-server.js";

@@ -17,6 +17,51 @@
 import type { PoolClient } from "pg";
 import type { NormalizedChange } from "@kavachiq/schema";
 
+export interface ListChangesOpts {
+  limit?: number;
+  offset?: number;
+  changeType?: string;
+}
+
+export interface ListChangesResult {
+  changes: NormalizedChange[];
+  total: number;
+}
+
+/** List normalized changes descending by observed_at, RLS-scoped. */
+export async function listNormalizedChanges(
+  client: PoolClient,
+  opts: ListChangesOpts = {},
+): Promise<ListChangesResult> {
+  const limit = Math.min(opts.limit ?? 50, 200);
+  const offset = opts.offset ?? 0;
+  const params: unknown[] = [];
+  const where: string[] = [];
+
+  if (opts.changeType) {
+    params.push(opts.changeType);
+    where.push(`change_type = $${params.length}`);
+  }
+
+  const whereClause = where.length ? `WHERE ${where.join(" AND ")}` : "";
+
+  const countRow = await client.query<{ c: string }>(
+    `SELECT count(*)::text AS c FROM normalized_changes ${whereClause}`,
+    params,
+  );
+  const total = parseInt(countRow.rows[0]!.c, 10);
+
+  params.push(limit, offset);
+  const rows = await client.query<{ payload: NormalizedChange }>(
+    `SELECT payload FROM normalized_changes ${whereClause}
+     ORDER BY observed_at DESC
+     LIMIT $${params.length - 1} OFFSET $${params.length}`,
+    params,
+  );
+
+  return { changes: rows.rows.map((r) => r.payload), total };
+}
+
 export interface InsertChangeResult {
   inserted: boolean;
 }
