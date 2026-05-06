@@ -9,13 +9,16 @@
 
 - **Multi-tenant architecture APPROVED 2026-05-05.** See `docs/MULTI_TENANT_ARCHITECTURE_DECISIONS.md` — D1-D8 + S1 + N1-N10 + Q1-Q7 all signed off. Implementation underway against the 6-week plan in §6.
 - **Week 1 of 6 — DONE.** Azure resources provisioned in `rg-kavachiq-platform`: Postgres Flex B1ms, Service Bus Standard, Key Vault, Storage Account (raw-events + baselines), Container Apps env, App Insights + Log Analytics. Schema applied (13 tables, RLS policies). RLS smoke-tested via psql.
-- **Week 2 — IN PROGRESS.** `@kavachiq/storage` package shipped end-to-end:
-  - `pool.ts` — pg.Pool with TLS, env-based config, max-conn budget tuned for KEDA autoscale (N8)
-  - `tenant-context.ts` — `withTenantContext(tenantId, fn)` and `withAdminContext(fn)`. Sets `SET LOCAL app.tenant_id` + `SET LOCAL ROLE` inside a TX so settings are auto-cleared on COMMIT/ROLLBACK and never leak across pool leases (D2)
-  - `incidents.ts` + `outbox.ts` — idempotent inserts (`ON CONFLICT DO NOTHING`, N2) with tenant-mismatch guards
-  - `0002_admin_grants.sql` — kavachiq_admin role table privileges (BYPASSRLS doesn't grant table access)
-  - `scripts/smoke-storage.ts` — **9/9 PASS** against live Azure Postgres: RLS isolation, idempotency, admin BYPASSRLS, no-leak across pool leases, tenant-mismatch defense-in-depth
-- **Week 2 — PENDING.** `@kavachiq/orchestration` (pipeline driver), `@kavachiq/workers` (`pipeline-worker` Container App with Service Bus consumer), end-to-end smoke (enqueue → see incident in DB).
+- **Week 2 — DONE end-to-end.** Full multi-tenant pipeline working in production architecture:
+  - `@kavachiq/storage` — pool, withTenantContext (SET LOCAL transaction-scoped, no pool-lease leak), withAdminContext (BYPASSRLS for outbox publisher), insertIncident / insertCorrelatedChangeBundle / insertNormalizedChange / insertRawEvent (all idempotent ON CONFLICT), enqueueOutboxEvent + fetchPendingOutbox + markOutboxPublished (N3). 0002_admin_grants.sql migration for the BYPASSRLS role.
+  - `@kavachiq/orchestration` — pipeline-driver (loads tenant policy → correlate → detect → persist Incident + outbox in same TX), outbox-drainer (BYPASSRLS pull, Service Bus emit, mark published), tenant-context-loader (sensitivity_lists → ScoringPolicy + DetectionPolicy), deterministicBundleId / deterministicIncidentId (N1 — Strangler Fig: post-process random IDs from core).
+  - `@kavachiq/workers` — pipeline-worker (Service Bus session-keyed consumer per N7, calls pipeline-driver, drains outbox after each message), health server (live + ready endpoints per N9), run-pipeline-worker entrypoint with SIGTERM handler.
+  - **3 smoke tests, 25/25 PASS** against live Azure:
+    - `scripts/smoke-storage.ts` — 9/9: RLS isolation, idempotency, admin BYPASSRLS, no-leak across pool leases
+    - `scripts/smoke-pipeline.ts` — 8/8: in-process pipeline against live Postgres; bundle + incident persistence, outbox row, RLS isolation, idempotent re-runs
+    - `scripts/smoke-e2e.ts` — 8/8: spawn worker as child process, enqueue Service Bus message session-keyed by tenant, wait for incident in Postgres, verify outbox drained, verify notify-operator queue received fanout event, verify SIGTERM exits within 15s (with SIGKILL fallback mirroring Container Apps grace period)
+- **Week 2 known caveat:** Service Bus SDK's `acceptNextSession` blocks the event loop in deep AMQP awaits that don't yield to SIGTERM handlers for ~30s. Production-OK because Container Apps `terminationGracePeriodSeconds: 90` SIGKILLs after grace. N2 idempotency makes redelivery of in-flight messages safe. Documented as a real characteristic, not a fix-blocker.
+- **Week 3 NEXT.** Containerization (Dockerfile + Container Apps Bicep + first deploy of pipeline-worker). Polling worker (Microsoft Graph audit polling). Onboarding flow (`/onboard` consent URL). Operator console basic incident list.
 - **Phase 0** (architecture spikes): complete and pushed.
 - **Phase 1** (`@kavachiq/core`): 3 of 4 change classes normalized (M1, M2, M3); correlation + detection + snapshot baseline shipped. **M4 (SP credential) normalization** is the remaining platform-side slice.
 - **Public site** is live at `https://agents.kavachiq.com` (Azure App Service `kavachiq-agents` in `rg-kavachiq-staging`); staging at `https://staging.kavachiq.com`. SEO-verified (`npm run verify:seo` → 16/16 PASS).

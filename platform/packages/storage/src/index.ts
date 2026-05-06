@@ -11,11 +11,9 @@
  * N1 + N2: deterministic IDs + ON CONFLICT DO NOTHING patterns. Caller
  *     constructs IDs from immutable inputs (per @kavachiq/schema) and
  *     this layer never silently overrides; duplicates are no-ops.
- * N3: outbox publisher loop reads `outbox WHERE published_at IS NULL`
- *     and emits to Service Bus; lives in @kavachiq/orchestration.
- *
- * Migrations live under `migrations/000N_*.sql`. Apply via `psql -f` for
- * v1; a runner is forthcoming.
+ * N3: outbox publisher (in @kavachiq/orchestration) reads pending rows
+ *     via fetchPendingOutbox() under withAdminContext, emits, marks
+ *     markOutboxPublished. Survives every component-level failure.
  */
 
 export {
@@ -40,7 +38,27 @@ export {
 
 export {
   enqueueOutboxEvent,
+  fetchPendingOutbox,
+  markOutboxFailure,
+  markOutboxPublished,
   type EnqueueOutboxArgs,
   type EnqueueOutboxResult,
   type OutboxEventType,
+  type PendingOutboxRow,
 } from "./outbox.js";
+
+export {
+  insertCorrelatedChangeBundle,
+  type InsertBundleResult,
+} from "./bundles.js";
+
+export {
+  insertNormalizedChange,
+  type InsertChangeResult,
+} from "./normalized-changes.js";
+
+export {
+  insertRawEvent,
+  type InsertRawEventArgs,
+  type InsertRawEventResult,
+} from "./raw-events.js";

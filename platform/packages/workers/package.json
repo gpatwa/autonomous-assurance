@@ -10,7 +10,11 @@
   },
   "dependencies": {
     "@kavachiq/schema": "*",
-    "@kavachiq/core": "*"
+    "@kavachiq/platform": "*",
+    "@kavachiq/core": "*",
+    "@kavachiq/storage": "*",
+    "@kavachiq/orchestration": "*",
+    "@azure/service-bus": "^7.9.5"
   },
   "devDependencies": {
     "typescript": "^5.7.0"

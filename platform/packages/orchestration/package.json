@@ -13,7 +13,8 @@
     "@kavachiq/schema": "*",
     "@kavachiq/platform": "*",
     "@kavachiq/core": "*",
-    "@kavachiq/storage": "*"
+    "@kavachiq/storage": "*",
+    "@azure/service-bus": "^7.9.5"
   },
   "devDependencies": {
     "typescript": "^5.7.0"
