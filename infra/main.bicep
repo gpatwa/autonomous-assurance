@@ -47,6 +47,17 @@ param pipelineWorkerServiceBusConnection string = ''
 @secure()
 param pipelineWorkerDatabaseUrl string = ''
 
+@description('polling-worker container image (full ref incl. registry+tag). Empty = skip Container App deploy.')
+param pollingWorkerImage string = ''
+
+@description('Service Bus namespace primary connection string for the polling-worker. Required if pollingWorkerImage is set.')
+@secure()
+param pollingWorkerServiceBusConnection string = ''
+
+@description('Postgres URL with sslmode=require for the polling-worker. Required if pollingWorkerImage is set.')
+@secure()
+param pollingWorkerDatabaseUrl string = ''
+
 // ─── Computed names ──────────────────────────────────────────────────────
 // Globally unique resource names for storage + KV + SB + Postgres.
 // If a name collision occurs, override via parameters file.
@@ -139,6 +150,21 @@ module pipelineWorker 'modules/container-app-pipeline-worker.bicep' = if (!empty
     image: pipelineWorkerImage
     serviceBusConnectionString: pipelineWorkerServiceBusConnection
     databaseUrl: pipelineWorkerDatabaseUrl
+    appInsightsConnectionString: appInsights.outputs.connectionString
+    serviceBusNamespace: serviceBus.outputs.namespace
+  }
+}
+
+module pollingWorker 'modules/container-app-polling-worker.bicep' = if (!empty(pollingWorkerImage)) {
+  name: 'pollingWorker'
+  params: {
+    name: 'ca-polling-worker${suffix}'
+    location: location
+    managedEnvironmentId: containerEnv.outputs.id
+    acrName: acr.outputs.name
+    image: pollingWorkerImage
+    serviceBusConnectionString: pollingWorkerServiceBusConnection
+    databaseUrl: pollingWorkerDatabaseUrl
     appInsightsConnectionString: appInsights.outputs.connectionString
     serviceBusNamespace: serviceBus.outputs.namespace
   }

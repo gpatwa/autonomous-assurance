@@ -1,0 +1,79 @@
+# syntax=docker/dockerfile:1.7
+#
+# polling-worker — Service Bus session-keyed consumer for `poll-tenant`.
+# Receives one message per tenant per polling interval → calls pollTenantBatch
+# (load creds → fetch Graph → archive Blob → raw_events → normalize →
+# enqueue process-events session-keyed by tenant_id).
+#
+# Multi-stage build: same pattern as Dockerfile.pipeline-worker.
+#
+# Build:
+#   docker build -f Dockerfile.polling-worker -t polling-worker:latest .
+#   (run from platform/ directory — context is the workspace root)
+
+# ─── Builder ────────────────────────────────────────────────────────────────
+
+FROM node:20-bookworm-slim AS builder
+WORKDIR /app
+
+# Install deps first (cache-friendly).
+COPY package.json package-lock.json tsconfig.base.json ./
+COPY packages/schema/package.json        ./packages/schema/
+COPY packages/platform/package.json      ./packages/platform/
+COPY packages/core/package.json          ./packages/core/
+COPY packages/storage/package.json       ./packages/storage/
+COPY packages/orchestration/package.json ./packages/orchestration/
+COPY packages/workers/package.json       ./packages/workers/
+RUN npm ci --ignore-scripts
+
+# Now copy sources and build.
+COPY packages/schema        ./packages/schema
+COPY packages/platform      ./packages/platform
+COPY packages/core          ./packages/core
+COPY packages/storage       ./packages/storage
+COPY packages/orchestration ./packages/orchestration
+COPY packages/workers       ./packages/workers
+RUN npm run build --workspace=@kavachiq/schema \
+                  --workspace=@kavachiq/platform \
+                  --workspace=@kavachiq/core \
+                  --workspace=@kavachiq/storage \
+                  --workspace=@kavachiq/orchestration \
+                  --workspace=@kavachiq/workers
+
+# ─── Runtime ────────────────────────────────────────────────────────────────
+
+FROM node:20-bookworm-slim AS runtime
+WORKDIR /app
+ENV NODE_ENV=production
+
+# Run as non-root.
+RUN groupadd --system --gid 1001 nodeapp && \
+    useradd --system --uid 1001 --gid nodeapp --shell /usr/sbin/nologin --no-create-home nodeapp
+
+# Copy ONLY what runtime needs.
+COPY --from=builder /app/package.json /app/package-lock.json ./
+COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app/packages/schema/package.json        ./packages/schema/package.json
+COPY --from=builder /app/packages/schema/dist                ./packages/schema/dist
+COPY --from=builder /app/packages/platform/package.json      ./packages/platform/package.json
+COPY --from=builder /app/packages/platform/dist              ./packages/platform/dist
+COPY --from=builder /app/packages/core/package.json          ./packages/core/package.json
+COPY --from=builder /app/packages/core/dist                  ./packages/core/dist
+COPY --from=builder /app/packages/storage/package.json       ./packages/storage/package.json
+COPY --from=builder /app/packages/storage/dist               ./packages/storage/dist
+COPY --from=builder /app/packages/storage/migrations         ./packages/storage/migrations
+COPY --from=builder /app/packages/orchestration/package.json ./packages/orchestration/package.json
+COPY --from=builder /app/packages/orchestration/dist         ./packages/orchestration/dist
+COPY --from=builder /app/packages/workers/package.json       ./packages/workers/package.json
+COPY --from=builder /app/packages/workers/dist               ./packages/workers/dist
+
+# Drop devDeps to keep the image lean.
+RUN npm prune --omit=dev
+
+# Health probe port (matches @kavachiq/workers defaults).
+EXPOSE 8080
+
+USER nodeapp
+
+# Entrypoint: run the polling-worker.
+CMD ["node", "-e", "require('@kavachiq/workers').runPollingWorker()"]
