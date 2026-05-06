@@ -7,7 +7,7 @@
 
 import type { Metadata } from "next";
 import Link from "next/link";
-import { consoleTenantId, listIncidents } from "@/lib/console-api";
+import { getConsoleTenantId, listIncidents } from "@/lib/console-api";
 
 export const metadata: Metadata = {
   title: "Incidents — Console",
@@ -41,7 +41,7 @@ export default async function IncidentsPage() {
   let fetchError: string | null = null;
 
   try {
-    tenantId = consoleTenantId();
+    tenantId = await getConsoleTenantId();
     result = await listIncidents(tenantId, { limit: 50 });
   } catch (err) {
     fetchError = err instanceof Error ? err.message : "Failed to load incidents";

@@ -5,14 +5,14 @@
  * (called from Server Components or Route Handlers).
  *
  * Config (env vars):
- *   KAVACHIQ_API_URL          — API server base URL (default: http://localhost:3001)
- *   KAVACHIQ_API_KEY          — Bearer token (required; must match API server API_KEY)
- *   KAVACHIQ_CONSOLE_TENANT   — Tenant ID shown in the console (required)
+ *   KAVACHIQ_API_URL   — API server base URL (default: http://localhost:3001)
+ *   KAVACHIQ_API_KEY   — Bearer token (required; must match API server API_KEY)
  *
- * TODO (Week 4 Day 4): replace static tenant + API key with Entra External
- * ID JWT. The operator's identity claim will carry the tenant ID; the API
- * will validate the token rather than a static key.
+ * Tenant resolution: read from the Entra session (kavachiqTenantId), which is
+ * derived at sign-in from AUTH_TID_TO_TENANT. No static KAVACHIQ_CONSOLE_TENANT needed.
  */
+
+import { auth } from "@/auth";
 
 // Minimal local types — structural matches for @kavachiq/schema Incident and
 // NormalizedChange. Platform packages are not linked in the root workspace.
@@ -61,9 +61,10 @@ function apiKey(): string {
   return process.env.KAVACHIQ_API_KEY ?? "";
 }
 
-export function consoleTenantId(): string {
-  const id = process.env.KAVACHIQ_CONSOLE_TENANT;
-  if (!id) throw new Error("KAVACHIQ_CONSOLE_TENANT env var not set");
+export async function getConsoleTenantId(): Promise<string> {
+  const session = await auth();
+  const id = session?.kavachiqTenantId;
+  if (!id) throw new Error("No tenant in session — check AUTH_TID_TO_TENANT mapping");
   return id;
 }
 

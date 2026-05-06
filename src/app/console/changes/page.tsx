@@ -3,7 +3,7 @@
  */
 
 import type { Metadata } from "next";
-import { consoleTenantId, listChanges } from "@/lib/console-api";
+import { getConsoleTenantId, listChanges } from "@/lib/console-api";
 
 export const metadata: Metadata = {
   title: "Changes — Console",
@@ -22,7 +22,7 @@ export default async function ChangesPage() {
   let fetchError: string | null = null;
 
   try {
-    const tenantId = consoleTenantId();
+    const tenantId = await getConsoleTenantId();
     result = await listChanges(tenantId, { limit: 100 });
   } catch (err) {
     fetchError = err instanceof Error ? err.message : "Failed to load changes";

@@ -7,7 +7,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { consoleTenantId, getIncident, type ConsoleIncident } from "@/lib/console-api";
+import { getConsoleTenantId, getIncident, type ConsoleIncident } from "@/lib/console-api";
 
 export async function generateMetadata({
   params,
@@ -62,7 +62,7 @@ export default async function IncidentDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const tenantId = consoleTenantId();
+  const tenantId = await getConsoleTenantId();
 
   let incident: ConsoleIncident;
   try {
