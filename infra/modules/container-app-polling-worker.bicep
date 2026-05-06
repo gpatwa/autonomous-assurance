@@ -33,6 +33,10 @@ param databaseUrl string
 @description('Application Insights connection string.')
 param appInsightsConnectionString string
 
+@description('Storage Account connection string for Blob archive writes.')
+@secure()
+param storageConnectionString string
+
 @description('Service Bus namespace name (for KEDA queue-length scaling).')
 param serviceBusNamespace string
 
@@ -42,8 +46,8 @@ param cpu string = '0.25'
 @description('Memory per replica.')
 param memory string = '0.5Gi'
 
-@description('Min replicas (0 = scale-to-zero when poll-tenant queue is empty).')
-param minReplicas int = 0
+@description('Min replicas. 1 = always-on (KEDA scale-from-zero unreliable for session queues).')
+param minReplicas int = 1
 
 @description('Max replicas.')
 param maxReplicas int = 10
@@ -75,6 +79,10 @@ resource app 'Microsoft.App/containerApps@2024-03-01' = {
         {
           name: 'app-insights-connection'
           value: appInsightsConnectionString
+        }
+        {
+          name: 'storage-connection'
+          value: storageConnectionString
         }
         {
           name: 'acr-admin-password'
@@ -111,6 +119,10 @@ resource app 'Microsoft.App/containerApps@2024-03-01' = {
             {
               name: 'APPLICATIONINSIGHTS_CONNECTION_STRING'
               secretRef: 'app-insights-connection'
+            }
+            {
+              name: 'STORAGE_CONNECTION_STRING'
+              secretRef: 'storage-connection'
             }
             {
               name: 'NODE_ENV'

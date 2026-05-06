@@ -58,6 +58,10 @@ param pollingWorkerServiceBusConnection string = ''
 @secure()
 param pollingWorkerDatabaseUrl string = ''
 
+@description('Storage Account connection string for polling-worker Blob writes. Required if pollingWorkerImage is set.')
+@secure()
+param pollingWorkerStorageConnectionString string = ''
+
 // ─── Computed names ──────────────────────────────────────────────────────
 // Globally unique resource names for storage + KV + SB + Postgres.
 // If a name collision occurs, override via parameters file.
@@ -166,6 +170,7 @@ module pollingWorker 'modules/container-app-polling-worker.bicep' = if (!empty(p
     serviceBusConnectionString: pollingWorkerServiceBusConnection
     databaseUrl: pollingWorkerDatabaseUrl
     appInsightsConnectionString: appInsights.outputs.connectionString
+    storageConnectionString: pollingWorkerStorageConnectionString
     serviceBusNamespace: serviceBus.outputs.namespace
   }
 }
