@@ -49,14 +49,15 @@ resource blob 'Microsoft.Storage/storageAccounts/blobServices@2023-05-01' = {
   }
 }
 
+// Container purposes (per N10) documented in code, not metadata —
+// Storage container metadata values must be ASCII; comments are simpler.
+//   raw-events  — N10 immutable source of truth (Microsoft Graph audit JSON archive)
+//   baselines   — per-tenant baseline snapshots (group-membership, app-role-assignment)
 resource rawEvents 'Microsoft.Storage/storageAccounts/blobServices/containers@2023-05-01' = {
   parent: blob
   name: 'raw-events'
   properties: {
     publicAccess: 'None'
-    metadata: {
-      purpose: 'N10 immutable source of truth — Microsoft Graph audit JSON'
-    }
   }
 }
 
@@ -65,9 +66,6 @@ resource baselines 'Microsoft.Storage/storageAccounts/blobServices/containers@20
   name: 'baselines'
   properties: {
     publicAccess: 'None'
-    metadata: {
-      purpose: 'Per-tenant baseline snapshots — group-membership, app-role-assignment'
-    }
   }
 }
 

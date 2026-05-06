@@ -82,6 +82,20 @@ resource db 'Microsoft.DBforPostgreSQL/flexibleServers/databases@2024-08-01' = {
   }
 }
 
+// Allowlist Postgres extensions used by the schema (0001_initial.sql).
+// Azure managed Postgres requires this server-level config before
+// CREATE EXTENSION can succeed.
+//   pgcrypto  — gen_random_uuid()
+//   uuid-ossp — legacy uuid support
+resource extensionsAllowlist 'Microsoft.DBforPostgreSQL/flexibleServers/configurations@2024-08-01' = {
+  parent: pg
+  name: 'azure.extensions'
+  properties: {
+    value: 'PGCRYPTO,UUID-OSSP'
+    source: 'user-override'
+  }
+}
+
 output serverName string = pg.name
 output fqdn string = pg.properties.fullyQualifiedDomainName
 output databaseName string = db.name
