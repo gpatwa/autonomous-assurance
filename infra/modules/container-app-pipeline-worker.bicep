@@ -42,8 +42,8 @@ param cpu string = '0.25'
 @description('Memory per replica.')
 param memory string = '0.5Gi'
 
-@description('Min replicas (0 = scale-to-zero on idle).')
-param minReplicas int = 0
+@description('Min replicas. 1 = always-on (KEDA scale-from-zero unreliable for session queues).')
+param minReplicas int = 1
 
 @description('Max replicas (KEDA scales between min and max based on queue length).')
 param maxReplicas int = 10
