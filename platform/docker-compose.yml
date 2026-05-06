@@ -1,32 +1,59 @@
-version: "3.8"
+# Local development stack — KavachIQ multi-tenant platform.
+#
+# Approved 2026-05-05 per docs/MULTI_TENANT_ARCHITECTURE_DECISIONS.md.
+# Lets developers iterate on @kavachiq/storage, @kavachiq/orchestration
+# without provisioning Azure resources or burning shared dev credits.
+#
+# Service Bus is intentionally NOT included; dev points at the real Azure
+# Service Bus dev namespace (~$10/mo shared cost). Adding a local emulator
+# is on the deferred list — do it if/when a fully-offline dev story is
+# needed.
+#
+# Usage:
+#   cd platform
+#   docker compose up -d
+#   PGPASSWORD=devpassword psql -h localhost -p 5432 -U kavachiqadmin -d kavachiq \
+#     -f packages/storage/migrations/0001_initial.sql
+#
+# Tear down:
+#   docker compose down -v   # -v removes the data volume
 
 services:
-  # Azure Storage emulator (Blob, Table, Queue)
-  azurite:
-    image: mcr.microsoft.com/azure-storage/azurite
+  postgres:
+    image: postgres:16
+    container_name: kavachiq-pg-dev
+    environment:
+      POSTGRES_USER: kavachiqadmin
+      POSTGRES_PASSWORD: devpassword
+      POSTGRES_DB: kavachiq
     ports:
-      - "10000:10000"  # Blob
-      - "10001:10001"  # Queue
-      - "10002:10002"  # Table
+      - "5432:5432"
     volumes:
-      - azurite-data:/data
-    command: "azurite --blobHost 0.0.0.0 --queueHost 0.0.0.0 --tableHost 0.0.0.0"
+      - kavachiq-pg-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U kavachiqadmin -d kavachiq"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
 
-  # Note: Cosmos DB emulator is not available on ARM64/Apple Silicon.
-  # Use the Azure Cosmos DB emulator natively or use the Linux emulator
-  # on x86_64. For Apple Silicon, use the Cosmos DB local emulator
-  # from https://learn.microsoft.com/en-us/azure/cosmos-db/local-emulator
-  # or connect to a real Azure Cosmos DB instance for dev.
-  #
-  # Uncomment for x86_64 Linux/WSL:
-  # cosmos:
-  #   image: mcr.microsoft.com/cosmosdb/linux/azure-cosmos-emulator:latest
-  #   ports:
-  #     - "8081:8081"
-  #     - "10250-10256:10250-10256"
-  #   environment:
-  #     - AZURE_COSMOS_EMULATOR_PARTITION_COUNT=10
-  #     - AZURE_COSMOS_EMULATOR_ENABLE_DATA_PERSISTENCE=true
+  azurite:
+    # Azure Storage emulator — Blob, Queue, Table.
+    # We only use Blob in dev (raw-events + baselines containers).
+    image: mcr.microsoft.com/azure-storage/azurite
+    container_name: kavachiq-azurite-dev
+    command: "azurite --blobHost 0.0.0.0 --queueHost 0.0.0.0 --tableHost 0.0.0.0 --loose"
+    ports:
+      - "10000:10000" # Blob
+      - "10001:10001" # Queue
+      - "10002:10002" # Table
+    volumes:
+      - kavachiq-azurite-data:/data
+    healthcheck:
+      test: ["CMD-SHELL", "nc -z 127.0.0.1 10000 || exit 1"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
 
 volumes:
-  azurite-data:
+  kavachiq-pg-data:
+  kavachiq-azurite-data:

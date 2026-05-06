@@ -1,0 +1,125 @@
+// KavachIQ multi-tenant platform — main Bicep orchestrator.
+// Approved 2026-05-05 per docs/MULTI_TENANT_ARCHITECTURE_DECISIONS.md.
+//
+// Deploys, in dependency order:
+//   1. App Insights + Log Analytics (observability backend, D7)
+//   2. Key Vault                    (per-tenant DEK + secrets, D2)
+//   3. Storage Account              (Blob raw-events + baselines, D3, N10)
+//   4. Service Bus namespace        (queues with sessions, D4, N7)
+//   5. Container Apps environment   (workers + API runtime, D4, N8)
+//   6. Postgres Flexible Server     (state + RLS, D2, D3)
+//
+// Idempotent. Re-runs only update drifted properties.
+
+targetScope = 'resourceGroup'
+
+// ─── Parameters ──────────────────────────────────────────────────────────
+
+@description('Region — must match the resource group region.')
+param location string = resourceGroup().location
+
+@description('Environment short name — e.g. dev, staging, prod.')
+@allowed(['dev', 'staging', 'prod', 'eu'])
+param env string = 'dev'
+
+@description('Resource name prefix.')
+param namePrefix string = 'kavachiq-platform'
+
+@description('Postgres administrator login. Cannot be: azure_superuser, azure_pg_admin, admin, administrator, root, guest, public.')
+param postgresAdminLogin string = 'kavachiqadmin'
+
+@description('Postgres administrator password. Generate with openssl rand -base64 32.')
+@secure()
+@minLength(16)
+param postgresAdminPassword string
+
+@description('Object IDs of users/groups to grant Key Vault Secrets Officer (read+write secrets) at the RBAC level.')
+param keyVaultAdmins array = []
+
+// ─── Computed names ──────────────────────────────────────────────────────
+// Globally unique resource names for storage + KV + SB + Postgres.
+// If a name collision occurs, override via parameters file.
+
+var suffix = '-${env}'
+var keyVaultName       = 'kv-${namePrefix}${suffix}'
+var serviceBusName     = 'sb-${namePrefix}${suffix}'
+var postgresName       = 'pg-${namePrefix}${suffix}'
+var containerEnvName   = 'cae-${namePrefix}${suffix}'
+var appInsightsName    = 'appi-${namePrefix}${suffix}'
+var logAnalyticsName   = 'log-${namePrefix}${suffix}'
+// Storage account: 3-24 chars, lowercase alnum, no dashes
+var storageAccountName = replace('${namePrefix}${env}st', '-', '')
+
+// ─── Modules ─────────────────────────────────────────────────────────────
+
+module appInsights 'modules/app-insights.bicep' = {
+  name: 'appInsights'
+  params: {
+    logAnalyticsName: logAnalyticsName
+    appInsightsName: appInsightsName
+    location: location
+  }
+}
+
+module keyVault 'modules/key-vault.bicep' = {
+  name: 'keyVault'
+  params: {
+    name: keyVaultName
+    location: location
+    tenantId: subscription().tenantId
+    adminPrincipalIds: keyVaultAdmins
+  }
+}
+
+module storage 'modules/storage.bicep' = {
+  name: 'storage'
+  params: {
+    accountName: storageAccountName
+    location: location
+  }
+}
+
+module serviceBus 'modules/service-bus.bicep' = {
+  name: 'serviceBus'
+  params: {
+    namespaceName: serviceBusName
+    location: location
+  }
+}
+
+module containerEnv 'modules/container-apps-env.bicep' = {
+  name: 'containerEnv'
+  params: {
+    envName: containerEnvName
+    location: location
+    appInsightsConnectionString: appInsights.outputs.connectionString
+    logAnalyticsCustomerId: appInsights.outputs.customerId
+    logAnalyticsSharedKey: appInsights.outputs.sharedKey
+  }
+}
+
+module postgres 'modules/postgres.bicep' = {
+  name: 'postgres'
+  params: {
+    serverName: postgresName
+    location: location
+    adminLogin: postgresAdminLogin
+    adminPassword: postgresAdminPassword
+  }
+}
+
+// ─── Outputs ─────────────────────────────────────────────────────────────
+
+output keyVaultName string = keyVault.outputs.name
+output keyVaultUri string = keyVault.outputs.uri
+output storageAccountName string = storage.outputs.accountName
+output blobEndpoint string = storage.outputs.blobEndpoint
+output serviceBusNamespace string = serviceBus.outputs.namespace
+output serviceBusEndpoint string = serviceBus.outputs.endpoint
+output containerEnvName string = containerEnv.outputs.name
+output containerEnvId string = containerEnv.outputs.id
+output postgresName string = postgres.outputs.serverName
+output postgresFqdn string = postgres.outputs.fqdn
+output postgresAdminLogin string = postgresAdminLogin
+output appInsightsName string = appInsights.outputs.name
+output appInsightsConnectionString string = appInsights.outputs.connectionString

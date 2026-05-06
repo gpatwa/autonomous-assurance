@@ -1,17 +1,22 @@
 # Next Session — KavachIQ resume state
 
-**Last updated:** 2026-05-04
+**Last updated:** 2026-05-05
 **Delete or rewrite when you land the next pass.** This file is a rolling "start here" pointer, not a history.
 
 ---
 
 ## TL;DR
 
+- **Multi-tenant architecture APPROVED 2026-05-05.** See `docs/MULTI_TENANT_ARCHITECTURE_DECISIONS.md` — D1-D8 + S1 + N1-N10 + Q1-Q7 all signed off. Implementation underway against the 6-week plan in §6.
+- **Phase 1.5 (multi-tenant infrastructure) — Phase 1 of 2 landed in repo:**
+  - `infra/` — Bicep modules for Postgres / Service Bus / Container Apps env / Key Vault / Storage / App Insights, ready to deploy.
+  - `platform/packages/storage/migrations/0001_initial.sql` — multi-tenant schema with RLS policies + UNIQUE idempotency constraints.
+  - `platform/packages/{orchestration,storage,auth}/` — package skeletons (export `{}`); fill in week 2-4.
+  - `platform/docker-compose.yml` updated for local dev (Postgres + Azurite).
+- **Phase 1.5 Phase 2 (Azure provisioning) — pending.** Needs `az deployment group create` against `infra/main.bicep`. ~$26-30/mo committed cost starts on deploy.
 - **Phase 0** (architecture spikes): complete and pushed.
-- **Phase 1** (ingestion backbone): substantially advanced — 3 of 4 change classes normalized; correlation, detection, and snapshot-based baseline reconstruction shipped. **M4 (SP credential) normalization is the next platform-side slice.**
-- **Public site** is live at `https://agents.kavachiq.com` (Azure App Service `kavachiq-agents` in `rg-kavachiq-staging`); staging at `https://staging.kavachiq.com`. Both serve the same B1 plan. SEO-verified (`npm run verify:seo` → 16/16 PASS).
-- **/demo** at `agents.kavachiq.com/demo` is now wired to real platform fixtures — incident id, title, classification, change count, primary actor all derive from `platform/fixtures/canonical/*`. Phase 2/3 narrative fields (blast radius, recovery plan) remain UI-augmentation with explicit code comments.
-- **/evidence** is a new page surfacing the WI-05 audit-completeness findings to technical buyers.
+- **Phase 1** (`@kavachiq/core`): 3 of 4 change classes normalized (M1, M2, M3); correlation + detection + snapshot baseline shipped. **M4 (SP credential) normalization** is the remaining platform-side slice.
+- **Public site** is live at `https://agents.kavachiq.com` (Azure App Service `kavachiq-agents` in `rg-kavachiq-staging`); staging at `https://staging.kavachiq.com`. SEO-verified (`npm run verify:seo` → 16/16 PASS).
 - Working tree clean as of last commit.
 
 ---

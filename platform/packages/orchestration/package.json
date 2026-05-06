@@ -1,0 +1,21 @@
+{
+  "name": "@kavachiq/orchestration",
+  "version": "0.0.1",
+  "private": true,
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc --noEmit",
+    "test": "node --import tsx --test src/**/*.test.ts"
+  },
+  "dependencies": {
+    "@kavachiq/schema": "*",
+    "@kavachiq/platform": "*",
+    "@kavachiq/core": "*",
+    "@kavachiq/storage": "*"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.0"
+  }
+}
