@@ -28,7 +28,13 @@
   - `@kavachiq/storage` adds: `tenant_credentials` (encrypted_client_secret bytea + DEK URI; v1 noop cipher, KeyVault cipher in week 4), `polling_state` read/write helpers (JS Date → ISO 8601 conversion fixed — PG `::text` cast emits format Graph rejects), Blob client wired against the existing `raw-events` container.
   - `@kavachiq/orchestration` adds: `graph-client` (ClientSecretCredential + `/auditLogs/directoryAudits` filter polling, GraphThrottleError surfaces 429/Retry-After), `polling-driver.pollTenantBatch` (load creds → fetch events → archive Blob → insert raw_events → normalize memberAdded → enqueue process-events session-keyed by tenant → advance cursor; recordPollFailure on throw).
   - **`scripts/smoke-polling.ts` — 8/8 PASS** against `patwainc.onmicrosoft.com`: 21 real audit events fetched from Graph, 40KB archived to Blob, 21 raw_events rows inserted, polling_state cursor advanced, re-run produces 0 duplicates (deterministic raw_event_id + UNIQUE (tenant, microsoft_event_id)).
-- **Week 3 — Day 3-5 NEXT.** Containerize polling-worker (same pattern as pipeline-worker; Container App job with KEDA cron scaler against `poll-tenant` Service Bus queue). Deployed-worker E2E: trigger a poll, watch deployed pipeline-worker promote a memberAdded burst into an Incident. Then week 4: API + /console + External ID + Playwright browser E2E.
+- **Week 3 — COMPLETE.** All 5 days done. Both workers deployed and smoke-tested end-to-end:
+  - Day 3: polling-worker containerized (Dockerfile.polling-worker, createPollingWorker, runPollingWorker), Container App Bicep with KEDA on poll-tenant queue
+  - Day 4: Image built + pushed to ACR, deployed ca-polling-worker-dev
+  - Day 5: smoke-deployed-polling 6/6 PASS — Sub-flow A (real Graph poll: 21 events → raw_events + Blob + polling_state), Sub-flow B (canonical synthetic process-events → Incident high/95/new + outbox published from inside cluster)
+  - **Bugs found + fixed**: (1) KEDA scale-from-zero unreliable for session queues → minReplicas=1 on both workers; (2) polling-worker missing STORAGE_CONNECTION_STRING → added as secret; (3) live patwainc audit log has 0 memberAdded events today (20 unmatched + 1 CA-change) → sub-flow B covers pipeline path with canonical fixture.
+  - **Cumulative smoke tests: 44/44 PASS** (smoke-storage 9, smoke-pipeline 8, smoke-e2e 8, smoke-deployed-worker 5, smoke-polling 8, smoke-deployed-polling 6)
+  - Now week 4: API + /console + External ID + Playwright browser E2E.
 - **Phase 0** (architecture spikes): complete and pushed.
 - **Phase 1** (`@kavachiq/core`): 3 of 4 change classes normalized (M1, M2, M3); correlation + detection + snapshot baseline shipped. **M4 (SP credential) normalization** is the remaining platform-side slice.
 - **Public site** is live at `https://agents.kavachiq.com` (Azure App Service `kavachiq-agents` in `rg-kavachiq-staging`); staging at `https://staging.kavachiq.com`. SEO-verified (`npm run verify:seo` → 16/16 PASS).
