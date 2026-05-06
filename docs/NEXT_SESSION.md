@@ -1,6 +1,6 @@
 # Next Session — KavachIQ resume state
 
-**Last updated:** 2026-05-05
+**Last updated:** 2026-05-06
 **Delete or rewrite when you land the next pass.** This file is a rolling "start here" pointer, not a history.
 
 ---
@@ -36,7 +36,7 @@
   - **Cumulative smoke tests: 44/44 PASS** (smoke-storage 9, smoke-pipeline 8, smoke-e2e 8, smoke-deployed-worker 5, smoke-polling 8, smoke-deployed-polling 6)
   - Now week 4: API + /console + External ID + Playwright browser E2E.
 - **Phase 0** (architecture spikes): complete and pushed.
-- **Phase 1** (`@kavachiq/core`): 3 of 4 change classes normalized (M1, M2, M3); correlation + detection + snapshot baseline shipped. **M4 (SP credential) normalization** is the remaining platform-side slice.
+- **Phase 1** (`@kavachiq/core`): **COMPLETE.** All 4 change classes normalized (M1, M2, M3, M4); correlation + detection + snapshot baseline shipped. 79/79 tests PASS.
 - **Public site** is live at `https://agents.kavachiq.com` (Azure App Service `kavachiq-agents` in `rg-kavachiq-staging`); staging at `https://staging.kavachiq.com`. SEO-verified (`npm run verify:seo` → 16/16 PASS).
 - Working tree clean as of last commit.
 
@@ -49,7 +49,7 @@
 | **Normalization — M1 group-member-add** | done | 9 | `src/normalization/member-add.ts` |
 | **Normalization — M2 Conditional Access** | done | 9 | `src/normalization/ca-policy-update.ts` |
 | **Normalization — M3 app-role-assignment** | done | 10 | `src/normalization/app-role-assignment.ts` |
-| **Normalization — M4 SP credential** | NOT STARTED | — | next slice |
+| **Normalization — M4 SP credential** | done | 12 | `src/normalization/sp-credential-change.ts` |
 | **Correlation — memberAdded burst → bundle** | done | 14 | `src/correlation/` |
 | **Detection — bundle → Incident (immediate path)** | done | 13 | `src/detection/` |
 | **Snapshot provider — group-membership baseline (M1)** | done | partial | `src/normalization/snapshot-provider.ts` |
@@ -58,7 +58,7 @@
 | **API server** | stub | — | `packages/api/src/index.ts` is `export {}` |
 | **Execution service (Graph writes)** | stub | — | `packages/execution/src/{actions,validation,approval,audit}/` are `export {}` |
 
-Total platform-side test count: **67 passing** at last verification.
+Total platform-side test count: **79 passing** at last verification.
 
 ## What's implemented (site-side)
 
@@ -85,23 +85,24 @@ Highlights:
 
 ## Next 2 concrete tasks
 
-### 1. M4 SP-credential normalization slice
+### 1. Week 4 — API package (REST endpoints)
 
-**Why now:** completes Phase 1's per-class coverage. Last of the four WI-05 classes.
+**Why now:** Phase 1 is complete. Week 4 scope: API + /console + External ID auth + Playwright E2E.
 
-**Scope:** mirror M2 (audit-authoritative both sides — both `oldValue` and `newValue` carry KeyDescription metadata). `secretText` always tagged `confidence: "unavailable"`; never stored or reconstructed.
+**Scope (Week 4 Day 1-2):**
+- `packages/api/src/index.ts` — Express/Fastify REST server exposing normalized change + incident read paths
+- Auth middleware: validate tenant context from Entra External ID JWT
+- Endpoints: `GET /incidents`, `GET /changes`, `GET /health`
 
-**Reference:** `docs/SPIKE_REPORT_AUDIT_LOG_COMPLETENESS.md §4.4` for the encoding pattern; M2 mapper (`ca-policy-update.ts`) for the audit-authoritative shape.
+**Reference:** `docs/NEXT_SESSION.md` Week 4 tasks; `packages/api/src/index.ts` is currently `export {}`.
 
-**Out of scope:** correlation for credential events, detection rules. Same pattern as M2/M3 slices.
+### 2. /console operator UI (Next.js)
 
-**Budget:** ~1 day including a generator + canonical fixture from real WI-05 evidence.
+**Why now:** Week 4 target. Operator UI that reads from the API package.
 
-### 2. Wire `/demo` more deeply once Phase 2 (blast radius) ships
+**Reference:** `site/` directory for Next.js setup pattern.
 
-**Why later:** today blast-radius and recovery-plan in `/demo` are honestly tagged `UI_AUGMENTATION` in code because the platform doesn't generate them yet. Once Phase 2 (`@kavachiq/core/blast-radius`) lands, swap the next layer of demo data from hand-built to platform-derived.
-
-**Out of scope until Phase 2 starts:** there's no platform output to wire.
+**Out of scope:** blast-radius, recovery-plan, execution service (Phase 2+).
 
 ---
 
@@ -144,17 +145,11 @@ npm run verify:seo
 ## Recent commit trail (newest first)
 
 ```
-docs(demo): pre-demo checklist + DEMO_SCRIPT timestamp refresh
-docs: deploy runbook for Azure + Cloudflare provisioning
-feat(site): post-deploy SEO verifier + dev-default tightening + deploy checklist
-docs: agents subdomain SEO plan + buyer-doc URL updates
-feat(site): move public product surface to agents.kavachiq.com
+feat(core): Phase 1 normalization slice — SP credential change (M4)
+docs: update NEXT_SESSION — week 3 complete, 44/44 smoke tests PASS
+feat(platform): smoke-deployed-polling 6/6 PASS — two-sub-flow design
+fix(infra): pipeline-worker minReplicas=1 (same KEDA session-queue fix)
+fix(infra): polling-worker STORAGE_CONNECTION_STRING + minReplicas=1
+feat(platform): polling-worker containerized + deployed (ca-polling-worker-dev)
 feat(core): Phase 1 normalization slice — app-role-assignment grant (M3)
-feat(core): Phase 1 normalization slice — Conditional Access policy update
-feat(core): filesystem snapshot-provider adapter for group-membership baselines
-feat(core): Phase 1 detection slice — CorrelatedChangeBundle → Incident
-fix(core): normalize test return type includes `source` in Omit
-feat(core): Phase 1 correlation slice — memberAdded burst → CorrelatedChangeBundle
 ```
-
-The /demo wiring + /evidence + this doc refresh land as the next commits on top.
