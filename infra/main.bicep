@@ -36,6 +36,17 @@ param postgresAdminPassword string
 @description('Object IDs of users/groups to grant Key Vault Secrets Officer (read+write secrets) at the RBAC level.')
 param keyVaultAdmins array = []
 
+@description('pipeline-worker container image (full ref incl. registry+tag). Empty = skip Container App deploy.')
+param pipelineWorkerImage string = ''
+
+@description('Service Bus namespace primary connection string for the pipeline-worker. Required if pipelineWorkerImage is set.')
+@secure()
+param pipelineWorkerServiceBusConnection string = ''
+
+@description('Postgres URL with sslmode=require. Required if pipelineWorkerImage is set.')
+@secure()
+param pipelineWorkerDatabaseUrl string = ''
+
 // ─── Computed names ──────────────────────────────────────────────────────
 // Globally unique resource names for storage + KV + SB + Postgres.
 // If a name collision occurs, override via parameters file.
@@ -49,6 +60,8 @@ var appInsightsName    = 'appi-${namePrefix}${suffix}'
 var logAnalyticsName   = 'log-${namePrefix}${suffix}'
 // Storage account: 3-24 chars, lowercase alnum, no dashes
 var storageAccountName = replace('${namePrefix}${env}st', '-', '')
+// ACR: 5-50 chars, alphanumeric only (no dashes)
+var acrName            = replace('${namePrefix}${env}acr', '-', '')
 
 // ─── Modules ─────────────────────────────────────────────────────────────
 
@@ -108,6 +121,29 @@ module postgres 'modules/postgres.bicep' = {
   }
 }
 
+module acr 'modules/acr.bicep' = {
+  name: 'acr'
+  params: {
+    name: acrName
+    location: location
+  }
+}
+
+module pipelineWorker 'modules/container-app-pipeline-worker.bicep' = if (!empty(pipelineWorkerImage)) {
+  name: 'pipelineWorker'
+  params: {
+    name: 'ca-pipeline-worker${suffix}'
+    location: location
+    managedEnvironmentId: containerEnv.outputs.id
+    acrName: acr.outputs.name
+    image: pipelineWorkerImage
+    serviceBusConnectionString: pipelineWorkerServiceBusConnection
+    databaseUrl: pipelineWorkerDatabaseUrl
+    appInsightsConnectionString: appInsights.outputs.connectionString
+    serviceBusNamespace: serviceBus.outputs.namespace
+  }
+}
+
 // ─── Outputs ─────────────────────────────────────────────────────────────
 
 output keyVaultName string = keyVault.outputs.name
@@ -123,3 +159,5 @@ output postgresFqdn string = postgres.outputs.fqdn
 output postgresAdminLogin string = postgresAdminLogin
 output appInsightsName string = appInsights.outputs.name
 output appInsightsConnectionString string = appInsights.outputs.connectionString
+output acrName string = acr.outputs.name
+output acrLoginServer string = acr.outputs.loginServer

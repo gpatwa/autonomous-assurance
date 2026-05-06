@@ -1,0 +1,26 @@
+# Don't ship node_modules from the host build context — re-installed inside.
+node_modules
+**/node_modules
+
+# Don't ship test fixtures or compiled local dist (rebuilt in the image).
+**/dist
+fixtures
+scripts/smoke-*.ts
+scripts/run-pipeline-worker.ts
+
+# Source control
+.git
+.gitignore
+
+# Editor
+.vscode
+.idea
+
+# Other workspaces / docs
+docs
+wi05
+artifacts
+
+# Local env
+.env
+.env.local
