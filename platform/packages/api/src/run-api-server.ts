@@ -39,3 +39,5 @@ export async function runApiServer(): Promise<void> {
 
   await server.listen();
 }
+
+runApiServer();
