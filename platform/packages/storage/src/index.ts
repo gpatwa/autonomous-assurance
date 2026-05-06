@@ -62,3 +62,30 @@ export {
   type InsertRawEventArgs,
   type InsertRawEventResult,
 } from "./raw-events.js";
+
+export {
+  loadTenantCredentials,
+  seedTenantCredentials,
+  type TenantGraphCredentials,
+  type SeedTenantCredentialsArgs,
+} from "./tenant-credentials.js";
+
+export {
+  getPollingState,
+  recordPollStarted,
+  recordPollSuccess,
+  recordPollFailure,
+  type PollingState,
+  type PollingStartArgs,
+  type PollingSuccessArgs,
+  type PollingFailureArgs,
+} from "./polling-state.js";
+
+export {
+  archiveRawEvents,
+  getBlobService,
+  getRawEventsContainer,
+  getBaselinesContainer,
+  type ArchiveRawEventsArgs,
+  type ArchiveRawEventsResult,
+} from "./blob.js";

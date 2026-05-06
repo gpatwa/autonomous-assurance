@@ -27,3 +27,20 @@ export {
   deterministicBundleId,
   deterministicIncidentId,
 } from "./ids.js";
+
+export {
+  pollTenantBatch,
+  type PollTenantBatchOptions,
+  type PollTenantBatchResult,
+} from "./polling-driver.js";
+
+export {
+  createGraphCredential,
+  fetchAuditEvents,
+  GraphAuthError,
+  GraphThrottleError,
+  type AuditEvent,
+  type GraphTenantCredentials,
+  type FetchAuditEventsArgs,
+  type FetchAuditEventsResult,
+} from "./graph-client.js";
