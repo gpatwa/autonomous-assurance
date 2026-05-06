@@ -1,0 +1,116 @@
+/**
+ * Server-side API client for the /console operator UI.
+ *
+ * Calls the @kavachiq/api REST server. All functions are server-side only
+ * (called from Server Components or Route Handlers).
+ *
+ * Config (env vars):
+ *   KAVACHIQ_API_URL          — API server base URL (default: http://localhost:3001)
+ *   KAVACHIQ_API_KEY          — Bearer token (required; must match API server API_KEY)
+ *   KAVACHIQ_CONSOLE_TENANT   — Tenant ID shown in the console (required)
+ *
+ * TODO (Week 4 Day 4): replace static tenant + API key with Entra External
+ * ID JWT. The operator's identity claim will carry the tenant ID; the API
+ * will validate the token rather than a static key.
+ */
+
+// Minimal local types — structural matches for @kavachiq/schema Incident and
+// NormalizedChange. Platform packages are not linked in the root workspace.
+
+export interface ConsoleIncident {
+  incidentId: string;
+  tenantId: string;
+  title: string;
+  severity: "critical" | "high" | "medium" | "low";
+  urgency: "immediate" | "within-hour" | "within-day" | "informational";
+  status: string;
+  classificationRationale: {
+    scoreAtCreation: number;
+    narrative: string;
+    signals: Array<{ signal: string; weight: number; value: number }>;
+  };
+  sensitivityContext: {
+    targetSensitivity: "high" | "medium" | "low";
+    actorClassification: string;
+  };
+  correlatedChangeIds: string[];
+  detectedAt: string;
+  createdAt: string;
+}
+
+export interface ConsoleChange {
+  changeId: string;
+  changeType: string;
+  target: { objectType: string; displayName: string; objectId: string };
+  actor: { type: string; displayName: string | null; agentIdentified: boolean };
+  observedAt: string;
+}
+
+export interface ListResult<T> {
+  data: T[];
+  meta: { total: number; limit: number; offset: number };
+}
+
+// ─── Config ───────────────────────────────────────────────────────────────
+
+function apiBase(): string {
+  return (process.env.KAVACHIQ_API_URL ?? "http://localhost:3001").replace(/\/$/, "");
+}
+
+function apiKey(): string {
+  return process.env.KAVACHIQ_API_KEY ?? "";
+}
+
+export function consoleTenantId(): string {
+  const id = process.env.KAVACHIQ_CONSOLE_TENANT;
+  if (!id) throw new Error("KAVACHIQ_CONSOLE_TENANT env var not set");
+  return id;
+}
+
+// ─── Fetch helper ─────────────────────────────────────────────────────────
+
+async function apiFetch<T>(path: string): Promise<T> {
+  const url = `${apiBase()}${path}`;
+  const res = await fetch(url, {
+    headers: { Authorization: `Bearer ${apiKey()}` },
+    // No caching — operator console should always show fresh data.
+    cache: "no-store",
+  });
+  if (!res.ok) {
+    throw new Error(`API ${path} returned ${res.status}`);
+  }
+  return res.json() as Promise<T>;
+}
+
+// ─── API calls ────────────────────────────────────────────────────────────
+
+export async function listIncidents(
+  tenantId: string,
+  opts: { limit?: number; offset?: number; severity?: string } = {},
+): Promise<ListResult<ConsoleIncident>> {
+  const qs = new URLSearchParams();
+  if (opts.limit) qs.set("limit", String(opts.limit));
+  if (opts.offset) qs.set("offset", String(opts.offset));
+  if (opts.severity) qs.set("severity", opts.severity);
+  const q = qs.toString() ? `?${qs}` : "";
+  return apiFetch(`/tenants/${tenantId}/incidents${q}`);
+}
+
+export async function getIncident(
+  tenantId: string,
+  incidentId: string,
+): Promise<{ data: ConsoleIncident }> {
+  return apiFetch(`/tenants/${tenantId}/incidents/${incidentId}`);
+}
+
+export async function listChanges(
+  tenantId: string,
+  opts: { limit?: number; offset?: number; changeType?: string } = {},
+): Promise<ListResult<ConsoleChange>> {
+  const qs = new URLSearchParams();
+  if (opts.limit) qs.set("limit", String(opts.limit));
+  if (opts.offset) qs.set("offset", String(opts.offset));
+  if (opts.changeType) qs.set("changeType", opts.changeType);
+  const q = qs.toString() ? `?${qs}` : "";
+  return apiFetch(`/tenants/${tenantId}/changes${q}`);
+}
