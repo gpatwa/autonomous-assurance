@@ -13,6 +13,7 @@
  */
 
 import type { PoolClient } from "pg";
+import { encryptWithDek, decryptWithDek } from "./keyvault-cipher.js";
 
 const NOOP_DEK_URI = "noop://dev";
 
@@ -64,7 +65,7 @@ export async function loadTenantCredentials(
     throw new Error("loadTenantCredentials: no credentials for current tenant");
   }
   const row = result.rows[0]!;
-  const clientSecret = decryptSecret(row.encrypted_client_secret, row.dek_key_vault_uri);
+  const clientSecret = await decryptSecret(row.encrypted_client_secret, row.dek_key_vault_uri);
   return {
     microsoftTenantId: row.ms_tenant_id,
     clientId: row.client_id,
@@ -86,7 +87,7 @@ export async function seedTenantCredentials(
   args: SeedTenantCredentialsArgs,
 ): Promise<void> {
   const dek = args.dekKeyVaultUri ?? NOOP_DEK_URI;
-  const ciphertext = encryptSecret(args.clientSecret, dek);
+  const ciphertext = await encryptSecret(args.clientSecret, dek);
   await client.query(
     `INSERT INTO tenant_credentials (
        tenant_id, client_id, encrypted_client_secret, dek_key_vault_uri, consented_scopes
@@ -103,18 +104,18 @@ export async function seedTenantCredentials(
   );
 }
 
-// ─── Cipher (v1 = noop; KeyVault impl lands in week-4 hardening) ──────
+// ─── Cipher ───────────────────────────────────────────────────────────────────
 
-function encryptSecret(plaintext: string, dekUri: string): Buffer {
+async function encryptSecret(plaintext: string, dekUri: string): Promise<Buffer> {
   if (dekUri === NOOP_DEK_URI) {
     return Buffer.from(plaintext, "utf8");
   }
-  throw new Error(`encryptSecret: unsupported dekUri "${dekUri}" — KeyVaultCipher not implemented yet`);
+  return encryptWithDek(plaintext, dekUri);
 }
 
-function decryptSecret(ciphertext: Buffer, dekUri: string): string {
+async function decryptSecret(ciphertext: Buffer, dekUri: string): Promise<string> {
   if (dekUri === NOOP_DEK_URI) {
     return ciphertext.toString("utf8");
   }
-  throw new Error(`decryptSecret: unsupported dekUri "${dekUri}" — KeyVaultCipher not implemented yet`);
+  return decryptWithDek(ciphertext, dekUri);
 }

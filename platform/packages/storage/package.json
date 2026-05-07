@@ -10,11 +10,12 @@
     "test": "node --import tsx --test src/**/*.test.ts"
   },
   "dependencies": {
-    "@kavachiq/schema": "*",
-    "@kavachiq/platform": "*",
-    "pg": "^8.13.0",
     "@azure/identity": "^4.4.0",
-    "@azure/storage-blob": "^12.27.0"
+    "@azure/keyvault-secrets": "^4.11.2",
+    "@azure/storage-blob": "^12.27.0",
+    "@kavachiq/platform": "*",
+    "@kavachiq/schema": "*",
+    "pg": "^8.13.0"
   },
   "devDependencies": {
     "@types/pg": "^8.11.10",

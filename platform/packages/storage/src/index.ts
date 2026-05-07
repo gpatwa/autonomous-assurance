@@ -76,6 +76,8 @@ export {
   type SeedTenantCredentialsArgs,
 } from "./tenant-credentials.js";
 
+export { provisionTenantDek, encryptWithDek, decryptWithDek } from "./keyvault-cipher.js";
+
 export {
   getPollingState,
   recordPollStarted,
