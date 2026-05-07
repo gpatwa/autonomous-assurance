@@ -46,3 +46,8 @@ next-env.d.ts
 
 # staging verification artifacts
 /artifacts
+
+# playwright
+/test-results/
+/playwright-report/
+tests/.auth/
