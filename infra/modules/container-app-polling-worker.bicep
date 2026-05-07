@@ -1,7 +1,8 @@
 // Container App: polling-worker.
 // D4 + N7 + N8 + N9: Service Bus session-keyed consumer for `poll-tenant`.
-// Scales on poll-tenant queue length. System-assigned managed identity
-// provisioned for future managed-identity ACR pull (week-4 hardening).
+// Scales on poll-tenant queue length. Pulls images from ACR using the shared
+// user-assigned managed identity (UAMI) — no admin credentials required
+// (Week 5 hardening).
 //
 // Each replica accepts one session (one tenant) at a time, calls
 // pollTenantBatch (Graph → Blob → raw_events → normalize → enqueue
@@ -16,8 +17,11 @@ param location string
 @description('Container Apps managed environment ID.')
 param managedEnvironmentId string
 
-@description('ACR resource name (in the same RG) for admin credential lookup.')
-param acrName string
+@description('ACR login server (e.g. kavachiqplatformdevacr.azurecr.io).')
+param acrLoginServer string
+
+@description('Resource ID of the user-assigned managed identity used for ACR pull.')
+param uamiId string
 
 @description('Container image (full reference incl. registry + tag).')
 param image string
@@ -52,15 +56,14 @@ param minReplicas int = 1
 @description('Max replicas.')
 param maxReplicas int = 10
 
-resource acrRef 'Microsoft.ContainerRegistry/registries@2024-11-01-preview' existing = {
-  name: acrName
-}
-
 resource app 'Microsoft.App/containerApps@2024-03-01' = {
   name: name
   location: location
   identity: {
-    type: 'SystemAssigned'  // provisioned; unused for ACR pull until week-4 hardening
+    type: 'UserAssigned'
+    userAssignedIdentities: {
+      '${uamiId}': {}
+    }
   }
   properties: {
     managedEnvironmentId: managedEnvironmentId
@@ -84,16 +87,11 @@ resource app 'Microsoft.App/containerApps@2024-03-01' = {
           name: 'storage-connection'
           value: storageConnectionString
         }
-        {
-          name: 'acr-admin-password'
-          value: acrRef.listCredentials().passwords[0].value
-        }
       ]
       registries: [
         {
-          server: acrRef.properties.loginServer
-          username: acrRef.listCredentials().username
-          passwordSecretRef: 'acr-admin-password'
+          server: acrLoginServer
+          identity: uamiId  // UAMI has AcrPull granted in acr.bicep; no password needed
         }
       ]
       ingress: null  // worker — no external ingress
@@ -188,4 +186,3 @@ resource app 'Microsoft.App/containerApps@2024-03-01' = {
 
 output id string = app.id
 output name string = app.name
-output principalId string = app.identity.principalId

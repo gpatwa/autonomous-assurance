@@ -8,6 +8,7 @@
 //   4. Service Bus namespace        (queues with sessions, D4, N7)
 //   5. Container Apps environment   (workers + API runtime, D4, N8)
 //   6. Postgres Flexible Server     (state + RLS, D2, D3)
+//   7. User-assigned managed identity + ACR (credential-free image pull, Week 5)
 //
 // Idempotent. Re-runs only update drifted properties.
 
@@ -77,6 +78,8 @@ var logAnalyticsName   = 'log-${namePrefix}${suffix}'
 var storageAccountName = replace('${namePrefix}${env}st', '-', '')
 // ACR: 5-50 chars, alphanumeric only (no dashes)
 var acrName            = replace('${namePrefix}${env}acr', '-', '')
+// UAMI shared by all Container Apps for ACR pull
+var uamiName           = 'id-${namePrefix}${suffix}'
 
 // ─── Modules ─────────────────────────────────────────────────────────────
 
@@ -136,11 +139,22 @@ module postgres 'modules/postgres.bicep' = {
   }
 }
 
+// UAMI created before ACR so the AcrPull role assignment can reference its
+// principalId in the same deployment — no bootstrap deadlock.
+module uami 'modules/managed-identity.bicep' = {
+  name: 'uami'
+  params: {
+    name: uamiName
+    location: location
+  }
+}
+
 module acr 'modules/acr.bicep' = {
   name: 'acr'
   params: {
     name: acrName
     location: location
+    uamiPrincipalId: uami.outputs.principalId
   }
 }
 
@@ -150,7 +164,8 @@ module pipelineWorker 'modules/container-app-pipeline-worker.bicep' = if (!empty
     name: 'ca-pipeline-worker${suffix}'
     location: location
     managedEnvironmentId: containerEnv.outputs.id
-    acrName: acr.outputs.name
+    acrLoginServer: acr.outputs.loginServer
+    uamiId: uami.outputs.id
     image: pipelineWorkerImage
     serviceBusConnectionString: pipelineWorkerServiceBusConnection
     databaseUrl: pipelineWorkerDatabaseUrl
@@ -165,7 +180,8 @@ module pollingWorker 'modules/container-app-polling-worker.bicep' = if (!empty(p
     name: 'ca-polling-worker${suffix}'
     location: location
     managedEnvironmentId: containerEnv.outputs.id
-    acrName: acr.outputs.name
+    acrLoginServer: acr.outputs.loginServer
+    uamiId: uami.outputs.id
     image: pollingWorkerImage
     serviceBusConnectionString: pollingWorkerServiceBusConnection
     databaseUrl: pollingWorkerDatabaseUrl
@@ -192,3 +208,5 @@ output appInsightsName string = appInsights.outputs.name
 output appInsightsConnectionString string = appInsights.outputs.connectionString
 output acrName string = acr.outputs.name
 output acrLoginServer string = acr.outputs.loginServer
+output uamiName string = uami.outputs.id
+output uamiClientId string = uami.outputs.clientId

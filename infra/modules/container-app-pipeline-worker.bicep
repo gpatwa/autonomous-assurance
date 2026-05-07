@@ -1,7 +1,7 @@
 // Container App: pipeline-worker.
 // D4 + N8 + N9: Service Bus session-keyed consumer with KEDA scaling on
-// queue length. System-assigned managed identity granted AcrPull on the
-// registry so the image pull is credential-free.
+// queue length. Pulls images from ACR using the shared user-assigned managed
+// identity (UAMI) — no admin credentials required (Week 5 hardening).
 //
 // Secrets (Service Bus connection, DATABASE_URL) are stored as Container
 // App secrets, not env vars. Container App secret refs flow into env at
@@ -16,8 +16,11 @@ param location string
 @description('Container Apps managed environment ID.')
 param managedEnvironmentId string
 
-@description('ACR resource name (in the same RG) for AcrPull role assignment.')
-param acrName string
+@description('ACR login server (e.g. kavachiqplatformdevacr.azurecr.io).')
+param acrLoginServer string
+
+@description('Resource ID of the user-assigned managed identity used for ACR pull.')
+param uamiId string
 
 @description('Container image (full reference incl. registry + tag).')
 param image string
@@ -48,19 +51,14 @@ param minReplicas int = 1
 @description('Max replicas (KEDA scales between min and max based on queue length).')
 param maxReplicas int = 10
 
-// Reference the existing ACR (in same RG) so we can read admin creds at
-// deploy time. listCredentials() returns username/password for the registry
-// only at deployment-action evaluation time; values aren't stored in the
-// Bicep template or in deployment outputs.
-resource acrRef 'Microsoft.ContainerRegistry/registries@2024-11-01-preview' existing = {
-  name: acrName
-}
-
 resource app 'Microsoft.App/containerApps@2024-03-01' = {
   name: name
   location: location
   identity: {
-    type: 'SystemAssigned'  // kept; future-ready for managed-identity ACR pull
+    type: 'UserAssigned'
+    userAssignedIdentities: {
+      '${uamiId}': {}
+    }
   }
   properties: {
     managedEnvironmentId: managedEnvironmentId
@@ -80,16 +78,11 @@ resource app 'Microsoft.App/containerApps@2024-03-01' = {
           name: 'app-insights-connection'
           value: appInsightsConnectionString
         }
-        {
-          name: 'acr-admin-password'
-          value: acrRef.listCredentials().passwords[0].value
-        }
       ]
       registries: [
         {
-          server: acrRef.properties.loginServer
-          username: acrRef.listCredentials().username
-          passwordSecretRef: 'acr-admin-password'
+          server: acrLoginServer
+          identity: uamiId  // UAMI has AcrPull granted in acr.bicep; no password needed
         }
       ]
       ingress: null  // worker — no external ingress
@@ -178,14 +171,5 @@ resource app 'Microsoft.App/containerApps@2024-03-01' = {
   }
 }
 
-// Note: AcrPull role assignment for the managed identity is intentionally
-// NOT created here. Container Apps + system-assigned-identity + private ACR
-// has a known bootstrap deadlock — the first image pull happens before the
-// role assignment propagates, the deployment expires, and Bicep marks the
-// resource Failed. We use ACR admin credentials (above) for v1; the system
-// identity is provisioned but not yet used. Track managed-identity pull as
-// a week-4 hardening pass.
-
 output id string = app.id
 output name string = app.name
-output principalId string = app.identity.principalId
