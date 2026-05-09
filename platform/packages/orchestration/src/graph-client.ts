@@ -22,12 +22,6 @@ import { ClientSecretCredential, type TokenCredential } from "@azure/identity";
 const GRAPH_BASE = "https://graph.microsoft.com/v1.0";
 const GRAPH_SCOPE = "https://graph.microsoft.com/.default";
 
-export interface GraphTenantCredentials {
-  microsoftTenantId: string;
-  clientId: string;
-  clientSecret: string;
-}
-
 export interface AuditEvent {
   id: string;
   activityDateTime: string;
@@ -68,15 +62,23 @@ export class GraphAuthError extends Error {
 /**
  * Build a TokenCredential for client_credentials flow against the
  * customer's Microsoft tenant.
+ *
+ * Secretless design: KavachIQ is a multi-tenant Entra app. We use the
+ * platform's own credentials (KAVACHIQ_APP_CLIENT_ID + _CLIENT_SECRET)
+ * to call Graph in the customer's tenant after admin consent. No per-tenant
+ * secrets are stored.
+ *
+ * @param microsoftTenantId — the customer's Entra tenant ID (from tenants table)
  */
-export function createGraphCredential(
-  creds: GraphTenantCredentials,
-): TokenCredential {
-  return new ClientSecretCredential(
-    creds.microsoftTenantId,
-    creds.clientId,
-    creds.clientSecret,
-  );
+export function createGraphCredential(microsoftTenantId: string): TokenCredential {
+  const clientId = process.env.KAVACHIQ_APP_CLIENT_ID;
+  const clientSecret = process.env.KAVACHIQ_APP_CLIENT_SECRET;
+  if (!clientId || !clientSecret) {
+    throw new Error(
+      "createGraphCredential: KAVACHIQ_APP_CLIENT_ID and KAVACHIQ_APP_CLIENT_SECRET must be set",
+    );
+  }
+  return new ClientSecretCredential(microsoftTenantId, clientId, clientSecret);
 }
 
 /**

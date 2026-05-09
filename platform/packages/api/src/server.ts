@@ -18,11 +18,14 @@
  */
 
 import http from "node:http";
+import { randomUUID } from "node:crypto";
 import { rootLogger } from "@kavachiq/platform";
 import {
   findIncidentById,
+  insertOnboardedTenant,
   listIncidents,
   listNormalizedChanges,
+  withAdminContext,
   withTenantContext,
 } from "@kavachiq/storage";
 
@@ -71,6 +74,23 @@ function serverError(res: http.ServerResponse, err: unknown): void {
   json(res, 500, { error: { code: "INTERNAL_ERROR", message } });
 }
 
+// ─── Body helpers ──────────────────────────────────────────────────────────
+
+function readJson(req: http.IncomingMessage): Promise<Record<string, unknown>> {
+  return new Promise((resolve, reject) => {
+    const chunks: Buffer[] = [];
+    req.on("data", (c: Buffer) => chunks.push(c));
+    req.on("end", () => {
+      try {
+        resolve(JSON.parse(Buffer.concat(chunks).toString("utf8")) as Record<string, unknown>);
+      } catch (e) {
+        reject(e);
+      }
+    });
+    req.on("error", reject);
+  });
+}
+
 // ─── Query-string helpers ──────────────────────────────────────────────────
 
 function intParam(params: URLSearchParams, key: string, defaultVal: number, max: number): number {
@@ -87,6 +107,34 @@ function intParam(params: URLSearchParams, key: string, defaultVal: number, max:
 const RE_INCIDENTS = /^\/tenants\/([^/]+)\/incidents(?:\/([^/]+))?$/;
 // /tenants/<uuid>/changes
 const RE_CHANGES = /^\/tenants\/([^/]+)\/changes$/;
+
+// ─── Onboarding helpers ────────────────────────────────────────────────────
+
+/**
+ * Encode onboarding state: base64(JSON { tenantId, displayName }).
+ * Carried through the OAuth admin-consent redirect as the `state` param.
+ * Not signed in v1 — add HMAC in hardening pass.
+ */
+function encodeConsentState(tenantId: string, displayName: string): string {
+  return Buffer.from(JSON.stringify({ tenantId, displayName })).toString("base64url");
+}
+
+function decodeConsentState(state: string): { tenantId: string; displayName: string } | null {
+  try {
+    const parsed = JSON.parse(Buffer.from(state, "base64url").toString("utf8")) as unknown;
+    if (
+      typeof parsed === "object" &&
+      parsed !== null &&
+      typeof (parsed as Record<string, unknown>).tenantId === "string" &&
+      typeof (parsed as Record<string, unknown>).displayName === "string"
+    ) {
+      return parsed as { tenantId: string; displayName: string };
+    }
+  } catch {
+    // fall through
+  }
+  return null;
+}
 
 async function handleRequest(
   req: http.IncomingMessage,
@@ -105,10 +153,86 @@ async function handleRequest(
     return;
   }
 
-  // ── Auth ────────────────────────────────────────────────────────────
+  // ── Auth ─────────────────────────────────────────────────────────────
   const authHeader = req.headers["authorization"] ?? "";
   if (authHeader !== `Bearer ${apiKey}`) {
     unauthorized(res);
+    return;
+  }
+
+  // ── Onboarding: initiate admin consent ──────────────────────────────
+  // POST /onboarding/initiate  { displayName: string }
+  // Returns { consentUrl, tenantId } — console redirects browser to consentUrl.
+  if (method === "POST" && path === "/onboarding/initiate") {
+    let body: { displayName?: string };
+    try {
+      body = await readJson(req);
+    } catch {
+      badRequest(res, "invalid JSON body");
+      return;
+    }
+    const displayName = (body.displayName ?? "").trim();
+    if (!displayName) {
+      badRequest(res, "displayName is required");
+      return;
+    }
+    const clientId = process.env.KAVACHIQ_APP_CLIENT_ID;
+    const consoleUrl = process.env.KAVACHIQ_CONSOLE_URL;
+    if (!clientId || !consoleUrl) {
+      log.error("api: onboarding initiate — KAVACHIQ_APP_CLIENT_ID or KAVACHIQ_CONSOLE_URL not set");
+      serverError(res, "server misconfiguration");
+      return;
+    }
+    const tenantId = randomUUID();
+    const state = encodeConsentState(tenantId, displayName);
+    const redirectUri = encodeURIComponent(`${consoleUrl}/console/onboarding/callback`);
+    const consentUrl =
+      `https://login.microsoftonline.com/common/adminconsent` +
+      `?client_id=${clientId}` +
+      `&redirect_uri=${redirectUri}` +
+      `&state=${state}`;
+    json(res, 200, { consentUrl, tenantId });
+    return;
+  }
+
+  // ── Onboarding: complete after admin consent ─────────────────────────
+  // POST /onboarding/complete  { state: string, microsoftTenantId: string }
+  // Called by the console callback page after Microsoft redirects back.
+  if (method === "POST" && path === "/onboarding/complete") {
+    let body: { state?: string; microsoftTenantId?: string };
+    try {
+      body = await readJson(req);
+    } catch {
+      badRequest(res, "invalid JSON body");
+      return;
+    }
+    if (!body.state || !body.microsoftTenantId) {
+      badRequest(res, "state and microsoftTenantId are required");
+      return;
+    }
+    const decoded = decodeConsentState(body.state);
+    if (!decoded) {
+      badRequest(res, "invalid state");
+      return;
+    }
+    try {
+      await withAdminContext(async (client) => {
+        await insertOnboardedTenant(client, {
+          tenantId: decoded.tenantId,
+          microsoftTenantId: body.microsoftTenantId!,
+          displayName: decoded.displayName,
+          consentedAt: new Date().toISOString(),
+        });
+      });
+      log.info("api: tenant onboarded", {
+        tenantId: decoded.tenantId,
+        microsoftTenantId: body.microsoftTenantId,
+      });
+      json(res, 200, { ok: true, tenantId: decoded.tenantId });
+    } catch (err) {
+      log.error("api: onboarding complete failed", { err });
+      serverError(res, err);
+    }
     return;
   }
 

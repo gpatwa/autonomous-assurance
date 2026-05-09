@@ -67,7 +67,6 @@ STORAGE_CONNECTION=$(az storage account show-connection-string \
   --query connectionString -o tsv)
 
 # API key — stored in Key Vault for stability across deploys.
-# On first deploy it won't exist yet; generate and store it.
 if az keyvault secret show --vault-name "$KV" --name api-key &>/dev/null; then
   API_KEY=$(az keyvault secret show --vault-name "$KV" --name api-key --query value -o tsv)
   echo "  api-key: loaded from Key Vault"
@@ -75,10 +74,26 @@ else
   API_KEY=$(openssl rand -hex 32)
   az keyvault secret set --vault-name "$KV" --name api-key --value "$API_KEY" -o none
   echo "  api-key: generated and stored in Key Vault"
-  echo ""
-  echo "  !! Update KAVACHIQ_API_KEY in the console .env.local:"
-  echo "     KAVACHIQ_API_KEY=${API_KEY}"
+  echo "  !! Update KAVACHIQ_API_KEY in the console .env.local: ${API_KEY}"
 fi
+
+# KavachIQ platform Entra app credentials (used by polling-worker for Graph).
+# These are the same app registration used for operator console sign-in.
+# Required env vars: KAVACHIQ_APP_CLIENT_ID, KAVACHIQ_APP_CLIENT_SECRET
+# (or set them in .env before running, or export from shell).
+KAVACHIQ_APP_CLIENT_ID="${KAVACHIQ_APP_CLIENT_ID:-}"
+KAVACHIQ_APP_CLIENT_SECRET="${KAVACHIQ_APP_CLIENT_SECRET:-}"
+if [[ -z "$KAVACHIQ_APP_CLIENT_ID" || -z "$KAVACHIQ_APP_CLIENT_SECRET" ]]; then
+  echo ""
+  echo "ERROR: KAVACHIQ_APP_CLIENT_ID and KAVACHIQ_APP_CLIENT_SECRET must be set."
+  echo "  export KAVACHIQ_APP_CLIENT_ID=<your-entra-app-client-id>"
+  echo "  export KAVACHIQ_APP_CLIENT_SECRET=<your-entra-app-client-secret>"
+  exit 1
+fi
+
+# Console URL — used by the API to build the admin-consent redirect URI.
+CONSOLE_URL="${KAVACHIQ_CONSOLE_URL:-http://localhost:3000}"
+echo "  console-url: ${CONSOLE_URL}"
 
 # ─── Deploy ────────────────────────────────────────────────────────────────
 
@@ -95,6 +110,9 @@ az deployment group create \
     apiKey="$API_KEY" \
     apiDatabaseUrl="$DATABASE_URL" \
     pipelineWorkerImage="${ACR_SERVER}/pipeline-worker:${TAG}" \
+    consoleUrl="$CONSOLE_URL" \
+    kavachiqAppClientId="$KAVACHIQ_APP_CLIENT_ID" \
+    kavachiqAppClientSecret="$KAVACHIQ_APP_CLIENT_SECRET" \
     pipelineWorkerServiceBusConnection="$SB_CONNECTION" \
     pipelineWorkerDatabaseUrl="$DATABASE_URL" \
     pollingWorkerImage="${ACR_SERVER}/polling-worker:${TAG}" \

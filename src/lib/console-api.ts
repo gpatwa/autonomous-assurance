@@ -83,6 +83,43 @@ async function apiFetch<T>(path: string): Promise<T> {
   return res.json() as Promise<T>;
 }
 
+// ─── Onboarding ───────────────────────────────────────────────────────────
+
+export async function initiateOnboarding(
+  displayName: string,
+): Promise<{ consentUrl: string; tenantId: string }> {
+  const url = `${apiBase()}/onboarding/initiate`;
+  const res = await fetch(url, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${apiKey()}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ displayName }),
+    cache: "no-store",
+  });
+  if (!res.ok) throw new Error(`onboarding initiate failed: ${res.status}`);
+  return res.json() as Promise<{ consentUrl: string; tenantId: string }>;
+}
+
+export async function completeOnboarding(
+  state: string,
+  microsoftTenantId: string,
+): Promise<{ tenantId: string }> {
+  const url = `${apiBase()}/onboarding/complete`;
+  const res = await fetch(url, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${apiKey()}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ state, microsoftTenantId }),
+    cache: "no-store",
+  });
+  if (!res.ok) throw new Error(`onboarding complete failed: ${res.status}`);
+  return res.json() as Promise<{ tenantId: string }>;
+}
+
 // ─── API calls ────────────────────────────────────────────────────────────
 
 export async function listIncidents(

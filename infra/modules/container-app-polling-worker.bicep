@@ -41,6 +41,13 @@ param appInsightsConnectionString string
 @secure()
 param storageConnectionString string
 
+@description('KavachIQ multi-tenant Entra app client ID (used for Graph API calls in customer tenants).')
+param kavachiqAppClientId string
+
+@description('KavachIQ multi-tenant Entra app client secret.')
+@secure()
+param kavachiqAppClientSecret string
+
 @description('Service Bus namespace name (for KEDA queue-length scaling).')
 param serviceBusNamespace string
 
@@ -87,6 +94,10 @@ resource app 'Microsoft.App/containerApps@2024-03-01' = {
           name: 'storage-connection'
           value: storageConnectionString
         }
+        {
+          name: 'kavachiq-app-client-secret'
+          value: kavachiqAppClientSecret
+        }
       ]
       registries: [
         {
@@ -121,6 +132,14 @@ resource app 'Microsoft.App/containerApps@2024-03-01' = {
             {
               name: 'STORAGE_CONNECTION_STRING'
               secretRef: 'storage-connection'
+            }
+            {
+              name: 'KAVACHIQ_APP_CLIENT_ID'
+              value: kavachiqAppClientId  // not a secret; the client ID is public
+            }
+            {
+              name: 'KAVACHIQ_APP_CLIENT_SECRET'
+              secretRef: 'kavachiq-app-client-secret'
             }
             {
               name: 'NODE_ENV'

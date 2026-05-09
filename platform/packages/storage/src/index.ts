@@ -69,13 +69,18 @@ export {
   type InsertRawEventResult,
 } from "./raw-events.js";
 
+// Secretless design (Week 5 Day 3): no per-tenant credentials stored.
+// KavachIQ uses platform-level Entra app credentials (env vars) + the
+// customer's microsoft_tenant_id obtained at admin consent time.
 export {
-  loadTenantCredentials,
-  seedTenantCredentials,
-  type TenantGraphCredentials,
-  type SeedTenantCredentialsArgs,
-} from "./tenant-credentials.js";
+  loadTenantMicrosoftId,
+  insertOnboardedTenant,
+  type TenantMicrosoftId,
+  type InsertOnboardedTenantArgs,
+} from "./tenants.js";
 
+// Key Vault envelope cipher — generic utility for platform-level secret
+// encryption (e.g. future key rotation). No longer used for per-tenant creds.
 export { provisionTenantDek, encryptWithDek, decryptWithDek } from "./keyvault-cipher.js";
 
 export {

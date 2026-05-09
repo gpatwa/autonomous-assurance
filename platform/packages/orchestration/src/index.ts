@@ -40,7 +40,6 @@ export {
   GraphAuthError,
   GraphThrottleError,
   type AuditEvent,
-  type GraphTenantCredentials,
   type FetchAuditEventsArgs,
   type FetchAuditEventsResult,
 } from "./graph-client.js";

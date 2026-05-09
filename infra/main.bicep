@@ -48,6 +48,16 @@ param apiKey string = ''
 @secure()
 param apiDatabaseUrl string = ''
 
+@description('Console URL — used by the API to build the admin-consent redirect URI (e.g. https://console.kavachiq.com).')
+param consoleUrl string = ''
+
+@description('KavachIQ multi-tenant Entra app client ID. Used by polling-worker for Graph API calls.')
+param kavachiqAppClientId string = ''
+
+@description('KavachIQ multi-tenant Entra app client secret. Used by polling-worker for Graph API calls.')
+@secure()
+param kavachiqAppClientSecret string = ''
+
 @description('pipeline-worker container image (full ref incl. registry+tag). Empty = skip Container App deploy.')
 param pipelineWorkerImage string = ''
 
@@ -181,6 +191,8 @@ module api 'modules/container-app-api.bicep' = if (!empty(apiImage)) {
     apiKey: apiKey
     databaseUrl: apiDatabaseUrl
     appInsightsConnectionString: appInsights.outputs.connectionString
+    consoleUrl: consoleUrl
+    kavachiqAppClientId: kavachiqAppClientId
   }
 }
 
@@ -213,6 +225,8 @@ module pollingWorker 'modules/container-app-polling-worker.bicep' = if (!empty(p
     databaseUrl: pollingWorkerDatabaseUrl
     appInsightsConnectionString: appInsights.outputs.connectionString
     storageConnectionString: pollingWorkerStorageConnectionString
+    kavachiqAppClientId: kavachiqAppClientId
+    kavachiqAppClientSecret: kavachiqAppClientSecret
     serviceBusNamespace: serviceBus.outputs.namespace
   }
 }

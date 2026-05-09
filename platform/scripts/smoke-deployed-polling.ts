@@ -37,7 +37,6 @@ import type { PollTenantMessage } from "@kavachiq/workers";
 import {
   closePool,
   getPollingState,
-  seedTenantCredentials,
   withAdminContext,
   withTenantContext,
 } from "@kavachiq/storage";
@@ -45,17 +44,17 @@ import {
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
 // ─── Config ─────────────────────────────────────────────────────────────
+// Secretless: KAVACHIQ_APP_CLIENT_ID + _SECRET are platform-level credentials.
+// SP_READ_TENANT_ID is the customer Microsoft tenant ID under test.
 
 const SB_CONN = required("SERVICE_BUS_CONNECTION_STRING");
 required("DATABASE_URL");
 required("SP_READ_TENANT_ID");
-required("SP_READ_CLIENT_ID");
-required("SP_READ_CLIENT_SECRET");
+required("KAVACHIQ_APP_CLIENT_ID");
+required("KAVACHIQ_APP_CLIENT_SECRET");
 
 const TENANT_ID = randomUUID();
 const MS_TENANT_ID = process.env.SP_READ_TENANT_ID!;
-const CLIENT_ID = process.env.SP_READ_CLIENT_ID!;
-const CLIENT_SECRET = process.env.SP_READ_CLIENT_SECRET!;
 
 // Both workers are always-on (minReplicas=1). Polling timeout covers the
 // Graph fetch + Blob + DB insert. Pipeline timeout covers message delivery
@@ -109,14 +108,7 @@ async function seed(): Promise<void> {
       [TENANT_ID, PRIVILEGED_GROUP_ID, SP_EXECUTE_ID],
     );
   });
-  await withTenantContext(TENANT_ID, async (client) => {
-    await seedTenantCredentials(client, {
-      microsoftTenantId: MS_TENANT_ID,
-      clientId: CLIENT_ID,
-      clientSecret: CLIENT_SECRET,
-      consentedScopes: ["AuditLog.Read.All", "Directory.Read.All"],
-    });
-  });
+  // Secretless: no per-tenant credentials to seed; Graph creds come from env.
 }
 
 async function teardown(): Promise<void> {

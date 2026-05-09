@@ -32,6 +32,12 @@ param databaseUrl string
 @description('Application Insights connection string.')
 param appInsightsConnectionString string
 
+@description('Console URL — used to build the admin-consent redirect URI.')
+param consoleUrl string
+
+@description('KavachIQ multi-tenant Entra app client ID (passed to KAVACHIQ_APP_CLIENT_ID env).')
+param kavachiqAppClientId string
+
 @description('CPU cores per replica.')
 param cpu string = '0.25'
 
@@ -114,6 +120,14 @@ resource app 'Microsoft.App/containerApps@2024-03-01' = {
             {
               name: 'NODE_ENV'
               value: 'production'
+            }
+            {
+              name: 'KAVACHIQ_CONSOLE_URL'
+              value: consoleUrl
+            }
+            {
+              name: 'KAVACHIQ_APP_CLIENT_ID'
+              value: kavachiqAppClientId  // not a secret; the client ID is public
             }
           ]
           probes: [

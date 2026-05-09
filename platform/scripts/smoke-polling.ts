@@ -33,25 +33,25 @@ import { pollTenantBatch } from "@kavachiq/orchestration";
 import {
   closePool,
   getPollingState,
-  loadTenantCredentials,
-  seedTenantCredentials,
+  loadTenantMicrosoftId,
   withAdminContext,
   withTenantContext,
 } from "@kavachiq/storage";
 
 // ─── Config ─────────────────────────────────────────────────────────────
+// Secretless design: KAVACHIQ_APP_CLIENT_ID + _CLIENT_SECRET are platform
+// credentials used by createGraphCredential to call Graph in any consented
+// tenant. SP_READ_TENANT_ID is the customer Microsoft tenant ID to test against.
 
 required("DATABASE_URL");
 required("SP_READ_TENANT_ID");
-required("SP_READ_CLIENT_ID");
-required("SP_READ_CLIENT_SECRET");
+required("KAVACHIQ_APP_CLIENT_ID");
+required("KAVACHIQ_APP_CLIENT_SECRET");
 required("STORAGE_CONNECTION_STRING");
 const SB_CONN = required("SERVICE_BUS_CONNECTION_STRING");
 
 const TENANT_ID = randomUUID();
 const MS_TENANT_ID = process.env.SP_READ_TENANT_ID!;
-const CLIENT_ID = process.env.SP_READ_CLIENT_ID!;
-const CLIENT_SECRET = process.env.SP_READ_CLIENT_SECRET!;
 
 let passed = 0;
 let failed = 0;
@@ -80,20 +80,13 @@ function required(k: string): string {
 }
 
 async function seed(): Promise<void> {
+  // Secretless: only tenant row needed; Graph credentials come from env vars.
   await withAdminContext(async (client) => {
     await client.query(
-      `INSERT INTO tenants (tenant_id, microsoft_tenant_id, display_name, status, consented_at, consent_admin_email)
-       VALUES ($1, $2, 'Smoke polling tenant (patwainc)', 'active', now(), 'smoke-polling@example.com')`,
+      `INSERT INTO tenants (tenant_id, microsoft_tenant_id, display_name, status, consented_at)
+       VALUES ($1, $2::uuid, 'Smoke polling tenant (patwainc)', 'active', now())`,
       [TENANT_ID, MS_TENANT_ID],
     );
-  });
-  await withTenantContext(TENANT_ID, async (client) => {
-    await seedTenantCredentials(client, {
-      microsoftTenantId: MS_TENANT_ID,
-      clientId: CLIENT_ID,
-      clientSecret: CLIENT_SECRET,
-      consentedScopes: ["AuditLog.Read.All", "Directory.Read.All"],
-    });
   });
 }
 
@@ -132,19 +125,11 @@ async function main() {
   await seed();
 
   try {
-    await check("Tenant credentials load successfully (RLS-scoped)", async () => {
-      await withTenantContext(TENANT_ID, async (client) => {
-        const creds = await loadTenantCredentials(client);
-        if (creds.microsoftTenantId !== MS_TENANT_ID) {
-          throw new Error(`ms tenant id mismatch: ${creds.microsoftTenantId}`);
-        }
-        if (creds.clientId !== CLIENT_ID) {
-          throw new Error(`client id mismatch: ${creds.clientId}`);
-        }
-        if (creds.clientSecret !== CLIENT_SECRET) {
-          throw new Error("client secret round-trip mismatch (cipher bug?)");
-        }
-      });
+    await check("Tenant microsoft_tenant_id loads (RLS-scoped)", async () => {
+      const { microsoftTenantId } = await withTenantContext(TENANT_ID, loadTenantMicrosoftId);
+      if (microsoftTenantId !== MS_TENANT_ID) {
+        throw new Error(`ms tenant id mismatch: ${microsoftTenantId}`);
+      }
     });
 
     await check("polling_state starts as null (no row yet)", async () => {

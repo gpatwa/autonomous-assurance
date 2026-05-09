@@ -39,7 +39,7 @@ import {
   archiveRawEvents,
   getPollingState,
   insertRawEvent,
-  loadTenantCredentials,
+  loadTenantMicrosoftId,
   recordPollFailure,
   recordPollStarted,
   recordPollSuccess,
@@ -94,8 +94,9 @@ export async function pollTenantBatch(
 
     let result: PollTenantBatchResult;
     try {
-      // 1. Load creds + previous cursor.
-      const creds = await loadTenantCredentials(client);
+      // 1. Load microsoft_tenant_id + previous cursor.
+      // Secretless: platform credentials come from env, not per-tenant storage.
+      const { microsoftTenantId } = await loadTenantMicrosoftId(client);
       const state = await getPollingState(client);
       const cursor =
         state?.lastEventObservedAt ??
@@ -110,12 +111,8 @@ export async function pollTenantBatch(
         pageSize: opts.pageSize ?? 250,
       });
 
-      // 2. Fetch audit events from Graph.
-      const credential = createGraphCredential({
-        microsoftTenantId: creds.microsoftTenantId,
-        clientId: creds.clientId,
-        clientSecret: creds.clientSecret,
-      });
+      // 2. Fetch audit events from Graph using platform credentials.
+      const credential = createGraphCredential(microsoftTenantId);
       const fetched = await fetchAuditEvents(credential, {
         since: cursor,
         pageSize: opts.pageSize,
