@@ -7,7 +7,7 @@
 # Multi-stage build: same pattern as Dockerfile.pipeline-worker.
 #
 # Build:
-#   docker build -f Dockerfile.api -t kavachiq-api:latest .
+#   docker build --platform linux/amd64 -f Dockerfile.api -t kavachiq-api:latest .
 #   (run from platform/ directory — context is the workspace root)
 
 # ─── Builder ────────────────────────────────────────────────────────────────
