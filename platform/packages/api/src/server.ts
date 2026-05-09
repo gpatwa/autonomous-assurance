@@ -18,13 +18,15 @@
  */
 
 import http from "node:http";
-import { randomUUID } from "node:crypto";
+import { randomBytes, randomUUID } from "node:crypto";
 import { rootLogger } from "@kavachiq/platform";
 import {
   findIncidentById,
   insertOnboardedTenant,
+  insertPendingOnboarding,
   listIncidents,
   listNormalizedChanges,
+  redeemPendingOnboarding,
   withAdminContext,
   withTenantContext,
 } from "@kavachiq/storage";
@@ -110,30 +112,9 @@ const RE_CHANGES = /^\/tenants\/([^/]+)\/changes$/;
 
 // ─── Onboarding helpers ────────────────────────────────────────────────────
 
-/**
- * Encode onboarding state: base64(JSON { tenantId, displayName }).
- * Carried through the OAuth admin-consent redirect as the `state` param.
- * Not signed in v1 — add HMAC in hardening pass.
- */
-function encodeConsentState(tenantId: string, displayName: string): string {
-  return Buffer.from(JSON.stringify({ tenantId, displayName })).toString("base64url");
-}
-
-function decodeConsentState(state: string): { tenantId: string; displayName: string } | null {
-  try {
-    const parsed = JSON.parse(Buffer.from(state, "base64url").toString("utf8")) as unknown;
-    if (
-      typeof parsed === "object" &&
-      parsed !== null &&
-      typeof (parsed as Record<string, unknown>).tenantId === "string" &&
-      typeof (parsed as Record<string, unknown>).displayName === "string"
-    ) {
-      return parsed as { tenantId: string; displayName: string };
-    }
-  } catch {
-    // fall through
-  }
-  return null;
+/** Cryptographically random opaque token used as the OAuth `state` param. */
+function generateOpaqueToken(): string {
+  return randomBytes(32).toString("hex");
 }
 
 async function handleRequest(
@@ -162,7 +143,13 @@ async function handleRequest(
 
   // ── Onboarding: initiate admin consent ──────────────────────────────
   // POST /onboarding/initiate  { displayName: string }
-  // Returns { consentUrl, tenantId } — console redirects browser to consentUrl.
+  // Returns { consentUrl, tenantId }.
+  //
+  // State design: the OAuth `state` param is an opaque 32-byte random token.
+  // The real payload (tenantId, displayName) is stored server-side in
+  // pending_onboarding with a 1-hour TTL. The client never sees the tenantId
+  // in the URL, cannot forge a tenantId, and replay is impossible (the row is
+  // deleted atomically on redemption in /onboarding/complete).
   if (method === "POST" && path === "/onboarding/initiate") {
     let body: { displayName?: string };
     try {
@@ -184,13 +171,22 @@ async function handleRequest(
       return;
     }
     const tenantId = randomUUID();
-    const state = encodeConsentState(tenantId, displayName);
+    const token = generateOpaqueToken();
+    try {
+      await withAdminContext((client) =>
+        insertPendingOnboarding(client, { token, tenantId, displayName }),
+      );
+    } catch (err) {
+      log.error("api: onboarding initiate — failed to store pending state", { err });
+      serverError(res, err);
+      return;
+    }
     const redirectUri = encodeURIComponent(`${consoleUrl}/console/onboarding/callback`);
     const consentUrl =
       `https://login.microsoftonline.com/common/adminconsent` +
       `?client_id=${clientId}` +
       `&redirect_uri=${redirectUri}` +
-      `&state=${state}`;
+      `&state=${token}`;
     json(res, 200, { consentUrl, tenantId });
     return;
   }
@@ -198,6 +194,11 @@ async function handleRequest(
   // ── Onboarding: complete after admin consent ─────────────────────────
   // POST /onboarding/complete  { state: string, microsoftTenantId: string }
   // Called by the console callback page after Microsoft redirects back.
+  //
+  // `state` is the opaque token from /onboarding/initiate. It is redeemed
+  // atomically (DELETE ... RETURNING): unknown tokens, expired tokens, and
+  // replayed tokens all return 400. The server — not the client — determines
+  // tenantId and displayName.
   if (method === "POST" && path === "/onboarding/complete") {
     let body: { state?: string; microsoftTenantId?: string };
     try {
@@ -210,25 +211,27 @@ async function handleRequest(
       badRequest(res, "state and microsoftTenantId are required");
       return;
     }
-    const decoded = decodeConsentState(body.state);
-    if (!decoded) {
-      badRequest(res, "invalid state");
-      return;
-    }
     try {
-      await withAdminContext(async (client) => {
+      const result = await withAdminContext(async (client) => {
+        const pending = await redeemPendingOnboarding(client, body.state!);
+        if (!pending) return null;
         await insertOnboardedTenant(client, {
-          tenantId: decoded.tenantId,
+          tenantId: pending.tenantId,
           microsoftTenantId: body.microsoftTenantId!,
-          displayName: decoded.displayName,
+          displayName: pending.displayName,
           consentedAt: new Date().toISOString(),
         });
+        return pending.tenantId;
       });
+      if (result === null) {
+        badRequest(res, "state token is invalid or expired");
+        return;
+      }
       log.info("api: tenant onboarded", {
-        tenantId: decoded.tenantId,
+        tenantId: result,
         microsoftTenantId: body.microsoftTenantId,
       });
-      json(res, 200, { ok: true, tenantId: decoded.tenantId });
+      json(res, 200, { ok: true, tenantId: result });
     } catch (err) {
       log.error("api: onboarding complete failed", { err });
       serverError(res, err);

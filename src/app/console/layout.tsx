@@ -27,6 +27,7 @@ export default async function ConsoleLayout({
         <nav className="space-y-1">
           <SidebarLink href="/console/incidents" label="Incidents" />
           <SidebarLink href="/console/changes" label="Changes" />
+          <SidebarLink href="/console/onboarding" label="Connect Tenant" />
         </nav>
 
         {/* Operator identity + sign-out */}

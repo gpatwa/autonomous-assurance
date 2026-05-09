@@ -95,6 +95,13 @@ export {
 } from "./polling-state.js";
 
 export {
+  insertPendingOnboarding,
+  redeemPendingOnboarding,
+  type InsertPendingOnboardingArgs,
+  type PendingOnboardingRow,
+} from "./pending-onboarding.js";
+
+export {
   archiveRawEvents,
   getBlobService,
   getRawEventsContainer,
