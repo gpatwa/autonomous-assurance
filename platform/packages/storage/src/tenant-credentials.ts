@@ -108,6 +108,9 @@ export async function seedTenantCredentials(
 
 async function encryptSecret(plaintext: string, dekUri: string): Promise<Buffer> {
   if (dekUri === NOOP_DEK_URI) {
+    if (process.env.NODE_ENV === "production") {
+      throw new Error("noop DEK is not permitted in production — provision a Key Vault DEK and set dekKeyVaultUri");
+    }
     return Buffer.from(plaintext, "utf8");
   }
   return encryptWithDek(plaintext, dekUri);
@@ -115,6 +118,9 @@ async function encryptSecret(plaintext: string, dekUri: string): Promise<Buffer>
 
 async function decryptSecret(ciphertext: Buffer, dekUri: string): Promise<string> {
   if (dekUri === NOOP_DEK_URI) {
+    if (process.env.NODE_ENV === "production") {
+      throw new Error("noop DEK is not permitted in production — provision a Key Vault DEK and set dekKeyVaultUri");
+    }
     return ciphertext.toString("utf8");
   }
   return decryptWithDek(ciphertext, dekUri);

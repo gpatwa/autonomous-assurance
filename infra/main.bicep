@@ -37,6 +37,17 @@ param postgresAdminPassword string
 @description('Object IDs of users/groups to grant Key Vault Secrets Officer (read+write secrets) at the RBAC level.')
 param keyVaultAdmins array = []
 
+@description('api container image (full ref incl. registry+tag). Empty = skip Container App deploy.')
+param apiImage string = ''
+
+@description('Static Bearer API key for the api server. Required if apiImage is set.')
+@secure()
+param apiKey string = ''
+
+@description('Postgres URL with sslmode=require for the api server. Required if apiImage is set.')
+@secure()
+param apiDatabaseUrl string = ''
+
 @description('pipeline-worker container image (full ref incl. registry+tag). Empty = skip Container App deploy.')
 param pipelineWorkerImage string = ''
 
@@ -158,6 +169,21 @@ module acr 'modules/acr.bicep' = {
   }
 }
 
+module api 'modules/container-app-api.bicep' = if (!empty(apiImage)) {
+  name: 'api'
+  params: {
+    name: 'ca-api${suffix}'
+    location: location
+    managedEnvironmentId: containerEnv.outputs.id
+    acrLoginServer: acr.outputs.loginServer
+    uamiId: uami.outputs.id
+    image: apiImage
+    apiKey: apiKey
+    databaseUrl: apiDatabaseUrl
+    appInsightsConnectionString: appInsights.outputs.connectionString
+  }
+}
+
 module pipelineWorker 'modules/container-app-pipeline-worker.bicep' = if (!empty(pipelineWorkerImage)) {
   name: 'pipelineWorker'
   params: {
@@ -210,3 +236,5 @@ output acrName string = acr.outputs.name
 output acrLoginServer string = acr.outputs.loginServer
 output uamiName string = uami.outputs.id
 output uamiClientId string = uami.outputs.clientId
+// apiFqdn: read from the portal or via:
+//   az containerapp show -n ca-api-dev -g <rg> --query properties.configuration.ingress.fqdn -o tsv
