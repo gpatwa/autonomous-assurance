@@ -43,4 +43,7 @@ export async function runApiServer(): Promise<void> {
   await server.listen();
 }
 
-runApiServer();
+// Auto-start removed — call `runApiServer()` explicitly from a wrapper script
+// (see platform/packages/api/src/entrypoint.ts, used as the Docker CMD).
+// Mirrors the pipeline-worker pattern so this module can be imported safely
+// in smoke / E2E tests without triggering the server startup.

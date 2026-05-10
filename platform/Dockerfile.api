@@ -69,5 +69,6 @@ EXPOSE 8080
 
 USER nodeapp
 
-# Direct entrypoint — run-api-server.js already calls runApiServer() on load.
-CMD ["node", "packages/api/dist/run-api-server.js"]
+# Use the dedicated entrypoint module so run-api-server.js can be imported
+# safely in tests without triggering startup side-effects.
+CMD ["node", "packages/api/dist/entrypoint.js"]
