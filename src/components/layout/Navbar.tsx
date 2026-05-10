@@ -60,7 +60,10 @@ export default function Navbar() {
           </div>
 
           {/* Desktop CTA */}
-          <div className="hidden lg:flex items-center">
+          <div className="hidden lg:flex items-center gap-3">
+            <Button variant="ghost" size="sm" href="/console/sign-in">
+              Sign In
+            </Button>
             <Button variant="primary" size="sm" href="#request-demo">
               Request a Demo
             </Button>
@@ -114,7 +117,15 @@ export default function Navbar() {
                 </Link>
               );
             })}
-            <div className="pt-2">
+            <div className="pt-2 space-y-2">
+              <Button
+                variant="secondary"
+                size="sm"
+                href="/console/sign-in"
+                className="w-full"
+              >
+                Sign In
+              </Button>
               <Button
                 variant="primary"
                 size="sm"
