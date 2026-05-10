@@ -9,6 +9,9 @@
  *   PORT           — HTTP port (default: 3000)
  */
 
+import { initTelemetry } from "@kavachiq/platform";
+initTelemetry("api");
+
 import { closePool } from "@kavachiq/storage";
 import { rootLogger } from "@kavachiq/platform";
 import { createApiServer } from "./server.js";

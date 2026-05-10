@@ -6,8 +6,9 @@
 
 import type { Metadata } from "next";
 import Link from "next/link";
+import { revalidatePath } from "next/cache";
 import { notFound } from "next/navigation";
-import { getConsoleTenantId, getIncident, type ConsoleIncident } from "@/lib/console-api";
+import { getConsoleTenantId, getIncident, updateIncidentStatus, type ConsoleIncident } from "@/lib/console-api";
 
 export async function generateMetadata({
   params,
@@ -56,6 +57,13 @@ function SignalRow({ signal }: { signal: ConsoleIncident["classificationRational
   );
 }
 
+const STATUS_TRANSITIONS: Record<string, { label: string; next: "acknowledged" | "investigating" | "closed" }[]> = {
+  new:           [{ label: "Acknowledge", next: "acknowledged" }, { label: "Close",       next: "closed" }],
+  acknowledged:  [{ label: "Investigate", next: "investigating" }, { label: "Close",      next: "closed" }],
+  investigating: [{ label: "Close",       next: "closed" }],
+  closed:        [],
+};
+
 export default async function IncidentDetailPage({
   params,
 }: {
@@ -75,6 +83,16 @@ export default async function IncidentDetailPage({
   }
 
   const score = incident.classificationRationale.scoreAtCreation;
+  const transitions = STATUS_TRANSITIONS[incident.status] ?? [];
+
+  async function setStatus(formData: FormData) {
+    "use server";
+    const next = formData.get("next") as "acknowledged" | "investigating" | "closed";
+    if (!next) return;
+    await updateIncidentStatus(tenantId, id, next);
+    revalidatePath(`/console/incidents/${id}`);
+    revalidatePath("/console/incidents");
+  }
 
   return (
     <div className="max-w-3xl space-y-6">
@@ -85,17 +103,34 @@ export default async function IncidentDetailPage({
         <span className="font-mono">{id.slice(0, 12)}…</span>
       </nav>
 
-      {/* Header */}
-      <div className="flex items-start gap-3">
-        <span className={`mt-1 shrink-0 rounded px-2 py-0.5 text-xs font-medium ${SEVERITY_STYLES[incident.severity] ?? ""}`}>
-          {incident.severity}
-        </span>
-        <div>
-          <h1 className="text-lg font-semibold text-text-primary">{incident.title}</h1>
-          <p className="mt-0.5 text-sm text-text-muted">
-            {incident.status} · Detected {fmt(incident.detectedAt)}
-          </p>
+      {/* Header + status actions */}
+      <div className="flex items-start justify-between gap-4">
+        <div className="flex items-start gap-3">
+          <span className={`mt-1 shrink-0 rounded px-2 py-0.5 text-xs font-medium ${SEVERITY_STYLES[incident.severity] ?? ""}`}>
+            {incident.severity}
+          </span>
+          <div>
+            <h1 className="text-lg font-semibold text-text-primary">{incident.title}</h1>
+            <p className="mt-0.5 text-sm text-text-muted">
+              {incident.status} · Detected {fmt(incident.detectedAt)}
+            </p>
+          </div>
         </div>
+        {transitions.length > 0 && (
+          <div className="flex shrink-0 gap-2">
+            {transitions.map((t) => (
+              <form key={t.next} action={setStatus}>
+                <input type="hidden" name="next" value={t.next} />
+                <button
+                  type="submit"
+                  className="rounded border border-border-primary bg-bg-surface px-3 py-1.5 text-xs font-medium text-text-secondary transition-colors hover:border-border-accent hover:text-text-primary"
+                >
+                  {t.label}
+                </button>
+              </form>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Narrative */}

@@ -86,6 +86,35 @@ export async function insertIncident(
   return { inserted: result.rowCount === 1 };
 }
 
+export type IncidentStatus = "new" | "acknowledged" | "investigating" | "closed";
+
+/**
+ * Update incident status. RLS-scoped — call inside withTenantContext.
+ * Syncs both the indexed column and the payload jsonb so reads stay consistent.
+ * Returns true if found and updated; false if not visible (RLS / missing).
+ */
+export async function updateIncidentStatus(
+  client: PoolClient,
+  incidentId: string,
+  status: IncidentStatus,
+): Promise<boolean> {
+  const now = new Date().toISOString();
+  const result = await client.query(
+    `UPDATE incidents
+     SET status     = $1,
+         updated_at = now(),
+         closed_at  = CASE WHEN $1 = 'closed' THEN now() ELSE closed_at END,
+         payload    = jsonb_set(
+                        jsonb_set(payload, '{status}',    to_jsonb($1::text)),
+                        '{updatedAt}', to_jsonb($2::text)
+                      )
+     WHERE incident_id = $3
+     RETURNING incident_id`,
+    [status, now, incidentId],
+  );
+  return (result.rowCount ?? 0) === 1;
+}
+
 /** Lookup by incident_id, RLS-scoped. Returns null when not visible. */
 export async function findIncidentById(
   client: PoolClient,

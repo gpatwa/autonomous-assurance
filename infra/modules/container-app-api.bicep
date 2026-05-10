@@ -38,6 +38,10 @@ param consoleUrl string
 @description('KavachIQ multi-tenant Entra app client ID (passed to KAVACHIQ_APP_CLIENT_ID env).')
 param kavachiqAppClientId string
 
+@description('Service Bus connection string — used to enqueue first poll-tenant on onboarding.')
+@secure()
+param serviceBusConnection string
+
 @description('CPU cores per replica.')
 param cpu string = '0.25'
 
@@ -76,6 +80,10 @@ resource app 'Microsoft.App/containerApps@2024-03-01' = {
         {
           name: 'app-insights-connection'
           value: appInsightsConnectionString
+        }
+        {
+          name: 'service-bus-connection'
+          value: serviceBusConnection
         }
       ]
       registries: [
@@ -128,6 +136,10 @@ resource app 'Microsoft.App/containerApps@2024-03-01' = {
             {
               name: 'KAVACHIQ_APP_CLIENT_ID'
               value: kavachiqAppClientId  // not a secret; the client ID is public
+            }
+            {
+              name: 'SERVICE_BUS_CONNECTION_STRING'
+              secretRef: 'service-bus-connection'
             }
           ]
           probes: [

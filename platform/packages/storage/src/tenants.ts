@@ -32,6 +32,33 @@ export interface InsertOnboardedTenantArgs {
 }
 
 /**
+ * Resolve a KavachIQ tenant ID from a Microsoft tenant ID.
+ * Admin-scoped — call inside withAdminContext.
+ * Returns null when no tenant has consented from that Microsoft org.
+ */
+export async function loadTenantByMicrosoftId(
+  client: PoolClient,
+  microsoftTenantId: string,
+): Promise<{ tenantId: string } | null> {
+  const result = await client.query<{ tenant_id: string }>(
+    `SELECT tenant_id::text FROM tenants WHERE microsoft_tenant_id = $1::uuid AND status = 'active'`,
+    [microsoftTenantId],
+  );
+  return result.rows[0] ? { tenantId: result.rows[0].tenant_id } : null;
+}
+
+/**
+ * List all active tenant IDs. Admin-scoped — call inside withAdminContext.
+ * Used by the polling scheduler.
+ */
+export async function listActiveTenantIds(client: PoolClient): Promise<string[]> {
+  const result = await client.query<{ tenant_id: string }>(
+    `SELECT tenant_id::text FROM tenants WHERE status = 'active'`,
+  );
+  return result.rows.map((r) => r.tenant_id);
+}
+
+/**
  * Load the Microsoft tenant ID for the current RLS tenant context.
  * Call inside withTenantContext.
  */

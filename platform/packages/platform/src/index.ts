@@ -13,3 +13,4 @@ export * from "./config/index.js";
 export * from "./observability/index.js";
 export * from "./errors/index.js";
 export * from "./utils/index.js";
+export { initTelemetry } from "./telemetry.js";

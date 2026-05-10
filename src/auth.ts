@@ -36,15 +36,26 @@ declare module "next-auth" {
   }
 }
 
-/** Parse AUTH_TID_TO_TENANT into a Map. */
-function buildTenantMap(): Map<string, string> {
-  const raw = process.env.AUTH_TID_TO_TENANT ?? "";
-  const map = new Map<string, string>();
-  for (const entry of raw.split(",")) {
-    const [tid, kqTenant] = entry.trim().split(":");
-    if (tid && kqTenant) map.set(tid, kqTenant);
+/**
+ * Resolve a KavachIQ tenant ID from a Microsoft tenant ID.
+ * Calls GET /resolve-tenant on the platform API. Returns null if not found or
+ * the API is unreachable (operator sees "no tenant" error; they can retry).
+ */
+async function resolveKavachiqTenant(microsoftTenantId: string): Promise<string | null> {
+  const apiUrl = process.env.KAVACHIQ_API_URL ?? "http://localhost:3001";
+  const apiKey = process.env.KAVACHIQ_API_KEY;
+  if (!apiKey) return null;
+  try {
+    const res = await fetch(
+      `${apiUrl}/resolve-tenant?microsoftTenantId=${encodeURIComponent(microsoftTenantId)}`,
+      { headers: { Authorization: `Bearer ${apiKey}` }, cache: "no-store" },
+    );
+    if (!res.ok) return null;
+    const data = (await res.json()) as { tenantId?: string };
+    return data.tenantId ?? null;
+  } catch {
+    return null;
   }
-  return map;
 }
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
@@ -57,14 +68,13 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   ],
 
   callbacks: {
-    jwt({ token, account, profile }) {
+    async jwt({ token, account, profile }) {
       // account + profile are set only on the initial sign-in
       if (account && profile) {
-        // `tid` is on the raw OIDC id_token profile for Entra
         const tid = (profile as Record<string, unknown>).tid as string | undefined;
         token.tid = tid;
         if (tid) {
-          token.kavachiqTenantId = buildTenantMap().get(tid) ?? null;
+          token.kavachiqTenantId = await resolveKavachiqTenant(tid);
         }
       }
       return token;

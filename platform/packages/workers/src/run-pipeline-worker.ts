@@ -17,7 +17,9 @@
  *   OUTBOX_BATCH_SIZE             — default 50
  */
 
-import { rootLogger } from "@kavachiq/platform";
+import { initTelemetry, rootLogger } from "@kavachiq/platform";
+initTelemetry("pipeline-worker");
+
 import { closePool } from "@kavachiq/storage";
 import { createPipelineWorker } from "./pipeline-worker.js";
 import { startHealthServer } from "./health.js";

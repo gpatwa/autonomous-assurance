@@ -193,6 +193,7 @@ module api 'modules/container-app-api.bicep' = if (!empty(apiImage)) {
     appInsightsConnectionString: appInsights.outputs.connectionString
     consoleUrl: consoleUrl
     kavachiqAppClientId: kavachiqAppClientId
+    serviceBusConnection: pipelineWorkerServiceBusConnection
   }
 }
 

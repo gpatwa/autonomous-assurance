@@ -34,6 +34,8 @@ export {
   findIncidentById,
   insertIncident,
   listIncidents,
+  updateIncidentStatus,
+  type IncidentStatus,
   type InsertIncidentResult,
   type ListIncidentsOpts,
   type ListIncidentsResult,
@@ -73,7 +75,9 @@ export {
 // KavachIQ uses platform-level Entra app credentials (env vars) + the
 // customer's microsoft_tenant_id obtained at admin consent time.
 export {
+  loadTenantByMicrosoftId,
   loadTenantMicrosoftId,
+  listActiveTenantIds,
   insertOnboardedTenant,
   type TenantMicrosoftId,
   type InsertOnboardedTenantArgs,

@@ -19,6 +19,7 @@
 
 import http from "node:http";
 import { randomBytes, randomUUID } from "node:crypto";
+import { ServiceBusClient } from "@azure/service-bus";
 import { rootLogger } from "@kavachiq/platform";
 import {
   findIncidentById,
@@ -26,7 +27,10 @@ import {
   insertPendingOnboarding,
   listIncidents,
   listNormalizedChanges,
+  loadTenantByMicrosoftId,
   redeemPendingOnboarding,
+  updateIncidentStatus,
+  type IncidentStatus,
   withAdminContext,
   withTenantContext,
 } from "@kavachiq/storage";
@@ -109,6 +113,8 @@ function intParam(params: URLSearchParams, key: string, defaultVal: number, max:
 const RE_INCIDENTS = /^\/tenants\/([^/]+)\/incidents(?:\/([^/]+))?$/;
 // /tenants/<uuid>/changes
 const RE_CHANGES = /^\/tenants\/([^/]+)\/changes$/;
+// /resolve-tenant?microsoftTenantId=<uuid>
+const RE_RESOLVE_TENANT = /^\/resolve-tenant$/;
 
 // ─── Onboarding helpers ────────────────────────────────────────────────────
 
@@ -231,9 +237,32 @@ async function handleRequest(
         tenantId: result,
         microsoftTenantId: body.microsoftTenantId,
       });
+      // Fire-and-forget first poll — kick off immediately so data appears
+      // within seconds of consent rather than waiting for the next scheduler tick.
+      void enqueuePollTenant(result, log);
       json(res, 200, { ok: true, tenantId: result });
     } catch (err) {
       log.error("api: onboarding complete failed", { err });
+      serverError(res, err);
+    }
+    return;
+  }
+
+  // ── Resolve tenant by Microsoft tenant ID ────────────────────────────
+  // GET /resolve-tenant?microsoftTenantId=<uuid>
+  // Used by the console auth callback to map the operator's Entra org to a
+  // KavachIQ tenant without a hardcoded env-var map.
+  if (method === "GET" && RE_RESOLVE_TENANT.test(path)) {
+    const msTenantId = qs.get("microsoftTenantId");
+    if (!msTenantId) { badRequest(res, "microsoftTenantId is required"); return; }
+    try {
+      const found = await withAdminContext((client) =>
+        loadTenantByMicrosoftId(client, msTenantId),
+      );
+      if (!found) { json(res, 404, { error: { code: "NOT_FOUND", message: "tenant not found" } }); return; }
+      json(res, 200, { tenantId: found.tenantId });
+    } catch (err) {
+      log.error("api: resolve-tenant failed", { err });
       serverError(res, err);
     }
     return;
@@ -281,10 +310,10 @@ async function handleRequest(
       return;
     }
 
-    const mChg = RE_CHANGES.exec(path);
-    if (mChg) {
+    const mChgRoute = RE_CHANGES.exec(path);
+    if (mChgRoute) {
       // GET /tenants/:tenantId/changes
-      const tenantId = mChg[1]!;
+      const tenantId = mChgRoute[1]!;
       const limit = intParam(qs, "limit", 50, 200);
       const offset = intParam(qs, "offset", 0, 1_000_000);
       const changeType = qs.get("changeType") ?? undefined;
@@ -305,7 +334,62 @@ async function handleRequest(
     }
   }
 
+  // ── PATCH /tenants/:tenantId/incidents/:incidentId ───────────────────
+  // Body: { status: "acknowledged" | "investigating" | "closed" }
+  if (method === "PATCH") {
+    const mInc = RE_INCIDENTS.exec(path);
+    if (mInc && mInc[2]) {
+      const tenantId = mInc[1]!;
+      const incidentId = mInc[2]!;
+      let body: { status?: string };
+      try { body = await readJson(req); } catch { badRequest(res, "invalid JSON body"); return; }
+      const VALID: IncidentStatus[] = ["acknowledged", "investigating", "closed"];
+      const status = body.status as IncidentStatus | undefined;
+      if (!status || !VALID.includes(status)) {
+        badRequest(res, `status must be one of: ${VALID.join(", ")}`);
+        return;
+      }
+      try {
+        const updated = await withTenantContext(tenantId, (client) =>
+          updateIncidentStatus(client, incidentId, status),
+        );
+        if (!updated) { notFound(res); return; }
+        json(res, 200, { ok: true, status });
+      } catch (err) {
+        log.error("api: updateIncidentStatus failed", { err });
+        serverError(res, err);
+      }
+      return;
+    }
+  }
+
   notFound(res);
+}
+
+// ─── Helpers ───────────────────────────────────────────────────────────────
+
+/** Enqueue one poll-tenant message. Fire-and-forget — errors are logged, not thrown. */
+async function enqueuePollTenant(tenantId: string, log: typeof rootLogger): Promise<void> {
+  const sbConn = process.env.SERVICE_BUS_CONNECTION_STRING;
+  if (!sbConn) {
+    log.warn("api: SERVICE_BUS_CONNECTION_STRING not set — skipping first poll enqueue");
+    return;
+  }
+  const sb = new ServiceBusClient(sbConn);
+  const sender = sb.createSender("poll-tenant");
+  try {
+    await sender.sendMessages({
+      body: { schemaVersion: 1 as const, tenantId, initialLookbackHours: 24 * 30 },
+      contentType: "application/json",
+      sessionId: tenantId,
+    });
+    log.info("api: enqueued first poll-tenant", { tenantId });
+  } catch (err) {
+    log.error("api: failed to enqueue first poll-tenant", { tenantId, err: String(err) });
+  } finally {
+    await sender.close().catch(() => undefined);
+    await sb.close().catch(() => undefined);
+  }
 }
 
 // ─── Factory ───────────────────────────────────────────────────────────────

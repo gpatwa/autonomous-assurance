@@ -15,9 +15,12 @@
  *   POLL_PAGE_SIZE                — Graph page size, default 250
  */
 
-import { rootLogger } from "@kavachiq/platform";
+import { initTelemetry, rootLogger } from "@kavachiq/platform";
+initTelemetry("polling-worker");
+
 import { closePool } from "@kavachiq/storage";
 import { createPollingWorker } from "./polling-worker.js";
+import { createScheduler } from "./scheduler.js";
 import { startHealthServer } from "./health.js";
 
 export async function runPollingWorker(): Promise<void> {
@@ -42,16 +45,19 @@ export async function runPollingWorker(): Promise<void> {
     logger: log,
   });
 
+  const scheduler = createScheduler({
+    serviceBusConnectionString: sbConn,
+    intervalMs: numEnv("POLL_INTERVAL_MS", 15 * 60 * 1000),
+    logger: log,
+  });
+
   let shuttingDown = false;
   const shutdown = (signal: string) => {
     if (shuttingDown) return;
     shuttingDown = true;
     log.info("run-polling-worker: shutdown signal received; exiting", { signal });
     health.setReady(false, "shutting-down");
-    // Same pattern as pipeline-worker: exit after 250ms log flush rather
-    // than awaiting the AMQP deep shutdown (which can stall 30+ seconds).
-    // Service Bus redelivers any in-flight message after lock expiry;
-    // N2 idempotency makes re-poll a safe no-op.
+    scheduler.stop();
     setTimeout(() => {
       void closePool().finally(() => {
         void health.close().finally(() => process.exit(0));
@@ -61,6 +67,7 @@ export async function runPollingWorker(): Promise<void> {
   process.on("SIGTERM", () => void shutdown("SIGTERM"));
   process.on("SIGINT", () => void shutdown("SIGINT"));
 
+  scheduler.start();
   health.setReady(true);
   log.info("run-polling-worker: ready");
 

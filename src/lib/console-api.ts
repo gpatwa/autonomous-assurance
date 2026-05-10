@@ -141,6 +141,24 @@ export async function getIncident(
   return apiFetch(`/tenants/${tenantId}/incidents/${incidentId}`);
 }
 
+export async function updateIncidentStatus(
+  tenantId: string,
+  incidentId: string,
+  status: "acknowledged" | "investigating" | "closed",
+): Promise<void> {
+  const url = `${apiBase()}/tenants/${tenantId}/incidents/${incidentId}`;
+  const res = await fetch(url, {
+    method: "PATCH",
+    headers: {
+      Authorization: `Bearer ${apiKey()}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ status }),
+    cache: "no-store",
+  });
+  if (!res.ok) throw new Error(`updateIncidentStatus failed: ${res.status}`);
+}
+
 export async function listChanges(
   tenantId: string,
   opts: { limit?: number; offset?: number; changeType?: string } = {},
