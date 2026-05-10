@@ -9,10 +9,11 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@kavachiq/schema": "*",
+    "@azure/service-bus": "^7.9.5",
     "@kavachiq/core": "*",
-    "@kavachiq/storage": "*",
-    "@kavachiq/platform": "*"
+    "@kavachiq/platform": "*",
+    "@kavachiq/schema": "*",
+    "@kavachiq/storage": "*"
   },
   "devDependencies": {
     "typescript": "^5.7.0"
