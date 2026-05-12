@@ -13,7 +13,10 @@ import ProcessStep from "@/components/ui/ProcessStep";
  */
 export default function HowItWorks() {
   return (
-    <section id="how-it-works" className="relative bg-bg-surface/40 py-24 sm:py-28">
+    <section
+      id="how-it-works"
+      className="relative bg-bg-surface/40 py-24 sm:py-28 scroll-mt-20"
+    >
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <SectionHeader
           label="How it works"

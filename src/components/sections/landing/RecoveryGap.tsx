@@ -48,7 +48,10 @@ const ROWS: { left: { lead: string; body: string }; right: { lead: string; body:
 
 export default function RecoveryGap() {
   return (
-    <section className="relative bg-bg-surface/40 py-24 sm:py-28">
+    <section
+      id="why-kavachiq"
+      className="relative bg-bg-surface/40 py-24 sm:py-28 scroll-mt-20"
+    >
       <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
         <motion.div
           variants={fadeUp}
