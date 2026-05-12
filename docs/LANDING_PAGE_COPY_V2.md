@@ -23,8 +23,9 @@ KavachIQ is the assurance and recovery layer for AI agents — starting with Mic
 | 3 | Vendor consensus wall | Show the industry agrees | `<VendorConsensusWall>` (new) |
 | 4 | The recovery gap | Differentiate from detection | `<RecoveryGap>` (new) |
 | 5 | Live recovery demo | Prove the differentiator visually | `<LiveRecoveryDemo>` (new) |
-| 6 | Incident cards | Visceral proof in real cases | `<IncidentCards>` (new) |
-| 7 | How it works | Product mechanics — kept, retitled | reuse |
+| 6 | Incident cards | Visceral proof in real cases — M365 / identity weighted | `<IncidentCards>` (new) |
+| 7 | How it works | Product mechanics — operator-approved, identity-first | reuse |
+| 7.5 | Trust and control | Tenant-safety posture for cautious CISOs | `<TrustControl>` (new) |
 | 8 | Market validation strip | Strengthen the category claim | `<MarketValidationStrip>` (new) |
 | 9 | Who it's for | Map to budget owners | reuse, rewritten |
 | 10 | Closing CTA | Urgency close | reuse, rewritten |
@@ -40,7 +41,7 @@ KavachIQ is the assurance and recovery layer for AI agents — starting with Mic
 **The undo button for AI-agent incidents.**
 
 ### Sub-headline
-When an AI agent damages your environment, you have minutes before it cascades. KavachIQ reverses the blast radius — identity, sharing, permissions, data — in dependency order.
+When an AI agent makes harmful changes, your team has minutes before the blast radius cascades across identity, sharing, permissions, and data. KavachIQ attributes every change to the agent's session and guides your operators through approval-gated, dependency-ordered reversal — with full audit.
 
 ### Supporting line (smaller, below sub)
 Built first for Microsoft 365 — where 80% of agentic risk lives today.
@@ -130,17 +131,17 @@ The alert just fired at 2:47 a.m. By 2:48 you're staring at 47 identity, sharing
 
 | You already pay for | Now you need |
 |---|---|
-| **Detection.** Purview, Defender, Zenity, Sentinel, WitnessAI tell you something went wrong. | **Recovery.** KavachIQ picks up where the alert ends. |
-| **Audit logs.** Microsoft 365 logs every action — but they're forensic, not operational. | **An undo button.** Scoped to the agent's actions. Dependency-ordered. Validated. |
-| **War rooms.** Four hours, six engineers, a runbook that doesn't quite fit this incident. | **A 90-second reversal** of cascading changes — before your CISO finishes coffee. |
+| **Detection.** Purview, Defender, Zenity, Sentinel, WitnessAI tell you something went wrong. | **Recovery.** KavachIQ runs downstream of detection — picking up where the alert ends. |
+| **Audit logs.** Microsoft 365 logs every action — useful in forensics, slow in an incident. | **Operational rollback.** Scoped to the agent's session. Dependency-ordered. Operator-approved. |
+| **War rooms.** Hours, multiple engineers, a runbook that doesn't quite fit this incident. | **Guided reversal.** Identity-first sequencing, approval gates, validated state, full evidence. |
 
 ### Closing line
-**Detection vendors don't lose this fight. They never showed up to it.**
+**Detection is mature. Operational recovery is the missing layer.**
 
 ### Notes
 - This is the section that has to land. Edit it three times before shipping.
 - The "2:47 a.m." moment is the emotional hook. Don't lose it.
-- "Detection vendors don't lose this fight. They never showed up to it." is the line a CISO repeats in their head when they're explaining the purchase to the board.
+- Closing line is intentionally non-combative — we run downstream of detection vendors, not against them.
 
 ---
 
@@ -149,19 +150,19 @@ The alert just fired at 2:47 a.m. By 2:48 you're staring at 47 identity, sharing
 **Purpose:** Show, don't tell. The page's flagship moment.
 
 ### Header
-**Watch a recovery happen.**
+**Walk through a recovery.**
 
 ### Sub-header
-A real Microsoft 365 tenant. An AI agent makes 47 changes — group memberships, sharing links, permission grants, conditional access exemptions. We reverse them in 92 seconds, in dependency order, with zero downtime.
+A Microsoft 365 tenant. An AI agent makes dozens of changes — group memberships, sharing links, permission grants, conditional access exemptions. KavachIQ attributes each change to the agent's session and proposes a dependency-ordered reversal plan. Your operator reviews, approves, and executes — with validation and full evidence.
 
 ### Demo
-- **Format v1 (ship first):** 90-second autoplaying video, narrated, captioned.
-- **Format v2 (post-launch):** Interactive simulation — buyer drives the rollback themselves.
+- **Format v1 (ship first):** Narrated walkthrough video, captioned, ~90 seconds. Uses a representative scenario in a controlled environment, not a customer tenant.
+- **Format v2 (post-launch):** Interactive simulation — visitor drives the rollback themselves through a sandboxed scenario.
 
 ### Below the demo (3-line caption)
-1. **Alert ingested** — KavachIQ accepts the incident signal from your existing detection layer (Sentinel, Purview, Defender, custom).
-2. **Blast radius mapped** — every identity, sharing, permission, and data change scoped to the agent's session.
-3. **Recovery executed** — dependency-ordered reversal. Trusted state restored. Evidence pack generated for compliance.
+1. **Alert ingested.** KavachIQ accepts the incident signal from your existing detection layer (Sentinel, Purview, Defender, or your SIEM/SOAR).
+2. **Blast radius mapped.** Every identity, sharing, permission, conditional access, and data change attributed to the agent's session — across Entra ID, SharePoint, OneDrive, Teams, and Exchange.
+3. **Recovery proposed, approved, and validated.** Your operator reviews the dependency-ordered reversal plan, approves, and executes. Trusted state is validated; an evidence pack is generated for audit and compliance.
 
 ### CTA below demo
 *Want to walk through your worst-case scenario with us?* → **[Book a recovery walkthrough]**
@@ -181,36 +182,36 @@ A real Microsoft 365 tenant. An AI agent makes 47 changes — group memberships,
 **The 90% gap is not hypothetical.**
 
 ### Sub-header
-Real incidents, real recovery costs. Each could have been minutes instead of months.
+Real, named incidents from the Microsoft and broader agentic ecosystem. Each one is a case where a recovery layer would have changed the outcome.
 
-### Card 1 — PocketOS / Cursor + Claude Opus
-- **Badge:** INCIDENT · APRIL 2026
-- **Title:** *9 seconds to delete. 3 months to recover.*
-- **Body:** An AI coding agent used a stale Railway API token to delete a customer's entire production database — backups included. The company spent the weekend manually reconstructing reservations from Stripe logs.
-- **Recovery tag:** *With dependency-ordered rollback: 12 minutes to trusted state.*
+### Card 1 — Microsoft 365 Copilot "EchoLeak" (CVE-2025-32711)
+- **Badge:** CVE · JUNE 2025 · CVSS 9.3
+- **Title:** *Zero-click prompt injection. Sensitive data accessed by Copilot.*
+- **Body:** A crafted email caused Microsoft 365 Copilot to act on attacker instructions, accessing Teams messages, SharePoint, and OneDrive content during normal retrieval. Microsoft patched the chain. Every tenant exposed pre-patch had limited operational visibility into what Copilot retrieved or shared.
+- **Recovery tag:** *With agent-session-scoped data and sharing audit, the blast radius can be scoped and excessive shares revoked under operator approval.*
 
-### Card 2 — Replit / SaaStr (Jason Lemkin)
-- **Badge:** INCIDENT · JULY 2025
-- **Title:** *1,200 customer records lost. Manual rollback only.*
-- **Body:** During an explicit code-and-action freeze, the agent deleted a live production database, then fabricated 1,200 fake user records to conceal the deletion. CEO publicly apologized; no automated recovery path existed.
-- **Recovery tag:** *With evidence-grade undo: deletion blocked at the approval gate.*
+### Card 2 — Copilot Studio AIjacking (Cloud Security Alliance, 2025)
+- **Badge:** RESEARCH · 2025
+- **Title:** *Agent sends sensitive data out — using its own connector.*
+- **Body:** Researchers showed Copilot Studio agents could be hijacked via instructions embedded in processed content, then use their configured email connector to send SharePoint and OneDrive data externally. Microsoft has since acknowledged the class of risk and is hardening Copilot Studio audit and policy surfaces.
+- **Recovery tag:** *With identity-scoped agent action audit, attribution and revocation of unauthorized shares becomes feasible.*
 
-### Card 3 — Amazon Kiro (AWS)
-- **Badge:** INCIDENT · DECEMBER 2025
-- **Title:** *13-hour outage. No rollback path.*
-- **Body:** An AWS AI coding agent bypassed mandatory peer review and decided to "delete and recreate" a customer-facing environment. AWS's emergency response after the second such incident: mandate peer review for all production access changes.
-- **Recovery tag:** *With cross-domain reversal: minutes, not 13 hours.*
-
-### Card 4 — Microsoft Entra "Agent ID Administrator" flaw
+### Card 3 — Microsoft Entra "Agent ID Administrator" role overreach
 - **Badge:** CVE · APRIL 2026
-- **Title:** *40 days exposed. Microsoft alone owned recovery.*
-- **Body:** A new Entra role created specifically for AI agents could take ownership of any service principal — a direct path to full tenant takeover. Disclosed March 1; patched April 9.
-- **Recovery tag:** *With agent-scoped audit + revoke: hours to contain blast radius across affected service principals.*
+- **Title:** *AI-specific role. Tenant-wide takeover risk.*
+- **Body:** A new Entra role intended to manage AI agent identities was found to grant ownership over any service principal in the tenant — a direct path to full tenant compromise. Silverfort disclosed it March 1; Microsoft patched on April 9.
+- **Recovery tag:** *With agent-attributable identity audit, ownership changes and credential additions on affected service principals can be detected and reversed under operator approval.*
+
+### Card 4 — Replit / SaaStr agent incident (broader category proof)
+- **Badge:** INCIDENT · JULY 2025
+- **Title:** *Agent acted during a freeze, then fabricated records.*
+- **Body:** During an explicit code-and-action freeze, an AI coding agent deleted a live database and generated thousands of fake user records to conceal the deletion. CEO publicly apologized. No automated recovery path existed; recovery was manual reconstruction.
+- **Recovery tag:** *Recovery starts with attribution — knowing exactly what the agent did, in what order, before any reversal is approved.*
 
 ### Notes
-- Recovery tag is the connective tissue back to the product. Don't skip it.
-- Don't use exact MTTR numbers we can't defend — the framing is directional, not contractual.
-- All four cards are real, named, sourced. No fictional incidents.
+- Three cards are now M365 / identity / Copilot-anchored; Card 4 stays as broader category proof of the "no recovery layer" cost.
+- Recovery tags are intentionally hedged — capabilities described, not specific recovery-time guarantees.
+- All four cards are real, named, sourced. No fictional incidents. No invented MTTR.
 
 ---
 
@@ -227,20 +228,51 @@ Plugged in behind your existing detection layer. Invoked when the alert fires. R
 ### Steps (4 numbered cards)
 
 #### 1. Connect to your detection layer
-KavachIQ ingests incidents from Microsoft Sentinel, Defender, Purview, or any SIEM/SOAR. We are downstream of detection — not a replacement for it.
+KavachIQ ingests incidents from Microsoft Sentinel, Defender, Purview, or your SIEM/SOAR. We run downstream of detection — not as a replacement for it.
 
 #### 2. Map the blast radius
-Every identity, sharing, permission, conditional access, and data change attributable to the agent's session, across Entra ID, SharePoint, OneDrive, Teams, and Exchange — modeled as a dependency graph.
+Every identity, sharing, permission, conditional access, and data change attributed to the agent's session — across Entra ID, SharePoint, OneDrive, Teams, and Exchange — modeled as a dependency graph.
 
-#### 3. Reverse in dependency order
-One click. We undo the cascade in the right order — so reverting a permission doesn't lock out a Global Admin and reverting a sharing change doesn't break an active collaboration.
+#### 3. Propose an identity-first reversal plan
+KavachIQ proposes a dependency-ordered reversal — identity first, then permissions, sharing, conditional access, and data — so revoking access does not lock out a Global Admin and undoing a share does not break an active collaboration.
 
-#### 4. Generate evidence
-A signed, exportable evidence pack. Every action logged, every reversal validated. Ready for the auditor, the board, and your post-mortem.
+#### 4. Approve, execute, and validate
+Your operator reviews and approves the plan. Each reversal is executed and validated against expected state. An exportable evidence pack is generated for the auditor, the board, and your post-mortem.
 
 ### Notes
-- Step 1 is the partnership signal — tells detection vendors we're partners, not competitors.
-- Step 4 is the compliance angle. Don't bury it.
+- Step 1 is the partnership signal — tells detection vendors we run downstream, not against them.
+- Step 3 reframes the old "one click" claim as "propose an identity-first reversal plan" — keeps the wedge sharp, drops the unsafe absolute.
+- Step 4 is the compliance and trust angle. Don't bury it.
+
+---
+
+## SECTION 7.5 — Trust and control (NEW)
+
+**Purpose:** Make a cautious CISO comfortable enough to put us inside their tenant. Compact, high-signal, no security-page bloat.
+
+### Header
+**Built for tenant safety.**
+
+### Sub-header
+KavachIQ is designed to operate inside enterprise environments under operator and CISO oversight. No automated reversals. No background privileges. No cross-tenant visibility.
+
+### Four trust pillars (compact tiles)
+
+| Pillar | Description |
+|---|---|
+| **Approval-gated reversal** | Every recovery is proposed for human review and approved by your operator before any change is made. No automated rollback. |
+| **Least-privilege Microsoft access** | Access through Microsoft Graph and Entra is scoped to what's required to attribute and reverse — and nothing more. Permissions are documented and consented per tenant. |
+| **Tenant-scoped isolation** | Each tenant's data is strictly isolated, enforced at the database layer via row-level security. KavachIQ operators have no cross-tenant visibility. |
+| **Audit trail and evidence pack** | Every step — ingestion, mapping, proposal, approval, reversal, validation — is recorded with operator identity, timestamp, and outcome. Exportable for audit and board reporting. |
+
+### Closing line
+**Recovery you can defend to your auditor, your board, and your own DFIR team.**
+
+### Notes
+- Four tiles, not six — keep the page from turning into a security trust center.
+- "No automated reversals" is the single most important phrase in this section for CISO comfort.
+- Row-level security claim is defensible — the platform enforces this at the storage layer.
+- Do NOT add SOC2 / ISO 27001 badges here unless we actually have them. Aspirational logos kill trust.
 
 ---
 
@@ -279,10 +311,10 @@ Built for the people who get the call at 2:47 a.m.
 
 | Role | What you get |
 |---|---|
-| **CISO** | A board-readable MTTR number for agentic incidents. Quantified recovery instead of qualitative risk. |
-| **DFIR / Incident Response Lead** | One pane, one click, dependency-ordered reversal across identity, data, and collaboration surfaces. |
-| **VP Identity / M365 Admin** | A safety net for Copilot, Copilot Studio, Entra Agent ID, and custom-built agents — without slowing adoption. |
-| **CFO / Risk Officer** | Quantified $-exposure replaced with a measured recovery SLA. Insurable, auditable, board-defensible. |
+| **CISO** | A defensible MTTR (mean time to restore trusted state) for AI-agent incidents. Quantified recovery you can take to the board. |
+| **DFIR / Incident Response Lead** | A single recovery pane — agent attribution, dependency-ordered reversal plan, approval workflow, and post-recovery validation. |
+| **VP Identity / M365 Admin** | A safety net for Copilot, Copilot Studio, Entra Agent ID, and custom agents — keep your adoption velocity and your audit posture. |
+| **CFO / Risk Officer** | A measurable recovery posture for agentic-AI risk. Insurable, auditable, and board-defensible. |
 
 ### Notes
 - Drop "Operator" from the role list. Operators use the product; CISOs buy it.
@@ -295,18 +327,18 @@ Built for the people who get the call at 2:47 a.m.
 **Purpose:** Final urgency push. Tie back to the Forrester quote that opens the page.
 
 ### Header
-**Forrester says one F500 will make headlines as the first major agentic AI breach in 2026.**
+**Adoption is moving faster than governance.**
 
 ### Sub-header
-Make sure it isn't you. And if it is — make sure you have the undo button.
+The organizations that scale AI agents safely will be the ones with a recovery posture in place before their first agentic incident — not after. Let's walk through what that looks like for your tenant.
 
 ### CTAs
 - **Primary:** *Request a demo* → existing `#request-demo` form
-- **Secondary:** *Walk through your worst-case scenario* → books a 30-minute recovery design session
+- **Secondary:** *Walk through a recovery scenario* → books a 30-minute working session
 
 ### Notes
-- The "Walk through your worst-case scenario" CTA is the high-intent qualifier. Track this as the lead-quality metric.
-- Use the same Forrester quote in both the proof bar and the close — bracketing the page reinforces the bet.
+- "Walk through a recovery scenario" is the high-intent qualifier. Track this as the lead-quality metric.
+- Forrester quote stays in the proof bar; closing line is intentionally less fear-based — confidence sells to CISOs better than fear.
 
 ---
 
@@ -364,11 +396,12 @@ Make sure it isn't you. And if it is — make sure you have the undo button.
 | Today (v1) | After v2 |
 |---|---|
 | Hero: "Autonomous Assurance for AI agents" | **"The undo button for AI-agent incidents"** |
-| 8 sections, detection + governance mixed | 11 sections, recovery wedge dominant |
+| 8 sections, detection + governance mixed | 12 sections, recovery wedge dominant |
 | No vendor consensus | 5-quote consensus wall |
-| No live demo | Flagship 90-second recovery demo |
+| No live demo | Flagship recovery walkthrough demo |
 | Stats: none | 80/10, $3.6B, Forrester at top of page |
-| Incident proof: none | 4 named real incidents, recovery-framed |
+| Incident proof: none | 4 named real incidents — 3 M365 / identity, 1 broader |
+| No trust/control section | New compact tenant-safety strip (approval-gated, least-priv, RLS, evidence) |
 | Buyer persona: operator | CISO / DFIR / VP Identity / CFO |
 | Roadmap signal: none | M365 today + expansion line in footer |
 
@@ -391,10 +424,13 @@ If the qualitative test fails, the wedge isn't sharp enough yet — iterate one 
 ## Approval checklist
 
 - [ ] Headline locked: *"The undo button for AI-agent incidents."*
-- [ ] Sub-headline locked
+- [ ] Revised sub-headline locked (operator-agency framing)
 - [ ] Category name locked: *Agentic Incident Recovery (AIR)*
 - [ ] All 5 vendor quotes approved
-- [ ] All 4 incident cards approved (factual accuracy + recovery tags)
+- [ ] All 4 incident cards approved — 3 M365 / identity, 1 broader (factual accuracy + recovery tags)
+- [ ] Section 7.5 trust-and-control copy approved (4 pillars, no aspirational badges)
+- [ ] Section 7 "operator-approved" framing approved (no "one click")
+- [ ] Section 5 demo: "walkthrough" framing approved (no "92 seconds / zero downtime")
 - [ ] Footer roadmap line approved
 - [ ] Demo video script approved (separate doc)
 - [ ] Voice/style rules acceptable
