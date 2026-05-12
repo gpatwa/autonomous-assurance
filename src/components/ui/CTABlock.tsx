@@ -118,8 +118,8 @@ export default function CTABlock({ headline, body, ctaText }: CTABlockProps) {
           </p>
           <div className="mt-8 grid gap-4 sm:grid-cols-2">
             {[
-              ["In the demo, you will see", "An agent-driven Entra change, the blast radius across Microsoft 365, and the recovery sequence that restores identity trust before data"],
-              ["What you will walk away with", "A clear picture of how rollback, restoration, and compensating actions get your environment back to a trusted operational state"],
+              ["In the demo, you will see", "An agent-driven change in Microsoft 365, blast radius mapped across identity and sharing, and an operator-approved dependency-ordered reversal that restores trusted state"],
+              ["What you will walk away with", "A clear picture of how KavachIQ proposes, approves, and validates recovery — with a signed evidence trail for audit and the board"],
             ].map(([title, desc]) => (
               <div
                 key={title}
@@ -180,12 +180,12 @@ export default function CTABlock({ headline, body, ctaText }: CTABlockProps) {
                 />
                 <div>
                   <label className="mb-2 block text-sm font-medium text-text-primary">
-                    What agent-driven changes concern you most
+                    What agent incidents are you most worried about?
                   </label>
                   <textarea
                     value={form.useCase}
                     onChange={(e) => setForm((c) => ({ ...c, useCase: e.target.value }))}
-                    placeholder="We want assurance for agent-driven identity changes and Microsoft 365 recovery."
+                    placeholder="We want recovery for Copilot, Copilot Studio, and Entra Agent ID actions in Microsoft 365."
                     className="min-h-32 w-full rounded-2xl border border-border-primary bg-bg-surface/80 px-4 py-3 text-sm text-text-primary placeholder:text-text-muted outline-none transition focus:border-accent"
                   />
                 </div>

@@ -32,7 +32,7 @@ export const metadata: Metadata = {
     template: `%s | ${SITE_NAME}`,
   },
   description:
-    "KavachIQ Autonomous Assurance helps enterprises understand, contain, and recover from high-impact agent-driven changes, starting with Microsoft Entra and Microsoft 365.",
+    "The undo button for AI-agent incidents. KavachIQ attributes every change to the agent's session and guides operators through approval-gated, dependency-ordered reversal — built first for Microsoft 365.",
   applicationName: SITE_NAME,
   alternates: {
     canonical: "/",
@@ -40,7 +40,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: SITE_NAME,
     description:
-      "Identity-first recovery for high-impact agent-driven changes across Microsoft Entra, Microsoft 365, and connected enterprise systems.",
+      "Operational recovery for AI-agent incidents in Microsoft 365 — approval-gated, dependency-ordered, fully audited.",
     siteName: SITE_NAME,
     url: SITE_ORIGIN,
     type: "website",
@@ -50,7 +50,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: SITE_NAME,
     description:
-      "Identity-first recovery for high-impact agent-driven changes across Microsoft Entra, Microsoft 365, and connected enterprise systems.",
+      "Operational recovery for AI-agent incidents in Microsoft 365 — approval-gated, dependency-ordered, fully audited.",
   },
   // Per-environment: only the public production origin is indexable.
   // Staging / preview / dev origins are noindex regardless of any
