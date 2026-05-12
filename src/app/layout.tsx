@@ -86,7 +86,13 @@ export default function RootLayout({
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable} antialiased`}
     >
-      <body className="min-h-screen flex flex-col bg-bg-primary text-text-primary">
+      <body
+        className="min-h-screen flex flex-col bg-bg-primary text-text-primary"
+        // Suppress hydration warnings from browser extensions (Grammarly,
+        // password managers, etc.) that inject attributes onto <body>
+        // after SSR. The warning is dev-only and scoped to this element.
+        suppressHydrationWarning
+      >
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
