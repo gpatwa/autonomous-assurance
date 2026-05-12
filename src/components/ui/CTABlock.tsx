@@ -119,7 +119,7 @@ export default function CTABlock({ headline, body, ctaText }: CTABlockProps) {
           <div className="mt-8 grid gap-4 sm:grid-cols-2">
             {[
               ["In the demo, you will see", "An agent-driven change in Microsoft 365, blast radius mapped across identity and sharing, and an operator-approved dependency-ordered reversal that restores trusted state"],
-              ["What you will walk away with", "A clear picture of how KavachIQ proposes, approves, and validates recovery — with a signed evidence trail for audit and the board"],
+              ["What you will walk away with", "A clear picture of how KavachIQ proposes, approves, and validates recovery — with an exportable evidence trail for audit and the board"],
             ].map(([title, desc]) => (
               <div
                 key={title}
