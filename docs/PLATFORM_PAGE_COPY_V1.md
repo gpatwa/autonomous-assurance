@@ -217,24 +217,24 @@ Your operator reviews the proposed plan and approves before any change is made. 
 **Built for tenant safety.**
 
 ### Sub-header
-KavachIQ operates inside enterprise environments under operator and CISO oversight. The same four pillars as the homepage — and the technical detail behind them.
+KavachIQ operates inside enterprise environments under operator and CISO oversight. The same four pillars as the homepage — with the control posture spelled out.
 
 ### Four pillars (deeper than homepage)
 
 | Pillar | What the homepage says | What `/platform` adds |
 |---|---|---|
-| **Approval-gated reversal** | Every recovery is proposed for human review before any change. No automated rollback. | The approval gate is enforced at the API layer, not just the UI. Operators see the full graph before approving. Partial approval (subset of the proposed plan) is supported. |
-| **Least-privilege Microsoft access** | Scoped to what's required to attribute and reverse. | Microsoft Graph permissions are documented per scope: `AuditLog.Read.All`, `Directory.ReadWrite.All`, `Sites.FullControl.All`, etc. Consent is admin-scoped and per-tenant. The full permission list is available on request. |
-| **Tenant-scoped isolation** | Strict per-tenant data boundaries enforced at the database layer via row-level security. | Postgres RLS enforces `tenant_id` on every query. No KavachIQ operator has cross-tenant visibility. Tenant data encryption keys are per-tenant. |
-| **Audit trail and evidence pack** | Every step recorded with operator identity, timestamp, and outcome. | Evidence pack is exportable as signed JSON. Format documented for SIEM ingest and audit-tool compatibility. Operator identity is anchored to Entra External ID. |
+| **Approval-gated reversal** | Every recovery is proposed for human review before any change. No automated rollback. | Operators see the full proposed reversal — every step and its dependency — before any change runs. Approval is an explicit, scoped action; the platform does not act on its own. |
+| **Least-privilege Microsoft access** | Scoped to what's required to attribute and reverse. | Microsoft Graph access is admin-consented per tenant and scoped to the surfaces under recovery management. Detailed permission scopes are available for procurement review on request. |
+| **Tenant-scoped isolation** | Strict per-tenant data boundaries enforced at the database layer. | Tenant isolation is enforced at the data layer, with no shared tenant context across requests. Tenant-bound keys and access scopes prevent cross-tenant visibility. |
+| **Audit trail and evidence pack** | Every step recorded with operator identity, timestamp, and outcome. | Each recovery produces an exportable evidence record covering the agent's actions, the proposed plan, every approval, and the validated result — suitable for audit, SIEM ingest, and board reporting. |
 
 ### Closing line
 **Recovery you can defend to your auditor, your board, and your own DFIR team.**
 
 ### Notes
-- The "what /platform adds" column is the depth-page differentiation from the homepage.
+- The "what /platform adds" column is intentionally outcome-led, not architecture-led. Implementation specifics (RLS, signed evidence format, specific Entra identity provider, key-management primitives) belong in a security detail document or procurement deck, not on the public platform page.
 - DO NOT add SOC 2 / ISO 27001 / FedRAMP badges unless we actually have them. Aspirational badges kill trust.
-- "Tenant data encryption keys are per-tenant" — verify with the platform code before shipping (we have per-tenant DEKs in storage migrations).
+- Detailed scope lists, evidence schema, and identity-provider specifics are available for serious procurement conversations — not on the public page.
 
 ---
 
@@ -244,27 +244,25 @@ KavachIQ operates inside enterprise environments under operator and CISO oversig
 **What operators get.**
 
 ### Sub-header
-The concrete feature surface KavachIQ ships today.
+What KavachIQ delivers to operators day-to-day.
 
-### Capability list (10–12 short items)
+### Capability list (10 short items, scannable)
 
-- **Agent-session correlation** — Every M365 change attributed to the originating agent identity and session, with Microsoft Graph audit trail
-- **Cross-domain blast radius graph** — Identity, sharing, permissions, conditional access, DLP, and data — modeled as a dependency graph per incident
-- **Dependency-ordered reversal proposals** — Plans respect "what depends on what" so partial reversal does not leave the tenant in a broken state
-- **Operator approval workflow** — Plans are proposed, not executed. Operators approve the full plan or a subset before any change is made
-- **Validation against expected state** — Every reversal step is validated post-execution; mismatches are surfaced before sign-off
-- **Exportable evidence pack** — Signed JSON for every recovery operation, ready for SIEM ingest and audit-tool compatibility
-- **Sentinel / Defender / Purview ingestion** — KavachIQ subscribes to your existing detection layer as the alert source
-- **Microsoft Graph permission scope documentation** — Every permission is documented, admin-consented per tenant
-- **Postgres row-level security** — Per-tenant isolation enforced at the database layer
-- **Per-tenant data encryption keys** — Each tenant's DEK is unique; no cross-tenant key reuse
-- **Operator identity via Entra External ID** — Operator actions anchored to verifiable Entra identity
-- **Audit-grade timeline** — Full chronological record of agent action → ingestion → mapping → approval → reversal → validation
+- **Agent-session correlation** — Every change in an agent's session is attributed back to it, with the supporting Microsoft 365 audit trail attached
+- **Cross-domain blast radius graph** — Identity, sharing, permissions, Conditional Access, DLP, and data modeled as a single dependency graph per incident
+- **Dependency-ordered reversal plans** — Recovery proposals respect what depends on what, so reversal does not leave the tenant in an inconsistent state
+- **Operator approval workflow** — Plans are proposed for review, not executed automatically. Operators approve before any change is made
+- **Post-reversal validation** — Each step is checked against expected state and any mismatch is surfaced before sign-off
+- **Exportable recovery evidence** — A complete, exportable record of every operation, suitable for audit review, SIEM ingest, and board reporting
+- **Detection-layer ingestion** — Subscribes to your existing detection (Microsoft Sentinel, Defender, Purview, or your SIEM/SOAR) as the alert source
+- **Documented Microsoft Graph access** — Scoped, admin-consented per tenant; detailed scope inventory available on request
+- **Tenant-scoped isolation** — Per-tenant data and access boundaries enforced at the data layer, with tenant-bound key material
+- **Audit-grade incident timeline** — A chronological record of agent action → ingestion → mapping → approval → reversal → validation, anchored to verifiable enterprise identity
 
 ### Notes
-- Cap at 12 items — scannable, not exhaustive.
-- Each item one line. Use existing `CapabilityCard` or a tighter list format.
-- Items must reflect what the platform actually ships (per-tenant DEKs and RLS are real per the storage migrations; Entra External ID is wired). Don't list aspirational features.
+- Trimmed from 12 to 10 — each line should feel like value the operator gets, not an implementation claim.
+- Implementation specifics (signed-JSON format, key-management primitives, exact identity provider, database-engine RLS) are folded into outcome language: "exportable evidence", "tenant-bound key material", "verifiable enterprise identity", "data layer". Detail belongs in procurement materials, not on the public page.
+- DO NOT promote items to overstate shipped status. Each line should map to a capability we can demonstrate end-to-end on a discovery call.
 
 ---
 
@@ -346,9 +344,9 @@ We'll show you how KavachIQ runs inside a Microsoft 365 tenant — alert ingesti
 ## Open decisions (need founder sign-off before build)
 
 1. **Hero visual** — keep `RecoveryFlowVisual` or build a new surface-map diagram?
-2. **Capabilities list** — verify the 12 items match shipped reality before locking
+2. **Capabilities list (10 items)** — confirm each line is demonstrable on a discovery call. The new wording is outcome-led rather than implementation-specific, but each capability still has to be real.
 3. **Roadmap quarter callouts** — Q3 2026 / late 2026 — confirm or adjust
-4. **Trust pillar technical claims** — verify per-tenant DEKs and Entra External ID auth claims before shipping
+4. **Procurement deck for security depth** — the public page now keeps trust claims outcome-led. Detail (signed-evidence schema, key-management specifics, exact identity provider, RLS implementation) belongs in a procurement-only doc. Confirm a procurement deck exists, or commission one.
 5. **Section 8 format** — `CapabilityCard` grid (existing primitive) or tighter list format?
 6. **Connected systems / Platform vision section** — keep something like the old "Connected systems expansion" or fold into Section 9?
 
@@ -361,10 +359,10 @@ We'll show you how KavachIQ runs inside a Microsoft 365 tenant — alert ingesti
 | Hero: "Map blast radius. Recover safely." | **"Operational recovery for AI-agent incidents in Microsoft 365."** |
 | "Autonomous Assurance" terminology | **Recovery-wedge terminology, matching the homepage** |
 | Why-tools-fall-short 4-tile | **Detection / Backup / KavachIQ 3-column overview** |
-| Generic capabilities cards | **Concrete 12-item capability list — verifiable** |
+| Generic capabilities cards | **10-item capability list — concrete, scannable, outcome-led** |
 | Identity-first text-only | **Identity-first depth with named Entra surfaces** |
 | Data-first text-only | **Data-first depth with named M365 surfaces** |
-| No trust section | **Trust & tenant safety — homepage 4 pillars + technical depth** |
+| No trust section | **Trust & tenant safety — homepage 4 pillars + outcome-led control posture (procurement detail kept off the public page)** |
 | Vague "Platform vision" | **Concrete roadmap with named platforms and stages** |
 | CTA body "identity-first recovery" | **"Walk through the platform with us. Bring a scenario."** |
 
@@ -378,8 +376,8 @@ We'll show you how KavachIQ runs inside a Microsoft 365 tenant — alert ingesti
 - [ ] Identity Assurance deep-dive content approved
 - [ ] Data Assurance deep-dive content approved
 - [ ] How It Works 4 steps approved
-- [ ] Trust & tenant safety pillars approved (RLS, per-tenant DEK, Microsoft Graph scopes — verify all claims are shipped)
-- [ ] Capabilities matrix — final list of 12 items locked
+- [ ] Trust & tenant safety pillars approved (outcome-led wording; implementation specifics live in a separate procurement doc)
+- [ ] Capabilities matrix — final list of 10 outcome-led items locked, each demonstrable on a discovery call
 - [ ] Roadmap callouts approved
 - [ ] Closing CTA body approved
 - [ ] All anchor IDs preserved (`#identity-assurance`, `#data-assurance`, `#how-it-works`, `#platform-proof`)
