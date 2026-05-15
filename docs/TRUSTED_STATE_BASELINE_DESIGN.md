@@ -10,7 +10,7 @@
 
 ## 1. Executive Summary
 
-KavachIQ's core promise is returning an enterprise environment to a "trusted operational state" after high-impact agent-driven changes. That promise depends on knowing what "trusted" looks like. This document defines how the system models, stores, compares, and validates state.
+KavachIQ's core promise is reversing the specific changes an AI agent made and returning an enterprise tenant to a "trusted state" after an agentic incident. That promise depends on knowing what "trusted" looks like. This document defines how the system models, stores, compares, and validates state.
 
 **The fundamental problem:** "trusted state" is not a single thing. It is at least five distinct concepts that must not be conflated: current observed state, pre-incident state, operator-approved baseline, intended policy state, and recovery target state. Collapsing these into one "baseline" produces a system that is confident but wrong.
 
@@ -399,7 +399,7 @@ The system should:
 | Validation result | Mark as "Verified" | Mark as "Likely restored" | Mark as "Unverified; manual check recommended" | Mark as "Unable to validate" |
 | Trusted-state declaration | Can contribute to "trusted state restored" | Can contribute with operator acknowledgment | Cannot contribute; blocks trusted-state declaration | Blocks trusted-state declaration |
 
-**Key principle:** The system should never declare "trusted operational state restored" if any critical object has low confidence or unknown validation state. Partial validation should be represented honestly.
+**Key principle:** The system should never declare "trusted state restored" if any critical object has low confidence or unknown validation state. Partial validation should be represented honestly.
 
 ---
 
