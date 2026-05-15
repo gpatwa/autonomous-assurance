@@ -10,7 +10,7 @@ KavachIQ has two distinct public products; they share the `KavachIQ` parent bran
 | Product | Hostname | Repo | What it is |
 |---|---|---|---|
 | KavachIQ (Microsoft 365 backup / ransomware recovery) | `kavachiq.com` | _(separate repo)_ | The parent brand's backup-and-recovery product. |
-| KavachIQ Autonomous Assurance (agents / assurance) | `agents.kavachiq.com` | this repo | Recovery layer for high-impact agent-driven changes across Microsoft Entra and Microsoft 365. |
+| KavachIQ Autonomous Assurance (agents / assurance) | `agents.kavachiq.com` | this repo | Agentic Incident Recovery — the undo button for AI-agent incidents in Microsoft Entra and Microsoft 365. |
 
 Both surfaces need to be discoverable in search without confusing each other. Sharing one hostname (or letting both redirect under the same root domain) collapses the two products in Google's eyes; splitting by subdomain keeps the brand unified and the product intents distinct.
 

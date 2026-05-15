@@ -1,4 +1,4 @@
-# KavachIQ Autonomous Assurance: Architecture Memo
+# KavachIQ — Agentic Incident Recovery: Architecture Memo
 
 **Author:** Principal Architect  
 **Date:** April 2026  
@@ -9,7 +9,7 @@
 
 ## 1. Executive Summary
 
-KavachIQ must build a system that ingests identity and data control-plane changes from Microsoft Entra and Microsoft 365, models the downstream blast radius of those changes, generates sequenced recovery plans with identity-first ordering, supports operator-approved execution of rollback/restoration/compensating actions, and validates return to a trusted operational state.
+KavachIQ must build a system that ingests AI-agent-driven control-plane changes from Microsoft Entra and Microsoft 365, attributes each change to the originating agent session, models the downstream blast radius across identity / sharing / permissions / Conditional Access / data, generates dependency-ordered reversal plans with identity-first sequencing, supports operator-approved execution, and validates that the resulting state matches the pre-incident baseline.
 
 **The hardest problems are:**
 1. Building a correct dependency graph across Entra objects, M365 workloads, and downstream app entitlements
@@ -109,7 +109,7 @@ Approved actions are executed through Microsoft Graph APIs (and potentially part
 
 ### 4.7 Trusted-State Validation
 
-After execution, the system compares the current state of affected objects against the pre-incident baseline. If all objects match baseline, the incident is marked "trusted operational state restored." If discrepancies remain, they are flagged for operator review.
+After execution, the system compares the current state of affected objects against the pre-incident baseline. If all objects match baseline, the incident is marked "trusted state restored." If discrepancies remain, they are flagged for operator review.
 
 ### 4.8 Audit Trail
 
@@ -532,7 +532,7 @@ Microsoft Graph rate limits are the binding constraint for baseline refresh and 
 4. [Validation] Validate CA policy scope matches baseline (depends on step 1)
 5. [Compensating] Confirm Teams workspace membership restored (depends on step 1)
 6. [Validation] Verify SAP Finance entitlement rollback (depends on steps 1-5, approval required)
-7. [Validation] Mark trusted operational state restored (depends on all, approval required)
+7. [Validation] Mark trusted state restored (depends on all, approval required)
 
 **Operator approval:** Identity admin reviews blast radius and recovery plan. Approves step 1. Steps 2-5 auto-approved by policy (low-risk compensating and validation actions). Steps 6-7 require explicit approval after step 1 completes.
 
