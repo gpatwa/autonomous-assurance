@@ -31,9 +31,9 @@ const VIEWPORTS = {
 const PAGE_SECTIONS: Record<string, { selector: string; name: string; clickText?: string; postClickText?: string }[]> = {
   home: [
     { selector: "body", name: "hero" },             // scroll to top to capture full hero with eyebrow
-    { selector: "#why-kavachiq", name: "comparison" },
+    { selector: "#why-kavachiq", name: "recovery-gap" },
+    { selector: "#live-recovery-demo", name: "walkthrough" },
     { selector: "#how-it-works", name: "how-it-works" },
-    { selector: "#recovery-scenario", name: "scenario" },
     { selector: "#request-demo", name: "cta" },
     { selector: "footer", name: "footer" },
   ],
@@ -55,26 +55,42 @@ const PAGE_SECTIONS: Record<string, { selector: string; name: string; clickText?
   ],
 };
 
+// Phrases that should appear on the live site, drawn from the locked copy
+// docs (LANDING_PAGE_COPY_V2 + PLATFORM_PAGE_COPY_V1). Anchored to the wedge.
 const APPROVED_PHRASES = [
-  "Recover from high-impact agent-driven changes",
-  "Identity-first recovery",
+  "undo button for AI-agent incidents",
+  "Agentic Incident Recovery",
   "Microsoft Entra",
   "Microsoft 365",
-  "trusted operational state",
   "blast radius",
-  "rollback, restoration, and compensating actions",
-  "KavachIQ Autonomous Assurance",
+  "operator-approved",
+  "dependency-ordered",
+  "trusted state",
+  "KavachIQ Agentic Incident Recovery",
 ];
 
+// Phrases the script flags if they appear — pre-wedge cruft, overclaim,
+// or anti-partner framing we don't want on the public site.
 const STALE_PHRASES = [
   "Deploy AI agents with confidence",
   "harmful agent-driven change",
-  "harmful agent-driven changes",
   "harmful agent actions",
   "harmful autonomous change",
   "autonomous change visibility",
   "context engine",
   "Microsoft doesn't back up",
+  // Old-wedge product framing (kept here so the audit catches regressions):
+  "KavachIQ Autonomous Assurance",
+  "Identity Assurance for Microsoft Entra",
+  "Data Assurance for Microsoft 365",
+  "Cross-System Assurance",
+  "trusted operational state",
+  "rollback, restoration, and compensating actions",
+  // Credibility-pass overclaims:
+  "92 seconds",
+  "zero downtime",
+  "Postgres RLS",
+  "signed JSON",
 ];
 
 // ─── Types ───────────────────────────────────────────────────────────────────

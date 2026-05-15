@@ -255,7 +255,7 @@ Everything else (CA policy writes, Exchange support, advanced detection, multi-r
 | **Circuit breaker** | Halt after 3 consecutive sub-action failures. |
 | **Safe mode** | Per-tenant write-disable. Triggered manually or by circuit breaker. |
 | **Execution audit trail** | ActionInstance, SubAction, ExecutionAttempt records. Full provenance. |
-| **Trusted-state declaration** | When all validation checks pass, mark "trusted operational state restored." |
+| **Trusted-state declaration** | When all validation checks pass, mark "trusted state restored." |
 | **Partial completion handling** | Accurate partial-completion status. Operator resume/manual options. |
 
 ### What Must Remain Manual in Phase 4
@@ -592,4 +592,4 @@ End of Phase 2 (~13 weeks): An operator can see an incident created by an agent-
 
 ### First customer-trust-worthy slice
 
-End of Phase 4 (~21 weeks): The full canonical scenario works end-to-end. An operator can approve a recovery plan, the system rolls back group membership, validates downstream state, and declares trusted operational state restored. Audit trail is complete. Safe mode works. This is sufficient for a controlled customer pilot with 1-3 enterprise tenants.
+End of Phase 4 (~21 weeks): The full canonical scenario works end-to-end. An operator can approve a recovery plan, the system rolls back group membership, validates downstream state, and declares trusted state restored. Audit trail is complete. Safe mode works. This is sufficient for a controlled customer pilot with 1-3 enterprise tenants.

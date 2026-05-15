@@ -14,7 +14,7 @@ The recovery orchestration layer transforms a blast-radius map and a trusted-sta
 
 **The problem:** Recovery is not "undo the last change." Different impacted objects require different action types (rollback, restoration, compensating action, validation), executed in a specific order (identity before data before downstream), with varying levels of operator approval, and validated against varying levels of confidence. A recovery step can itself create side effects. The orchestrator must be safe before it is fast.
 
-**Recommended model:** A recommendation-first orchestrator that generates a fully ordered, dependency-aware recovery plan from blast-radius output and baseline data. In v1, the system generates plans, classifies actions, enforces ordering, and tracks state. Operators approve and (for most actions) execute manually using the system's guidance. System-assisted execution is limited to group membership rollback (lowest-risk write) behind approval gates. Pre-execution validation is mandatory for every step. Post-execution validation includes delayed re-checks for eventually consistent systems. The system never declares "trusted operational state restored" until all critical objects are verified.
+**Recommended model:** A recommendation-first orchestrator that generates a fully ordered, dependency-aware recovery plan from blast-radius output and baseline data. In v1, the system generates plans, classifies actions, enforces ordering, and tracks state. Operators approve and (for most actions) execute manually using the system's guidance. System-assisted execution is limited to group membership rollback (lowest-risk write) behind approval gates. Pre-execution validation is mandatory for every step. Post-execution validation includes delayed re-checks for eventually consistent systems. The system never declares "trusted state restored" until all critical objects are verified.
 
 **Key trade-offs:**
 - Recommendation-first is slower to demonstrate value but eliminates the risk of the product causing harm
@@ -260,7 +260,7 @@ Tier 3: DOWNSTREAM VALIDATION
       Must complete before Tier 4
 
 Tier 4: TRUSTED-STATE DECLARATION
-  └── All checks pass → mark "trusted operational state restored"
+  └── All checks pass → mark "trusted state restored"
 ```
 
 ### 9.2 Intra-Tier Parallelism
@@ -472,7 +472,7 @@ Step executed at T
 
 ### 14.3 Trusted-State Declaration
 
-The system evaluates whether to declare "trusted operational state restored" based on:
+The system evaluates whether to declare "trusted state restored" based on:
 
 | Condition | Required |
 |-----------|----------|

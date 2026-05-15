@@ -363,7 +363,7 @@ export const recoveryPlan: RecoveryStep[] = [
   },
   {
     id: 7, order: 7,
-    action: "Mark environment returned to trusted operational state",
+    action: "Mark tenant returned to trusted state",
     type: "validation",
     target: "Full incident scope",
     status: "completed",

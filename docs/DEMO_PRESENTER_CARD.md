@@ -14,41 +14,47 @@
 
 ## Open (verbatim, ~30s)
 
-> "We help enterprises recover from high-impact agent-driven changes in Microsoft Entra and Microsoft 365. When an agent changes an identity and that change cascades into permissions, data, and downstream systems, KavachIQ maps the blast radius and guides recovery in the right order."
+> "KavachIQ is the undo button for AI-agent incidents in Microsoft 365. When an agent makes harmful changes — group memberships, sharing links, permission grants, Conditional Access exemptions — your team has minutes before the blast radius cascades. Detection tools alert you. Backup restores yesterday. KavachIQ reverses the specific changes the agent just made, in dependency order, after operator approval."
 
 ## Walk (in order)
 
 | # | Tab / section | Time | Beat |
 |---|---|---|---|
-| 1 | Site hero | ≤90s | Frame the problem |
-| 2 | Comparison | 30s | Backup / observability / governance stop short |
-| 3 | Scenario | 30s | Concrete Entra group change |
-| 4 | `/demo` Overview | 30s | Incident context — 12 users, 5 systems |
-| 5 | **Blast Radius — drill into Finance-Confidential** | **slow** | "This is real software" |
-| 6 | **Recovery Plan — expand step 1** | **slow** | Identity-first sequencing becomes obvious |
-| 7 | Resolution | don't rush | Confidence close — 7 verified checks |
+| 1 | Site hero | ≤30s | "The undo button for AI-agent incidents" — wedge in one sentence |
+| 2 | Proof bar | 20s | 80/10 adoption-governance gap · $3.6B funded · Forrester quote |
+| 3 | Vendor consensus | 20s | Microsoft, Salesforce, ServiceNow, Anthropic agree this layer is needed |
+| 4 | Recovery gap | 30s | "Everyone detects. No one undoes." — the wedge sharpened |
+| 5 | Live walkthrough animation | 30s | 4 stages cycle: alert → map → propose → approve & validate |
+| 6 | Incident cards | 30s | EchoLeak, Copilot Studio AIjacking, Entra Agent ID overreach, Replit |
+| 7 | Open `/demo` interactive | switch | Operator console: real software, not slides |
+| 8 | **Blast Radius — drill into Finance-Confidential** | **slow** | "This is real software" |
+| 9 | **Recovery Plan — expand step 1** | **slow** | Identity-first dependency ordering visible |
+| 10 | Resolution | don't rush | Trusted state restored · evidence pack generated |
 
 ## Phrases to use
 
-- **trusted operational state** · **blast radius** · **identity-first recovery** · **high-impact agent-driven changes** · **rollback, restoration, and compensating actions**
+- **Agentic Incident Recovery** · **the undo button for AI-agent incidents** · **blast radius** · **identity-first dependency order** · **operator-approved reversal** · **trusted state restored** · **exportable evidence pack**
 
 ## Never say
 
-- ❌ "harmful" — say **high-impact**
+- ❌ "Autonomous Assurance" or "Identity/Data Assurance" as the section names — those are the old wedge
 - ❌ "AI governance platform" · "context engine" · "Deploy AI agents with confidence"
-- ❌ "generic backup" / "better backup" / anti-Microsoft framing
+- ❌ "Generic backup" / "better backup" / anti-Microsoft framing
 - ❌ Teams **chat-message** recovery (we cover team membership / channels / permissions only)
+- ❌ "92 seconds" / "zero downtime" / any contractual MTTR — say "minutes, not hours"
+- ❌ Implementation specifics on a buyer call — "Postgres RLS", "signed JSON", "Entra External ID" live in the procurement-detail doc, NDA-gated
 
 ## Top objections (one-line answers)
 
-- *"How is this different from backup?"* — Backup restores objects. We map blast radius across identity + data and sequence recovery. Different problem.
-- *"Replaces SIEM / governance?"* — No. SIEM detects, governance sets rules, we **recover** business state after a high-impact change lands. Complementary.
-- *"Just a Microsoft tool?"* — Entra + M365 is the wedge. Same recovery model extends to connected enterprise systems.
-- *"Detect or recover?"* — Recover. We capture what happened, map what was affected, guide back to a trusted state.
+- *"How is this different from backup?"* — **Rubrik is backup. KavachIQ is undo.** Backup restores yesterday and loses every legitimate change since. We reverse only the agent's actions; everything else stays.
+- *"Replaces SIEM / governance?"* — No. SIEM detects, governance sets rules, we **recover** after a change lands. We ingest from Sentinel, Defender, Purview. Complementary.
+- *"Just a Microsoft tool?"* — Microsoft 365 is the wedge — that's where 80% of agentic risk lives. Q3 2026 adds Copilot Studio + Entra Agent ID. Late 2026 adds Salesforce, ServiceNow.
+- *"Detect or recover?"* — Recover. Detection is mature; operational recovery is the missing layer.
+- *"Operator approval model?"* — Every recovery is proposed for human review. No automated rollback. Operators approve before any change runs.
 
 ## Close (verbatim)
 
-> "We would like to show your team a recovery scenario tailored to your Entra and Microsoft 365 environment. We will walk through a real agent-driven change, the blast radius, and how identity-first recovery gets you back to a trusted state."
+> "Adoption is moving faster than governance. The organizations that scale AI agents safely are the ones with a recovery posture in place *before* their first agentic incident. Bring us a scenario — we'll walk it through with your team."
 
 ## If something breaks live
 

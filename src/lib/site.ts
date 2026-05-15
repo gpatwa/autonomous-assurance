@@ -18,8 +18,17 @@ export const PUBLIC_PRODUCTION_ORIGIN = "https://agents.kavachiq.com";
 /** Parent brand (shared with the backup/recovery product at kavachiq.com). */
 export const PARENT_BRAND = "KavachIQ";
 
-/** Product / site name — distinct from the parent brand to disambiguate in search. */
-export const SITE_NAME = "KavachIQ Autonomous Assurance";
+/**
+ * Product / site name — distinct from the parent brand to disambiguate in search.
+ *
+ * The wedge is "Agentic Incident Recovery" (AIR). Naming the product after the
+ * category keeps the title template, og:site_name, and JSON-LD aligned with
+ * what the homepage hero promises ("The undo button for AI-agent incidents").
+ *
+ * The parent brand "KavachIQ" stays visible via the JSON-LD publisher block,
+ * preserving the two-product brand IA documented in AGENTS_SUBDOMAIN_SEO_PLAN.
+ */
+export const SITE_NAME = "KavachIQ Agentic Incident Recovery";
 
 /** Parent brand root URL (the backup/recovery product). */
 export const PARENT_BRAND_URL = "https://kavachiq.com";

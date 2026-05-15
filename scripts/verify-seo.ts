@@ -27,7 +27,7 @@
 const PUBLIC_PRODUCTION_ORIGIN = "https://agents.kavachiq.com";
 const PARENT_BRAND = "KavachIQ";
 const PARENT_BRAND_URL = "https://kavachiq.com";
-const SITE_NAME = "KavachIQ Autonomous Assurance";
+const SITE_NAME = "KavachIQ Agentic Incident Recovery";
 
 const targetOrigin = (process.env.SITE_URL ?? PUBLIC_PRODUCTION_ORIGIN).replace(/\/+$/, "");
 const isPublic = targetOrigin === PUBLIC_PRODUCTION_ORIGIN;

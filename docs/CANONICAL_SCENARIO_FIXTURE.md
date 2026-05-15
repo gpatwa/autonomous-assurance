@@ -177,7 +177,7 @@ One CorrelatedChangeBundle:
 
 | Step | Action Type | Target | Approval | Execution |
 |------|-----------|--------|----------|-----------|
-| 8 | Validation | Mark trusted operational state restored | Required | Operator confirms |
+| 8 | Validation | Mark trusted state restored | Required | Operator confirms |
 
 ## 10. Expected Validation Outcomes *(Phase 4 product target)*
 

@@ -10,7 +10,7 @@ KavachIQ has two distinct public products; they share the `KavachIQ` parent bran
 | Product | Hostname | Repo | What it is |
 |---|---|---|---|
 | KavachIQ (Microsoft 365 backup / ransomware recovery) | `kavachiq.com` | _(separate repo)_ | The parent brand's backup-and-recovery product. |
-| KavachIQ Autonomous Assurance (agents / assurance) | `agents.kavachiq.com` | this repo | Recovery layer for high-impact agent-driven changes across Microsoft Entra and Microsoft 365. |
+| KavachIQ Agentic Incident Recovery (agents / AIR) | `agents.kavachiq.com` | this repo | The undo button for AI-agent incidents in Microsoft Entra and Microsoft 365. |
 
 Both surfaces need to be discoverable in search without confusing each other. Sharing one hostname (or letting both redirect under the same root domain) collapses the two products in Google's eyes; splitting by subdomain keeps the brand unified and the product intents distinct.
 
@@ -37,8 +37,8 @@ All changes are metadata / config. No product code, no backend, no platform work
 ### 2. Root layout metadata
 
 - [`src/app/layout.tsx`](../src/app/layout.tsx) — `metadataBase` now reads `SITE_ORIGIN`.
-- `openGraph.siteName` switched from the ambiguous `"KavachIQ"` to `"KavachIQ Autonomous Assurance"` — this is what search surfaces use to label the site. The parent brand stays visible via the JSON-LD publisher.
-- Title template is `%s | KavachIQ Autonomous Assurance` (was `%s | KavachIQ`). Search results for sub-pages now name the product surface, not just the parent brand.
+- `openGraph.siteName` is `"KavachIQ Agentic Incident Recovery"` — disambiguates this agents subdomain from the parent `KavachIQ` brand in search surfaces. The parent brand stays visible via the JSON-LD publisher block. (Earlier the product surface was labeled "KavachIQ Autonomous Assurance"; renamed to the wedge after the recovery-positioning launch.)
+- Title template is `%s | KavachIQ Agentic Incident Recovery`. Search results for sub-pages name the product surface, not just the parent brand.
 - `alternates.canonical: "/"` makes the root's canonical self-reference explicit; Next.js resolves it against `metadataBase`, so `staging` and `preview` origins cannot declare themselves canonical for the public product.
 - Environment-aware `robots` in root metadata: non-public origins ship `index: false, follow: false` regardless of any page-level metadata.
 
@@ -50,7 +50,7 @@ A single small `WebSite` + `Organization` publisher block in the root layout:
 {
   "@context": "https://schema.org",
   "@type": "WebSite",
-  "name": "KavachIQ Autonomous Assurance",
+  "name": "KavachIQ Agentic Incident Recovery",
   "url": "https://agents.kavachiq.com",
   "publisher": {
     "@type": "Organization",
@@ -151,8 +151,8 @@ Expected: `PASS`. Key assertions specific to this step:
 - `sitemap.xml`: valid `<urlset>` listing `/` and `/platform` at the public origin, with no staging/preview/localhost URLs leaking in.
 - `<meta name="robots">`: `index, follow`.
 - `<link rel="canonical">` and `og:url`: `https://agents.kavachiq.com`.
-- `og:site_name`: `KavachIQ Autonomous Assurance`.
-- JSON-LD: `@type: WebSite`, `name: KavachIQ Autonomous Assurance`, `publisher.name: KavachIQ`, `publisher.url: https://kavachiq.com`.
+- `og:site_name`: `KavachIQ Agentic Incident Recovery`.
+- JSON-LD: `@type: WebSite`, `name: KavachIQ Agentic Incident Recovery`, `publisher.name: KavachIQ`, `publisher.url: https://kavachiq.com`.
 
 After `verify:seo` passes against the live public host:
 

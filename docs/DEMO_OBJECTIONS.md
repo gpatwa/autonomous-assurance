@@ -6,58 +6,64 @@ Short, direct answers for the most common pushback in demos and buyer conversati
 
 ## "We already have backup for Microsoft 365."
 
-Backup restores individual objects or systems. It does not know what an agent changed, cannot map blast radius across identity and data, and has no concept of recovery sequencing. If an agent modifies an Entra group and that change cascades into SharePoint permissions, Exchange delegations, and Conditional Access scope, backup cannot tell you what was affected or help you recover in the right order. KavachIQ can.
+**Rubrik is backup. KavachIQ is undo.** Backup restores data to a point in time — useful for ransomware or accidental deletion. But it loses every legitimate change since the snapshot, and it can't tell you what an AI agent did to your identity, sharing, or Conditional Access surfaces. KavachIQ reverses the specific changes the agent made — preserving everything else. Different blast radius, different remediation. Most customers run both.
 
 ---
 
 ## "We already have a SIEM. Why do we need this?"
 
-Your SIEM detects and alerts. KavachIQ picks up where detection ends. Once your SIEM tells you an agent made a high-impact change, KavachIQ maps the full blast radius across identity and data, and guides your team through rollback, restoration, and compensating actions in the safest sequence.
+Your SIEM detects and alerts. KavachIQ picks up where detection ends. We ingest incidents from Microsoft Sentinel, Defender, Purview, or your SIEM/SOAR — we run downstream of detection. Once the alert fires, we map the blast radius across all five Microsoft 365 surfaces (identity, sharing, permissions, Conditional Access, DLP), propose a dependency-ordered reversal plan, execute after operator approval, and validate the result. They're complementary.
 
 ---
 
 ## "We have identity governance. Is this not the same?"
 
-Identity governance sets policies, access reviews, and approval workflows. It is preventative. KavachIQ is operational recovery. When an agent-driven change gets past your governance controls and causes impact, KavachIQ helps you understand what was affected and recover safely. They are complementary layers.
+Identity governance sets policies, access reviews, and approval workflows. It's **preventative** — it stops bad changes before they land. KavachIQ is **operational recovery** — it reverses changes that already landed. When an agent-driven change gets past your governance controls and causes impact, KavachIQ attributes the change to the agent's session, maps the blast radius, and guides reversal in dependency order. Different layers; both needed.
 
 ---
 
 ## "Can you do this for systems beyond Microsoft?"
 
-Microsoft Entra and Microsoft 365 are the initial focus because that is where the most damage happens fastest. The same capture, assess, and recover model is designed to extend to connected enterprise systems and adjacent SaaS platforms over time. We are starting with the highest-impact wedge.
+Microsoft 365 is the initial focus — Microsoft's own data says 80% of agentic risk lives there. Q3 2026 adds Copilot Studio agents, Entra Agent ID coverage, and custom-agent attribution. Late 2026 adds Salesforce Agentforce and ServiceNow Now Assist. Each platform earns its place by depth, not breadth — we do Microsoft 365 better than anyone before we add anything else.
 
 ---
 
 ## "How is this different from Microsoft's own tools?"
 
-Microsoft provides strong identity and collaboration infrastructure, including Entra audit logs, Microsoft Graph, and native backup capabilities. KavachIQ adds the recovery orchestration layer. We connect agent-driven identity changes to their downstream data impact, map blast radius across both, and sequence recovery so identity trust is restored before data. That cross-surface recovery coordination is what Microsoft's native tools do not provide.
+Microsoft provides strong infrastructure: Entra audit logs, Microsoft Graph, Purview AI Observability, Microsoft 365 Backup. Each does part of the job. None of them reverse the specific actions an AI agent took without rolling back legitimate work alongside. The cross-domain reversal — identity + sharing + permissions + Conditional Access + DLP, in dependency order, after operator approval — is the layer Microsoft's native tools don't yet provide. Microsoft's own toolkit and our Purview/Sentinel integration make us complementary, not competitive.
 
 ---
 
 ## "Is this a real product or still a concept?"
 
-The platform is operational. The staging site you are looking at reflects the current product scope. We are running demos with real recovery scenarios. The demo we are offering walks through a concrete agent-driven Entra change with blast-radius mapping and identity-first recovery sequencing.
+The platform is operational. The site you're looking at reflects the current product scope. We run demos with representative recovery scenarios in a Microsoft 365 tenant — alert ingestion, blast radius mapping, identity-first reversal proposal, operator approval, validation, evidence pack. Bring a scenario; we'll walk it through.
 
 ---
 
 ## "What if agents are not a real risk for us yet?"
 
-Agent-driven automation is expanding across enterprise IT. Even if your organization is not deploying autonomous agents today, automation workflows, Power Platform, and third-party integrations already make changes to Entra and Microsoft 365 that can have unintended consequences. The risk is not hypothetical. It is operational.
+Microsoft reports 80% of the Fortune 500 use AI agents in production today. Only 10% have a governance program. Even without autonomous agents in your stack, Power Platform flows, Copilot, Copilot Studio, and third-party integrations already make changes to Entra and Microsoft 365 that can have unintended consequences. Forrester says an agentic AI public breach is not a question of whether, but which organization will be first. The risk is operational, not hypothetical.
 
 ---
 
 ## "What is your pricing model?"
 
-We are in early conversations and tailoring pricing to the scope and environment. The best next step is a demo walkthrough so we can understand your Entra and Microsoft 365 footprint and discuss what a deployment looks like for your team.
+We're in early conversations and tailoring pricing to scope and environment. The right next step is a recovery walkthrough so we can understand your Microsoft 365 footprint, the surfaces in scope, and the operator approval model that fits your team. Pricing reflects the IR / DFIR budget line, not the backup budget — different problem, different category.
 
 ---
 
 ## "Who else is using this?"
 
-We are in early deployment conversations with enterprises running Entra and Microsoft 365 at scale. We are not sharing specific names yet, but the demo walkthrough will show you exactly what the product does in a realistic scenario.
+We're in early deployment conversations with enterprises running Microsoft 365 at scale. We're not sharing customer names publicly yet, but the demo walkthrough shows you exactly what the product does in a realistic Microsoft 365 scenario.
 
 ---
 
 ## "What data do you access? What are the privacy implications?"
 
-KavachIQ reads from Entra audit logs and Microsoft Graph APIs. We do not store your business data. We capture change metadata: what changed, who or what initiated it, and the before/after state. Access is scoped to the minimum required for blast-radius mapping and recovery guidance. We can walk through the specific permissions in the demo.
+KavachIQ reads from Microsoft Graph — today, scoped to `AuditLog.Read.All` and `Directory.Read.All`, admin-consented per tenant. We capture change metadata: what changed, the agent session that initiated it, the before/after state. We do not store your business document content. Tenant isolation is enforced at the data layer; KavachIQ operators have no cross-tenant visibility. The detailed scope inventory and security architecture is available under NDA — the marketing site keeps the trust posture outcome-led; procurement gets the implementation specifics.
+
+---
+
+## "What's the operator approval model?"
+
+Every recovery is proposed for human review. **No automated rollback. The platform does not act on its own.** Operators see the full proposed reversal — every step and its dependency — before any change runs. Approval is an explicit, scoped action. Partial approval (a subset of the plan) is supported. Each step is validated against expected state after execution.

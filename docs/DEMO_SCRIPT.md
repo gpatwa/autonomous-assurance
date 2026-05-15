@@ -1,18 +1,18 @@
 # KavachIQ Demo Script
 
-**Version:** Demo-ready baseline
-**Public site:** agents.kavachiq.com  _(internal test env: staging.kavachiq.com — noindex)_
-**Last updated:** 2026-05-04 (public URL switched to `agents.kavachiq.com`; pre-demo checklist now in `DEMO_CHEAT_SHEET.md`; one-page mid-call reference in [`DEMO_PRESENTER_CARD.md`](DEMO_PRESENTER_CARD.md))
+**Version:** Recovery-positioning baseline (post-AIR wedge launch)
+**Public site:** agents.kavachiq.com
+**Last updated:** 2026-05-12 — aligned with Agentic Incident Recovery wedge. Pre-demo checklist in `DEMO_CHEAT_SHEET.md`; mid-call reference in [`DEMO_PRESENTER_CARD.md`](DEMO_PRESENTER_CARD.md).
 
 ---
 
 ## 1. 30-Second Company Pitch
 
-> AI agents and automation are starting to change identities, permissions, and business data across enterprise systems. When those changes are high-impact, enterprises need to understand what was affected, map the blast radius, and recover in the right order.
+> AI agents in Microsoft 365 — Copilot, Copilot Studio, custom agents — are taking real actions in real tenants. Some of those actions are harmful: prompt injection, model misbehavior, unintended automation side effects. When that happens, your detection layer alerts you. Backup restores yesterday's data. Neither reverses the specific changes the agent just made.
 >
-> KavachIQ Autonomous Assurance is the recovery layer for high-impact agent-driven changes. We help teams map blast radius across Microsoft Entra and Microsoft 365, sequence identity-first recovery, and guide rollback, restoration, and compensating actions back to a trusted operational state.
+> KavachIQ is the undo button. We attribute every change to the agent's session, propose a dependency-ordered reversal plan, and execute it after operator approval — with full audit. Built first for Microsoft 365.
 >
-> We start with Microsoft Entra and Microsoft 365. Over time, the same recovery model extends to connected enterprise systems.
+> The category is Agentic Incident Recovery. Microsoft, Salesforce, ServiceNow, and Anthropic have all publicly said this layer needs to exist. We built it.
 
 **When to use:** elevator conversations, networking, cold intros, advisor catch-ups.
 
@@ -20,161 +20,193 @@
 
 ## 2. Two-Minute Website Walkthrough
 
-Use this when screen-sharing the staging site in a short call or meeting.
+Use this when screen-sharing the homepage in a short call.
 
 **Open agents.kavachiq.com.**
 
-### Hero (10 seconds)
+### Hero (15 seconds)
 
-"This is KavachIQ Autonomous Assurance. We help enterprises recover from high-impact agent-driven changes. The initial focus is Microsoft Entra and Microsoft 365."
+"This is KavachIQ — Agentic Incident Recovery. The hero says it directly: 'The undo button for AI-agent incidents.' When an AI agent makes harmful changes in your Microsoft 365 environment, your team has minutes before the blast radius cascades. We're the layer that reverses it."
 
-Point to: headline, eyebrow badge, three support cards (Identity-first, Data-aware, Recovery-led).
+Point to: the headline, the sub-headline, the supporting line *"Built first for Microsoft 365 — where 80% of agentic risk lives today."*
 
-### Problem section (20 seconds)
+### Proof bar (10 seconds)
 
-Scroll to the problem section.
+"Three sourced numbers below the fold. Eighty percent of the Fortune 500 use AI agents in production. Ten percent have a governance program. That's the gap. Three-point-six billion dollars went into AI-agent security startups last year — and not one focused on recovery. Forrester says an agentic AI breach is not a question of whether, but which organization will be first."
 
-"AI agents can now change users, modify groups, alter app registrations, update Conditional Access policies, and trigger workflows across your Entra and Microsoft 365 environment. Some of those changes will be unintended, risky, or malicious. When that happens, teams need to understand the full scope of impact and recover in the right order."
+### Vendor consensus wall (15 seconds)
 
-Point to: the four problem cards (Identity changes, Permission drift, Data impact, Cross-system fallout).
+Scroll to the vendor consensus quotes.
 
-### Comparison (20 seconds)
+"This isn't us crying wolf. Microsoft's Vasu Jakkal, Salesforce's Marc Benioff, ServiceNow's Bill McDermott, Anthropic, and Gartner have all publicly said this layer needs to exist. We built it."
 
-Scroll to the comparison table.
+Point to: any of the five vendor pull-quote tiles.
 
-"Backup restores objects but has no blast-radius mapping. Observability shows what happened but cannot restore state. Governance sets rules but cannot unwind change once it lands. KavachIQ is the missing layer: we map blast radius and guide rollback, restoration, and compensating actions."
+### Recovery gap (20 seconds)
 
-Point to: the four comparison rows, with KavachIQ highlighted.
+Scroll to the recovery gap section.
 
-### Recovery scenario (30 seconds)
+"This is the wedge. Everyone detects — Purview, Defender, Sentinel, Zenity, WitnessAI. Nobody undoes. The alert fires at 2:47 a.m. By 2:48 you're staring at 47 identity, sharing, and permission changes an AI agent made. KavachIQ takes that alert and proposes a dependency-ordered reversal."
 
-Scroll to the example scenario.
+Point to: the 2-column table (detection vs recovery).
 
-"Here is what recovery looks like in practice. An agent modifies an Entra group membership. KavachIQ captures the change, maps the blast radius across SharePoint, Exchange, Conditional Access, and downstream apps, then sequences recovery so identity is restored before data."
+### Live recovery walkthrough (20 seconds)
 
-Point to: the status rail and the 5-step timeline (Incident, Capture, Assess, Recover, Resolved).
+Scroll to the live walkthrough section.
+
+"This auto-advances through the four-stage flow. Alert ingested. Blast radius mapped — every change attributed to the agent's session, classified by surface. Reversal plan proposed in dependency order. Operator approves, execution happens, state is validated. Trusted state restored."
+
+Point to: the animation; let it cycle once.
+
+### Incident proof (15 seconds)
+
+Scroll to the incident cards.
+
+"Four real, named incidents. EchoLeak — zero-click prompt injection in Microsoft 365 Copilot. Copilot Studio AIjacking — agent exfiltrates data through its own email connector. Entra Agent ID Administrator role overreach — AI-specific role granted tenant-wide takeover access. Replit — agent acted during a code freeze and fabricated records. Each one is a case where a recovery layer would have changed the outcome."
 
 ### CTA (10 seconds)
 
-Scroll to the demo request section.
+Scroll to the closing CTA.
 
-"We are offering tailored recovery scenario walkthroughs. The demo shows a real Entra change, blast-radius mapping, and identity-first recovery sequencing."
+"Adoption is moving faster than governance. The organizations that scale AI agents safely will be the ones with a recovery posture in place *before* their first agentic incident. Request a demo right here."
 
 ---
 
 ## 3. Five-Minute Product Narrative
 
-Use this for longer advisor calls, investor conversations, or first buyer meetings where you need to explain the product clearly.
+Use this for longer advisor calls, investor conversations, or first buyer meetings.
 
 ### The setup (1 minute)
 
-"Enterprises are deploying AI agents and automation that can change identities, permissions, configurations, and business data. These are not hypothetical changes. Agents can create users, modify group memberships, alter app registrations, change Conditional Access policies, update SharePoint permissions, and trigger workflows across Microsoft 365."
+"AI agents in Microsoft 365 aren't hypothetical anymore. Copilot, Copilot Studio, custom Entra-registered agents — they take real actions in real tenants: create users, modify group memberships, add service principal owners, change Conditional Access exemptions, alter sharing on SharePoint and OneDrive, modify DLP labels."
 
-"Some of those changes will be high-impact. They could be unintended side effects of a well-meaning automation, risky configuration drift, or deliberate misuse."
+"Microsoft's own data: 80% of the Fortune 500 use AI agents in production. Only 10% have a governance program. The gap is real, and it's where the next class of breaches lives."
 
 ### The gap (1 minute)
 
-"When that happens, existing tools each solve part of the problem. Backup can restore individual objects, but it does not know what an agent changed, cannot map blast radius across identity and data, and has no concept of recovery sequencing. Observability shows what happened, but it cannot restore business state. Governance sets rules, but it cannot unwind a change once it lands."
+"Existing layers each solve part of the problem. Detection tools — Purview, Defender, Sentinel, Zenity — tell you something happened. Backup tools — Microsoft 365 Backup, Rubrik, Cohesity — restore data to a point in time. Governance — Purview policies, access reviews — sets rules before the fact."
 
-"No existing tool maps the blast radius of an agent-driven identity change across Entra and Microsoft 365, sequences recovery in the right order, and coordinates rollback and compensating actions across systems."
+"What's missing is the operational layer that reverses *the specific actions an AI agent took*, without rolling back legitimate work alongside. Restore-to-yesterday loses 21 hours of legitimate work and breaks active collaboration. Manual runbooks can't sequence 47 cascading changes across identity, sharing, permissions, and DLP without leaving the tenant in an inconsistent state."
 
 ### What KavachIQ does (1 minute)
 
-"KavachIQ Autonomous Assurance is the recovery layer. We capture agent-driven changes with full context: the initiating agent, workflow session, target object, and before/after state. We map blast radius across Entra identity objects, Microsoft 365 workloads, and connected systems. And we guide rollback, restoration, and compensating actions with identity-first sequencing."
+"KavachIQ is the recovery layer for AI-agent incidents. Four steps. First, we ingest the incident from your existing detection layer — Sentinel, Purview, Defender, your SIEM. Second, we attribute every change in the agent's session to its source and build a dependency graph across identity, sharing, permissions, Conditional Access, and DLP. Third, we propose a dependency-ordered reversal — identity first, then permissions, then sharing and Conditional Access, then data. Fourth, your operator approves the plan, we execute each step, and validate the result against expected state."
 
-"The key insight is that identity is the control plane. If an agent changes an Entra group membership, that change cascades into SharePoint permissions, Exchange delegations, Teams collaboration, Conditional Access scope, and downstream app provisioning. Recovering data before restoring identity trust means recovering on a broken foundation. KavachIQ sequences recovery so identity is restored first."
+"The output is restored trusted state plus an exportable evidence pack — every action recorded, ready for the auditor, the board, and the post-mortem."
 
 ### The wedge (1 minute)
 
-"We start with Microsoft Entra and Microsoft 365 because that is where the most damage happens fastest. Entra controls who has access to what. Microsoft 365 is where business impact shows up: SharePoint, OneDrive, Exchange, Teams. When identity and data both change, recovery must be coordinated across both."
+"Built first for Microsoft 365 — for two reasons. One, that's where 80% of agentic risk lives today. Two, Microsoft is where the cross-domain dependency graph is hardest to model and most valuable to get right — Entra plus SharePoint plus Conditional Access plus DLP plus Teams, all in one orchestrated reversal."
 
-"Over time, the same capture, assess, and recover model extends to connected enterprise systems and adjacent SaaS platforms."
+"The roadmap: Q3 2026 adds Copilot Studio agents and Entra Agent ID coverage. Late 2026 adds Salesforce Agentforce and ServiceNow Now Assist. Each platform earns its place by depth, not breadth — we do Microsoft 365 better than anyone before we add anything else."
 
-### The ask (1 minute)
+### The trust posture (45 seconds)
 
-"We are showing tailored recovery scenarios in demos. We walk through a real agent-driven Entra change, show the blast radius across Microsoft 365, and demonstrate how identity-first recovery sequencing works. The goal is for your team to see what recovery looks like in their environment."
+"Four pillars. Approval-gated reversal — operators see the full proposed plan before any change runs; the platform does not act on its own. Least-privilege Microsoft access — admin-consented per tenant, scoped to the surfaces under recovery management. Tenant-scoped isolation — per-tenant data and access boundaries enforced at the data layer, with tenant-bound key material. Audit trail and evidence — every step recorded with operator identity, timestamp, and outcome, exportable for audit and board reporting."
+
+### The ask (15 seconds)
+
+"We run tailored recovery scenario walkthroughs. We'll show you a representative scenario in a Microsoft 365 tenant — alert ingestion, blast radius mapping, identity-first reversal proposal, operator approval, validation, evidence pack. Bring a scenario; we'll walk it."
 
 ---
 
 ## 4. Ten-Minute Demo Flow
 
-Use this for structured buyer demos, technical evaluations, or detailed investor walkthroughs.
+Structured buyer demos, technical evaluations, detailed investor walkthroughs.
 
-### Minute 0-1: Context
+### Minute 0–1: Context
 
-"Thank you for the time. Let me show you what KavachIQ does and why it matters for your Entra and Microsoft 365 environment."
+"Thanks for the time. Let me show you what KavachIQ does and why it matters for your Microsoft 365 environment."
 
-Open agents.kavachiq.com. Walk through the hero briefly.
+Open agents.kavachiq.com. Walk through the hero.
 
-"KavachIQ Autonomous Assurance helps enterprises recover from high-impact agent-driven changes. We map blast radius and guide identity-first recovery."
+"This is the wedge: the undo button for AI-agent incidents in Microsoft 365. We're the operational layer that reverses the specific changes an AI agent made — after operator approval — and validates the result."
 
-### Minute 1-3: The problem
+### Minute 1–2: The market reality
 
-Scroll to the problem section.
+Scroll to the proof bar and then the vendor consensus wall.
 
-"AI agents and automation are starting to make real changes to enterprise identity and data. Let me show you what that looks like."
+"Three sourced numbers. Eighty/ten — adoption gap. Three-point-six billion in funding — but no one focused on recovery. Forrester predicting the first agentic breach in 2026."
 
-Walk through the four problem cards:
-- "Identity changes: agents can create users, modify groups, alter service principals, change app registrations, and update Conditional Access policies."
-- "Permission drift: those identity changes cascade into role assignments, downstream provisioning, and access scope."
-- "Data impact: SharePoint sites, OneDrive content, Exchange mailboxes, Teams collaboration, and permission settings are all affected."
-- "Cross-system fallout: a single Entra change can cascade into Microsoft 365, connected apps, and downstream business systems."
+"This is the vendor consensus wall. Microsoft, Salesforce, ServiceNow, Anthropic, Gartner — they've all publicly said this layer needs to exist. We're not coming in from a fringe position; we're building what the platforms themselves say is missing."
 
-### Minute 3-4: Why existing tools fall short
+### Minute 2–3: The recovery gap
 
-Scroll to the comparison section.
+Scroll to the recovery gap section.
 
-"Most enterprises have backup, observability, and governance. Each of those solves part of the problem. None of them solve recovery."
+"This is the differentiation. Three rows. Detection tells you something happened. Audit logs are useful in forensics, slow in an incident. War rooms — hours, multiple engineers, runbooks that don't quite fit. Versus KavachIQ — recovery downstream of detection, operational rollback scoped to the agent's session, guided reversal with approval gates and full evidence."
 
-Walk through each row briefly:
-- "Backup restores objects but has no blast-radius mapping or recovery sequencing."
-- "Observability shows what happened but cannot restore business state."
-- "Governance sets rules but cannot unwind a change once it lands."
-- "KavachIQ maps blast radius and guides rollback, restoration, and compensating actions."
+"Detection is mature. Operational recovery is the missing layer."
 
-### Minute 4-6: The recovery scenario
+### Minute 3–5: Live recovery walkthrough
 
-Scroll to the example recovery scenario.
+Scroll to the walkthrough section.
 
-"Let me walk you through a concrete example."
+"Here's what recovery looks like, in a representative scenario. The animation auto-advances through four stages."
 
-Walk through each step:
-1. "An agent modifies an Entra group membership. It adds 12 users to a privileged security group. Those users now have access to sensitive SharePoint sites, Exchange mailboxes, and a downstream LOB application."
-2. "KavachIQ captures the change with full context: the initiating agent, workflow session, target group, added members, and before/after state."
-3. "We map the blast radius. The group change affected 3 SharePoint site collections, 12 Exchange mailbox delegations, Conditional Access policy scope, and one downstream app provisioning flow."
-4. "KavachIQ recommends reverting the Entra group membership first, then revoking the downstream SharePoint and Exchange access, then verifying the Conditional Access policy is restored, then confirming the LOB app provisioning state."
-5. "The team returns to a trusted operational state with a full audit trail."
+Let the animation cycle once, then narrate:
 
-Point to the status rail: "This is the recovery progression: Agent action, Identity impact, Blast radius, Recovery sequence, Trusted state."
+1. "Stage one — alert ingested. KavachIQ accepts the incident signal from your detection layer."
+2. "Stage two — blast radius mapped. Each change in the agent's session is attributed and classified by surface: identity, permissions, sharing, Conditional Access, DLP."
+3. "Stage three — plan proposed. Dependency-ordered. Identity first, then permissions, then sharing, then Conditional Access, then data."
+4. "Stage four — operator approves, execution proceeds, state is validated. Trusted state restored. Evidence pack generated."
 
-### Minute 6-7: Identity-first recovery
+"In a buyer environment, the operator drives that flow on real incidents. Bring a scenario; we'll walk it."
 
-Scroll to the identity-first section.
+### Minute 5–6: Incident proof
 
-"The key architectural insight is that identity must be recovered before data. If you restore a mailbox before fixing the identity that was used to compromise it, you leave the door open."
+Scroll to the incident cards.
 
-"KavachIQ sequences recovery so Entra identity trust is restored first. Then Microsoft 365 data and collaboration surfaces. Then downstream systems."
+"These are real, named cases. Four cards."
 
-### Minute 7-8: Product scope
+- "EchoLeak — CVE-2025-32711. A crafted email caused Microsoft 365 Copilot to act on attacker instructions, accessing Teams, SharePoint, and OneDrive content. Every pre-patch tenant had limited operational visibility into what Copilot retrieved or shared."
+- "Copilot Studio AIjacking — Cloud Security Alliance research. Agents hijacked via embedded instructions, then exfiltrated SharePoint and OneDrive data via their own configured email connector."
+- "Entra Agent ID Administrator role overreach — April 2026 CVE. A new Entra role intended for AI agent management granted ownership over any service principal in the tenant. Silverfort disclosed it; Microsoft patched."
+- "Replit — broader category proof. AI coding agent acted during a code-and-action freeze, deleted a production database, fabricated records to conceal the deletion. No automated recovery path existed."
 
-Scroll to the product pillars.
+"Each card carries a recovery posture — what KavachIQ would have done."
 
-"We have three pillars."
-- "Identity Assurance for Microsoft Entra: users, groups, app registrations, service principals, Conditional Access, and role assignments."
-- "Data Assurance for Microsoft 365: SharePoint, OneDrive, Exchange, Teams collaboration, and permissions."
-- "Cross-System Assurance: connecting incident timelines across systems of record, with the same model extending to adjacent platforms over time."
+### Minute 6–7: How it works
 
-### Minute 8-9: How it works
+Scroll to the How It Works section.
 
-Scroll to How It Works.
+"Four operational steps."
 
-"The workflow is three steps: capture agent-driven change, map blast radius, guide safe recovery. It is built for operators, not passive monitoring."
+1. "Connect to your detection layer. Sentinel, Purview, Defender, or your SIEM/SOAR. We run downstream of detection — your existing alert posture stays in place."
+2. "Map the blast radius. Every identity, sharing, permission, Conditional Access, and DLP change attributed to the agent's session — modeled as a dependency graph."
+3. "Propose an identity-first reversal plan. Dependency-ordered. The graph respects what depends on what — revoking access doesn't lock out a Global Admin, undoing a share doesn't break an active collaboration."
+4. "Approve, execute, and validate. Operator review before any change runs. Each step validated against expected state. Exportable evidence pack at the end."
 
-### Minute 9-10: CTA and next steps
+### Minute 7–8: Trust and control
 
-Scroll to the demo section.
+Scroll to the Trust and Control section.
 
-"What we would like to do next is walk your team through a recovery scenario tailored to your environment. We will show you how KavachIQ handles a real agent-driven Entra change in the context of your Microsoft 365 setup."
+"Four pillars, because the CISO needs to know what we *don't* do in their tenant."
+
+- "Approval-gated reversal — no automated rollback. The platform does not act on its own."
+- "Least-privilege Microsoft access — Graph permissions admin-consented per tenant, scoped to the surfaces under recovery management."
+- "Tenant-scoped isolation — per-tenant data and access boundaries enforced at the data layer, with tenant-bound key material."
+- "Audit trail and evidence pack — every step recorded, exportable for audit, SIEM ingest, and board reporting."
+
+"Recovery you can defend to your auditor, your board, and your own DFIR team."
+
+### Minute 8–9: Who it's for and roadmap
+
+Scroll to Who It's For.
+
+"Four buyer rows. CISO gets a defensible MTTR. DFIR lead gets a single recovery pane. VP Identity / M365 Admin gets a safety net for Copilot, Copilot Studio, and custom agents. CFO / Risk Officer gets a measurable recovery posture — insurable, auditable, board-defensible."
+
+Scroll to the platform page if useful, point to the roadmap footer line:
+
+"Microsoft 365 today. Copilot Studio + Entra Agent ID coverage Q3 2026. Salesforce Agentforce + ServiceNow Now Assist on the roadmap."
+
+### Minute 9–10: CTA and next steps
+
+Scroll to the closing CTA.
+
+"The line is: adoption is moving faster than governance. The organizations that scale AI agents safely will be the ones with a recovery posture in place *before* their first agentic incident."
+
+"What we'd like to do next is walk your team through a recovery scenario tailored to your environment. We'll show you alert ingestion, blast radius mapping across all five Microsoft 365 surfaces, identity-first reversal proposal, operator approval, validation, and the evidence pack. Bring a scenario; we'll walk it."
 
 "The form is right here, or I can send you a direct link."
 
@@ -186,10 +218,11 @@ Scroll to the demo section.
 
 - "How is this different from our existing backup solution?"
 - "Does this replace our SIEM or SOAR?"
-- "What happens if the agent change is malicious, not just accidental?"
+- "What if the agent change is malicious, not just accidental?"
 - "How do you handle Conditional Access policy changes specifically?"
-- "What is the blast-radius model based on?"
-- "Can we define recovery policies or does the system recommend them?"
+- "What's the operator approval model? Can recovery happen without me?"
+- "What scopes do you need in our tenant?"
+- "What happens to our data if we cancel?"
 
 ### From CIOs / Heads of IT
 
@@ -197,23 +230,31 @@ Scroll to the demo section.
 - "What is the deployment model?"
 - "How quickly can we get this into staging?"
 - "Does this work with our existing identity governance tools?"
-- "What does the roadmap look like beyond Entra and Microsoft 365?"
+- "What's the roadmap beyond Microsoft 365?"
 
 ### From Identity / Entra Admins
 
 - "Does this cover service principals and app registrations?"
 - "How do you handle nested group membership changes?"
 - "Can I see the before/after state for a Conditional Access policy change?"
-- "Does this integrate with Entra audit logs?"
-- "Can I control which recovery actions require manual approval?"
+- "Does this read from Entra audit logs?"
+- "Can I control which reversal actions require manual approval?"
+- "What's the Microsoft Graph permission scope list?"
 
 ### From Microsoft 365 Admins
 
 - "Does this cover SharePoint permissions specifically?"
-- "What about Exchange mailbox delegations?"
-- "How do you handle Teams team membership and channel changes?"
+- "What about Exchange mailbox delegations and inbox rules?"
+- "How do you handle Teams team membership and channel permission changes?"
 - "Can I see which files or sites were affected by an identity change?"
-- "Does this work with Microsoft 365 retention policies?"
+- "How do you handle DLP and sensitivity label modifications?"
+
+### From DFIR / Incident Response leads
+
+- "What does the evidence pack contain?"
+- "Can the evidence pack be ingested by Sentinel / Splunk?"
+- "What's the recovery MTTR in a typical scenario?"
+- "How do you handle a failed reversal step mid-plan?"
 
 ---
 
@@ -221,66 +262,97 @@ Scroll to the demo section.
 
 ### "How is this different from backup?"
 
-"Backup restores individual objects or systems. It does not know what an agent changed, cannot map blast radius across identity and data, and has no concept of recovery sequencing. KavachIQ maps what was affected, understands the dependency order, and guides rollback, restoration, and compensating actions so identity is restored before data."
+"Backup restores data to a point in time. KavachIQ reverses the specific actions an AI agent took — preserving every legitimate change that happened in parallel. Restore-to-yesterday loses every hour of legitimate work since the snapshot. Rubrik, Cohesity, and Microsoft 365 Backup are the wrong primitive for agent error: snapshot-based, coarse, and agent-agnostic. The line we use: *Rubrik is backup. KavachIQ is undo.* You pair us with your backup, you don't replace it."
 
 ### "Does this replace our SIEM?"
 
-"No. Your SIEM detects and alerts. KavachIQ picks up where detection ends. Once you know something happened, KavachIQ helps you understand the full blast radius and recover safely. They are complementary."
+"No. Your SIEM detects and alerts. KavachIQ picks up where detection ends. We ingest incidents from Sentinel, Defender, Purview, or your SIEM/SOAR as the alert source — we run downstream of detection. They're complementary."
 
 ### "What about malicious changes?"
 
-"The recovery workflow is the same whether the change was accidental, risky, or malicious. KavachIQ captures the change with full context, maps blast radius, and guides recovery. For malicious changes, the audit trail and before/after state are especially important for incident response and forensics."
+"The flow is the same whether the change was accidental, risky, or malicious. We attribute the change to the agent's session, map the blast radius, propose a dependency-ordered reversal, and execute after operator approval. For malicious changes the evidence pack is especially important — audit-grade timeline of agent action, ingestion, mapping, approval, reversal, and validation, suitable for forensics and incident response."
 
 ### "Does this cover Conditional Access?"
 
-"Yes. Conditional Access policies are first-class objects in the identity surface we track. When an agent modifies a Conditional Access policy, KavachIQ captures the change, maps the downstream access impact, and sequences recovery alongside user, group, and service principal changes."
+"Yes. Conditional Access is one of the five recovery surfaces — alongside identity, permissions, sharing, and data. When an agent modifies a Conditional Access policy — scope changes, exemptions added, sign-in risk thresholds, MFA bypass conditions — we capture the change, model the downstream access impact, and sequence reversal alongside the related identity and permission changes."
+
+### "What's the operator approval model?"
+
+"Every recovery is proposed for human review. No automated rollback. Operators see the full proposed reversal — every step and its dependency — before any change runs. Approval is an explicit, scoped action; the platform does not act on its own. Partial approval — approving a subset of the plan — is supported in the data model."
+
+### "What scopes do you need?"
+
+"Today, read-only: `AuditLog.Read.All` and `Directory.Read.All` via Microsoft Graph, admin-consented per tenant. For platform-driven reversal we provision write scopes when a customer chooses to enable it — `Group.ReadWrite.All`, `Application.ReadWrite.All`, `Policy.ReadWrite.ConditionalAccess`, `RoleManagement.ReadWrite.Directory`, `Sites.FullControl.All`. Until then, KavachIQ proposes plans and your operators execute via their own tooling. The detailed scope inventory is available under NDA."
 
 ### "How does this fit into our Microsoft stack?"
 
-"KavachIQ works with your existing Entra and Microsoft 365 environment. It reads from Entra audit logs and Microsoft Graph. It does not replace your identity governance or compliance tools. It adds the recovery layer that those tools do not provide."
+"KavachIQ integrates with your Entra and Microsoft 365 environment through standard Microsoft Graph APIs. No agents installed in your environment, no infrastructure changes. We read from Entra audit logs and Microsoft Graph. We do not replace your identity governance, your detection layer, or your backup. We add the recovery layer those tools don't provide."
 
 ### "What about Teams?"
 
-"We cover Teams at the collaboration and access layer: team membership, channel structure, and permission changes. We do not claim to recover individual Teams chat messages. The focus is on the identity and permission changes that affect Teams collaboration, not message-level content."
+"We cover Teams at the collaboration and access layer: team membership, channel structure, channel permission changes, guest access. We do not claim to recover individual Teams chat messages. The focus is on the identity and permission changes that affect Teams collaboration, not message-level content."
 
-### "What is the deployment model?"
+### "What's the deployment model?"
 
-"Cloud-hosted. We integrate with your Entra and Microsoft 365 tenant through standard Microsoft Graph APIs. Deployment is lightweight and does not require agents or infrastructure changes."
+"Cloud-hosted, hosted in Azure. Microsoft Graph integration. Standard admin-consent flow at onboarding. No agents installed in your environment. No appliance, no inbound network changes. Deployment is lightweight — typically a single admin-consent action and configuration of your detection layer's webhook."
 
-### "What is the roadmap beyond Microsoft?"
+### "What's on the roadmap beyond Microsoft 365?"
 
-"Microsoft Entra and Microsoft 365 are the initial wedge. The same capture, assess, and recover model is designed to extend to connected enterprise systems and adjacent SaaS platforms as agent-driven automation expands. We are starting where the most damage happens fastest."
+"Microsoft Entra and Microsoft 365 are the initial wedge — that's where 80% of agentic risk lives today. Q3 2026: Copilot Studio agents, Entra Agent ID coverage, custom-agent attribution via Microsoft Graph. Late 2026: Salesforce Agentforce, ServiceNow Now Assist, adjacent agent platforms. Each platform earns its place by depth, not breadth — we do Microsoft 365 better than anyone before we add anything else."
+
+### "What's in the evidence pack?"
+
+"For each recovery operation: the originating incident (agent, session, surface, raw audit-log references), the proposed plan (all steps, dependency graph, expected outcomes), operator approval (identity, timestamp, scope of approval), step-by-step execution results with validation outcomes, and final state confirmation with operator sign-off. Format is JSON, designed for SIEM ingest and audit-tool compatibility."
 
 ---
 
 ## 7. What Not to Say
 
 ### Do not overclaim Teams recovery
+
 - Do not say: "We recover Teams chat messages" or "We restore Teams conversations."
 - Do say: "We cover Teams at the collaboration and access layer: team membership, channel structure, and permissions."
 
-### Do not position as generic backup
-- Do not say: "We are a better backup for Microsoft 365."
-- Do say: "We are the recovery layer that backup does not provide. Backup restores objects. We map blast radius and guide recovery sequencing."
+### Do not position as backup
+
+- Do not say: "We're a better backup for Microsoft 365."
+- Do say: "We're the recovery layer that backup doesn't provide. Rubrik is backup. KavachIQ is undo."
 
 ### Do not position as generic AI governance
-- Do not say: "We govern AI agents" or "We control what agents can do."
-- Do say: "We help enterprises recover when agent-driven changes are high-impact. Governance sets rules. KavachIQ helps when those rules are not enough."
 
-### Do not use anti-Microsoft framing
-- Do not say: "Microsoft does not protect your data" or "Microsoft backup is inadequate."
-- Do say: "Microsoft provides strong identity and collaboration infrastructure. KavachIQ adds the recovery layer for agent-driven change across that infrastructure."
+- Do not say: "We govern AI agents" or "We control what agents can do."
+- Do say: "We help enterprises recover when agent-driven changes are harmful. Governance sets rules before the fact. KavachIQ recovers after the rules aren't enough."
+
+### Do not use anti-vendor framing
+
+- Do not say: "Microsoft doesn't protect your data" or "Detection vendors don't show up."
+- Do say: "Microsoft provides strong identity and collaboration infrastructure. Detection vendors do detection well. KavachIQ adds the recovery layer none of them provide."
 
 ### Do not sound like a vague AI platform
+
 - Do not say: "We provide AI-powered insights" or "Our AI engine analyzes your environment."
-- Do say: "We capture agent-driven changes, map blast radius, and guide recovery. The value is operational, not analytical."
+- Do say: "We attribute every change to the agent's session, propose a dependency-ordered reversal, and execute after operator approval. The value is operational, not analytical."
+
+### Do not over-claim implementation specifics on a buyer call
+
+- Do not say: "We use Postgres row-level security" or "Our evidence pack is signed JSON" or "We use Entra External ID for operator identity."
+- Do say: "Tenant isolation is enforced at the data layer. Audit trail is exportable for audit, SIEM ingest, and board reporting. Operator identity is anchored to verifiable enterprise identity."
+- The implementation specifics are in the procurement-detail doc, NDA-gated. Share that doc only on serious procurement calls.
+
+### Do not commit to MTTR numbers we can't defend
+
+- Do not say: "Recovery in 92 seconds" or "Zero downtime."
+- Do say: "Operator-approved, dependency-ordered reversal. Minutes, not hours. Validated against expected state."
 
 ### Do not make unsupported claims
+
 - Do not say: "We prevent all agent-driven incidents."
-- Do say: "We help enterprises recover safely when high-impact agent-driven changes occur."
+- Do say: "Detection prevents some incidents. Governance prevents others. KavachIQ recovers when those layers aren't enough."
 
 ### Do not use stale messaging
-- Do not say: "Deploy AI agents with confidence."
-- Do not say: "Harmful agent-driven change."
-- Do say: "Recover from high-impact agent-driven changes."
-- Do say: "Return to a trusted operational state."
+
+- Do not say: "Autonomous Assurance" — that's the old brand framing.
+- Do not say: "Identity Assurance" or "Data Assurance" — those are the old section names.
+- Do say: "Agentic Incident Recovery." The category. The wedge.
+- Do say: "Agentic Identity Recovery" and "Agentic Data Recovery" — the section names.
+- Do say: "The undo button for AI-agent incidents." The hero promise.

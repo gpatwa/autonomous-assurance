@@ -3,8 +3,8 @@ import Link from "next/link";
 const footerLinks = {
   Platform: [
     { label: "Overview", href: "/platform" },
-    { label: "Identity Assurance", href: "/platform#identity-assurance" },
-    { label: "Data Assurance", href: "/platform#data-assurance" },
+    { label: "Agentic Identity Recovery", href: "/platform#identity-assurance" },
+    { label: "Agentic Data Recovery", href: "/platform#data-assurance" },
     { label: "How It Works", href: "/#how-it-works" },
   ],
   Company: [
@@ -27,9 +27,10 @@ export default function Footer() {
               </span>
             </Link>
             <p className="mt-4 text-sm text-text-secondary leading-relaxed max-w-md">
-              KavachIQ Autonomous Assurance helps enterprises understand,
-              contain, and recover from high-impact agent-driven changes across
-              identity, access, and systems of record.
+              The undo button for AI-agent incidents. KavachIQ attributes every
+              change to the agent&apos;s session and guides operators through
+              approval-gated, dependency-ordered reversal — built first for
+              Microsoft 365.
             </p>
           </div>
 
@@ -55,14 +56,19 @@ export default function Footer() {
           ))}
         </div>
 
-        <div className="mt-16 pt-8 border-t border-border-primary flex flex-col sm:flex-row items-center justify-between gap-4">
+        <div className="mt-16 pt-8 border-t border-border-primary flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <p className="text-xs text-text-muted">
             &copy; {new Date().getFullYear()} KavachIQ. All rights reserved.
           </p>
-          <p className="text-xs text-text-muted">
-            Identity-first recovery for Microsoft Entra, Microsoft 365, and connected enterprise systems
+          <p className="text-xs text-text-muted text-center sm:text-right">
+            Microsoft 365 today. Copilot Studio + Entra Agent ID coverage Q3 2026.
+            {" "}
+            <span className="hidden sm:inline">Salesforce Agentforce + ServiceNow Now Assist on the roadmap.</span>
           </p>
         </div>
+        <p className="mt-3 text-center text-xs text-text-muted sm:hidden">
+          Salesforce Agentforce + ServiceNow Now Assist on the roadmap.
+        </p>
       </div>
     </footer>
   );

@@ -1,7 +1,7 @@
 import { ImageResponse } from "next/og";
 
 export const runtime = "nodejs";
-export const alt = "KavachIQ Autonomous Assurance";
+export const alt = "KavachIQ Agentic Incident Recovery";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
@@ -64,8 +64,8 @@ export default function OGImage() {
             maxWidth: "900px",
           }}
         >
-          <span>Recover from high-impact </span>
-          <span style={{ color: "#38BDF8" }}>agent-driven changes</span>
+          <span>The undo button for </span>
+          <span style={{ color: "#38BDF8" }}>AI-agent incidents.</span>
         </div>
 
         <div
@@ -78,8 +78,8 @@ export default function OGImage() {
             lineHeight: 1.5,
           }}
         >
-          Identity-first recovery across Microsoft Entra, Microsoft 365,
-          and connected enterprise systems
+          Operational recovery for AI-agent incidents in Microsoft 365 —
+          approval-gated, dependency-ordered, fully audited.
         </div>
 
         <div
