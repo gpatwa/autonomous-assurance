@@ -61,7 +61,7 @@ export const metadata: Metadata = {
 };
 
 // JSON-LD: parent brand (KavachIQ) publishes this product site
-// (KavachIQ Autonomous Assurance at agents.kavachiq.com). Kept narrow —
+// (KavachIQ Agentic Incident Recovery at agents.kavachiq.com). Kept narrow —
 // WebSite + Organization publisher — to support search disambiguation
 // between the two KavachIQ products without over-schematizing.
 const jsonLd = {
