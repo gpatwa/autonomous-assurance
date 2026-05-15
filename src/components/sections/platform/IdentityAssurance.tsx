@@ -4,7 +4,7 @@ import { motion } from "framer-motion";
 import { fadeUp, staggerContainer } from "@/lib/animations";
 
 /**
- * Section 4 — Identity Assurance deep dive.
+ * Section 4 — Agentic Identity Recovery deep dive.
  *
  * Copy: docs/PLATFORM_PAGE_COPY_V1.md § SECTION 4
  * Anchor: #identity-assurance
@@ -77,7 +77,7 @@ export default function IdentityAssurance() {
               variants={fadeUp}
               className="text-3xl sm:text-4xl font-bold tracking-tight text-text-primary"
             >
-              Identity Assurance for Microsoft Entra.
+              Agentic Identity Recovery for Microsoft Entra.
             </motion.h2>
             <motion.p variants={fadeUp} className="mt-2 text-lg font-medium text-accent">
               The control plane is the highest-leverage place for an agent to do damage.

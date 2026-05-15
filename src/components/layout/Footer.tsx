@@ -3,8 +3,8 @@ import Link from "next/link";
 const footerLinks = {
   Platform: [
     { label: "Overview", href: "/platform" },
-    { label: "Identity Assurance", href: "/platform#identity-assurance" },
-    { label: "Data Assurance", href: "/platform#data-assurance" },
+    { label: "Agentic Identity Recovery", href: "/platform#identity-assurance" },
+    { label: "Agentic Data Recovery", href: "/platform#data-assurance" },
     { label: "How It Works", href: "/#how-it-works" },
   ],
   Company: [

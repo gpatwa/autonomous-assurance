@@ -14,7 +14,7 @@ The homepage answers: **"Why does this exist?"** → *The undo button for AI-age
 
 The platform page answers: **"What does it do in my Microsoft 365 tenant?"** → *Here's the product. Here's the surface area it covers. Here's how it operates inside your environment.*
 
-A CISO who's bought the homepage wedge clicks "Platform" / "Identity Assurance" / "Data Assurance" / "How It Works" in nav. The platform page is where they make the product-depth decision before requesting a demo. Tone: **less marketing, more operational specificity** — same wedge, more substance.
+A CISO who's bought the homepage wedge clicks "Platform" / "Agentic Identity Recovery" / "Agentic Data Recovery" / "How It Works" in nav. The platform page is where they make the product-depth decision before requesting a demo. Tone: **less marketing, more operational specificity** — same wedge, more substance.
 
 ---
 
@@ -36,8 +36,8 @@ All four already exist on /platform today and must keep their IDs.
 | 1 | Hero | — | Recovery-wedge framing for the depth page | `<PlatformHero>` (new) |
 | 2 | Platform overview | — | The KavachIQ position in your existing stack | `<PlatformOverview>` (new) |
 | 3 | The recovery surface | `#platform-proof` | What KavachIQ covers in M365 (Identity + Sharing + Permissions + CA + Data) | `<RecoverySurface>` (new) |
-| 4 | Identity Assurance — deep dive | `#identity-assurance` | Entra-specific recovery depth | `<IdentityAssurance>` (new) |
-| 5 | Data Assurance — deep dive | `#data-assurance` | SharePoint / OneDrive / Teams / Exchange recovery depth | `<DataAssurance>` (new) |
+| 4 | Agentic Identity Recovery — deep dive | `#identity-assurance` | Entra-specific recovery depth | `<IdentityAssurance>` (new) |
+| 5 | Agentic Data Recovery — deep dive | `#data-assurance` | SharePoint / OneDrive / Teams / Exchange recovery depth | `<DataAssurance>` (new) |
 | 6 | How the platform operates | `#how-it-works` | 4-step operational flow (matches homepage) | `<PlatformHowItWorks>` (new) |
 | 7 | Trust and tenant safety | — | Same 4 pillars as homepage, with deeper technical specificity | `<PlatformTrustControl>` (new) |
 | 8 | Capabilities matrix | — | Operator-facing feature list — concrete, scannable | `<CapabilitiesMatrix>` (new) |
@@ -122,13 +122,13 @@ Every agent-driven change in scope, mapped to the Microsoft surface it lives on.
 
 ---
 
-## SECTION 4 — Identity Assurance (deep dive)
+## SECTION 4 — Agentic Identity Recovery (deep dive)
 
 ### Anchor
 `#identity-assurance`
 
 ### Header
-**Identity Assurance for Microsoft Entra.**
+**Agentic Identity Recovery for Microsoft Entra.**
 
 ### Sub-header
 The control plane is the highest-leverage place for an agent to do damage — and the lowest-leverage place to roll back without dependency awareness.
@@ -151,13 +151,13 @@ KavachIQ scopes every identity change to the originating agent's session, models
 
 ---
 
-## SECTION 5 — Data Assurance (deep dive)
+## SECTION 5 — Agentic Data Recovery (deep dive)
 
 ### Anchor
 `#data-assurance`
 
 ### Header
-**Data Assurance for Microsoft 365.**
+**Agentic Data Recovery for Microsoft 365.**
 
 ### Sub-header
 Sharing, permissions, and data labels are where agent damage shows up to end users — and where uncoordinated rollback breaks active collaboration.
@@ -373,8 +373,8 @@ We'll show you how KavachIQ runs inside a Microsoft 365 tenant — alert ingesti
 - [ ] Hero headline locked: *"Operational recovery for AI-agent incidents in Microsoft 365."*
 - [ ] Section 2 platform overview 3-column comparison approved
 - [ ] Section 3 five-surface table approved (Identity / CA / Permissions / Sharing / Data)
-- [ ] Identity Assurance deep-dive content approved
-- [ ] Data Assurance deep-dive content approved
+- [ ] Agentic Identity Recovery deep-dive content approved
+- [ ] Agentic Data Recovery deep-dive content approved
 - [ ] How It Works 4 steps approved
 - [ ] Trust & tenant safety pillars approved (outcome-led wording; implementation specifics live in a separate procurement doc)
 - [ ] Capabilities matrix — final list of 10 outcome-led items locked, each demonstrable on a discovery call

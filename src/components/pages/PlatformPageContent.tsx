@@ -5,8 +5,8 @@
  *   1.  PlatformHero          — § Section 1 Hero
  *   2.  PlatformOverview      — § Section 2 Platform overview
  *   3.  RecoverySurface       — § Section 3 The recovery surface (anchor: #platform-proof)
- *   4.  IdentityAssurance     — § Section 4 Identity Assurance deep dive (anchor: #identity-assurance)
- *   5.  DataAssurance         — § Section 5 Data Assurance deep dive (anchor: #data-assurance)
+ *   4.  IdentityAssurance     — § Section 4 Agentic Identity Recovery deep dive (anchor: #identity-assurance)
+ *   5.  DataAssurance         — § Section 5 Agentic Data Recovery deep dive (anchor: #data-assurance)
  *   6.  PlatformHowItWorks    — § Section 6 How the platform operates (anchor: #how-it-works)
  *   7.  PlatformTrustControl  — § Section 7 Trust and tenant safety
  *   8.  CapabilitiesMatrix    — § Section 8 Capabilities matrix

@@ -4,7 +4,7 @@ import { motion } from "framer-motion";
 import { fadeUp, staggerContainer } from "@/lib/animations";
 
 /**
- * Section 5 — Data Assurance deep dive.
+ * Section 5 — Agentic Data Recovery deep dive.
  *
  * Copy: docs/PLATFORM_PAGE_COPY_V1.md § SECTION 5
  * Anchor: #data-assurance
@@ -108,7 +108,7 @@ export default function DataAssurance() {
               variants={fadeUp}
               className="text-3xl sm:text-4xl font-bold tracking-tight text-text-primary"
             >
-              Data Assurance for Microsoft 365.
+              Agentic Data Recovery for Microsoft 365.
             </motion.h2>
             <motion.p variants={fadeUp} className="mt-2 text-lg font-medium text-accent">
               Where agent damage shows up to end users.
