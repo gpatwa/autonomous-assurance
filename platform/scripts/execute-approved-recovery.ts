@@ -8,9 +8,10 @@
  * Dry-run is the default. Pass --apply for real Microsoft Graph writes.
  */
 
-import { randomUUID } from "node:crypto";
+import { createHash, randomUUID } from "node:crypto";
 import { mkdirSync, writeFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
+import { setTimeout as sleep } from "node:timers/promises";
 import {
   ExitCodes,
   createLogger,
@@ -44,7 +45,13 @@ import {
   updateRecoveryPlan,
   withTenantContext,
 } from "@kavachiq/storage";
-import type { ActionInstance, RecoveryPlan, RecoveryStep, ValidationRecord } from "@kavachiq/schema";
+import type {
+  ActionInstance,
+  RecoveryPlan,
+  RecoveryStep,
+  StateSnapshot,
+  ValidationRecord,
+} from "@kavachiq/schema";
 import { loadSpCredentials, tokenProviderFor } from "./lib/credentials.js";
 import { GraphRequestError, GraphTransport } from "./lib/transport.js";
 
@@ -164,29 +171,30 @@ async function run(args: Args, log: Logger): Promise<ExecuteApprovedRecoveryResu
   await withTenantContext(args.tenantId, (client) => insertActionInstance(client, action));
 
   const graph = new ExecuteGraphClient();
-  const executed = await executeGroupMemberRemovalAction(action, graph);
-  const validation = buildValidationRecord(executed, step);
-  const updatedPlan = updatePlanWithExecution(plan, step.stepId, executed, validation);
+  const executed = await executeGroupMemberRemovalAction(action, graph, { sleep });
+  const validated = await waitForPostExecutionValidation(executed, graph, log);
+  const validation = buildValidationRecord(validated, step);
+  const updatedPlan = updatePlanWithExecution(plan, step.stepId, validated, validation);
 
   await withTenantContext(args.tenantId, async (client) => {
-    await updateActionInstance(client, executed);
+    await updateActionInstance(client, validated);
     await insertValidationRecord(client, validation);
     await updateRecoveryPlan(client, updatedPlan);
     await appendAuditRecord(client, {
       auditRecordId: `aud_${randomUUID()}`,
       tenantId: args.tenantId,
-      eventType: executed.status === "completed" ? "action-executed" : "action-failed",
+      eventType: validated.status === "completed" ? "action-executed" : "action-failed",
       actor: systemActor(),
       entityType: "action-instance",
-      entityId: executed.instanceId,
-      action: executed.status,
+      entityId: validated.instanceId,
+      action: validated.status,
       detail: {
         incidentId: args.incidentId,
         stepId: step.stepId,
         planId: plan.planId,
         planVersion: plan.version,
-        subActions: executed.subActions.length,
-        circuitBroken: executed.circuitBroken,
+        subActions: validated.subActions.length,
+        circuitBroken: validated.circuitBroken,
       },
       timestamp: new Date().toISOString(),
       schemaVersion: 1,
@@ -202,7 +210,7 @@ async function run(args: Args, log: Logger): Promise<ExecuteApprovedRecoveryResu
       detail: {
         incidentId: args.incidentId,
         stepId: step.stepId,
-        actionInstanceId: executed.instanceId,
+        actionInstanceId: validated.instanceId,
       },
       timestamp: new Date().toISOString(),
       schemaVersion: 1,
@@ -211,7 +219,7 @@ async function run(args: Args, log: Logger): Promise<ExecuteApprovedRecoveryResu
 
   return {
     runMetadata: metadata(args, step.stepId, startedAt, startedMs),
-    actionInstance: executed,
+    actionInstance: validated,
     validation,
     persisted: true,
   };
@@ -285,10 +293,16 @@ function buildValidationRecord(
   action: ActionInstance,
   step: RecoveryStep,
 ): ValidationRecord {
-  const postMemberIds = readMemberIds(action.postExecutionState);
-  const remainingTargetMembers = action.membersToRemove.filter((member) =>
-    postMemberIds.includes(member.memberId),
-  );
+  const remainingTargetMembers = findRemainingTargetMembers(action);
+  const allWritesSucceeded =
+    action.status === "completed" &&
+    action.subActions.every((sub) => sub.status === "removed" || sub.status === "already-absent");
+  const result =
+    remainingTargetMembers.length === 0
+      ? "match"
+      : allWritesSucceeded
+        ? "pending-propagation"
+        : "mismatch";
   return {
     validationId: `val_${randomUUID()}`,
     tenantId: action.tenantId,
@@ -297,17 +311,61 @@ function buildValidationRecord(
     objectId: action.targetObjectId,
     targetState: action.expectedPostState,
     observedState: action.postExecutionState ?? step.currentStateAtPlan,
-    result: remainingTargetMembers.length === 0 ? "match" : "mismatch",
+    result,
     confidence: {
       level: "high",
-      reasons: ["post-execution-graph-read"],
+      reasons: [
+        "post-execution-graph-read",
+        ...(result === "pending-propagation" ? ["graph-propagation-window"] : []),
+      ],
       missingFields: [],
     },
     validatedAt: new Date().toISOString(),
-    revalidateAt: null,
+    revalidateAt: result === "pending-propagation" ? futureIso(5 * 60 * 1000) : null,
     revalidationId: null,
     schemaVersion: 1,
   };
+}
+
+async function waitForPostExecutionValidation(
+  action: ActionInstance,
+  graph: GroupMemberRemovalGraphClient,
+  log: Logger,
+): Promise<ActionInstance> {
+  const maxAttempts = readPositiveIntEnv("RECOVERY_POST_VALIDATION_ATTEMPTS", 6);
+  const delayMs = readPositiveIntEnv("RECOVERY_POST_VALIDATION_DELAY_MS", 5000);
+  let next = action;
+
+  for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
+    const remaining = findRemainingTargetMembers(next);
+    if (remaining.length === 0) {
+      if (attempt > 1) {
+        log.info("post-execution validation matched after propagation wait", { attempt });
+      }
+      return next;
+    }
+    if (next.status !== "completed" || attempt === maxAttempts) {
+      log.warn("post-execution validation still has target members", {
+        attempt,
+        remainingMembers: remaining.length,
+        actionStatus: next.status,
+      });
+      return next;
+    }
+
+    log.info("post-execution validation pending propagation", {
+      attempt,
+      remainingMembers: remaining.length,
+      delayMs,
+    });
+    await sleep(delayMs);
+    const postMembers = await graph.listGroupMembers(next.targetObjectId);
+    next = {
+      ...next,
+      postExecutionState: groupMembershipSnapshot(postMembers, new Date().toISOString()),
+    };
+  }
+  return next;
 }
 
 function updatePlanWithExecution(
@@ -335,6 +393,36 @@ function updatePlanWithExecution(
 function readMemberIds(snapshot: ActionInstance["postExecutionState"]): string[] {
   const ids = snapshot?.state.memberIds;
   return Array.isArray(ids) ? ids.filter((id): id is string => typeof id === "string") : [];
+}
+
+function findRemainingTargetMembers(action: ActionInstance) {
+  const postMemberIds = readMemberIds(action.postExecutionState);
+  return action.membersToRemove.filter((member) => postMemberIds.includes(member.memberId));
+}
+
+function groupMembershipSnapshot(members: EntraGroupMember[], capturedAt: string): StateSnapshot {
+  const ids = members.map((member) => member.id).sort();
+  return {
+    state: {
+      memberCount: ids.length,
+      memberIds: ids,
+    },
+    capturedAt,
+    captureSource: "graph-api-read",
+    confidence: "authoritative",
+    stateHash: createHash("sha256").update(ids.join("|")).digest("hex"),
+  };
+}
+
+function readPositiveIntEnv(name: string, fallback: number): number {
+  const raw = process.env[name];
+  if (!raw) return fallback;
+  const parsed = Number.parseInt(raw, 10);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
+}
+
+function futureIso(ms: number): string {
+  return new Date(Date.now() + ms).toISOString();
 }
 
 function metadata(args: Args, stepId: string, startedAt: string, startedMs: number) {
