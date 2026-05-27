@@ -17,6 +17,7 @@
 import { defineConfig, devices } from "@playwright/test";
 
 const AUTH_FILE = "tests/.auth/session.json";
+const BASE_URL = process.env.PLAYWRIGHT_BASE_URL ?? "http://localhost:3000";
 
 export default defineConfig({
   testDir: "./tests",
@@ -27,7 +28,7 @@ export default defineConfig({
   reporter: [["list"]],
 
   use: {
-    baseURL: "http://localhost:3000",
+    baseURL: BASE_URL,
     trace: "on-first-retry",
   },
 
