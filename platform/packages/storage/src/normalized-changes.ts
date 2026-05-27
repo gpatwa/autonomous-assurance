@@ -62,6 +62,21 @@ export async function listNormalizedChanges(
   return { changes: rows.rows.map((r) => r.payload), total };
 }
 
+export async function findNormalizedChangesByIds(
+  client: PoolClient,
+  changeIds: string[],
+): Promise<NormalizedChange[]> {
+  if (changeIds.length === 0) return [];
+  const rows = await client.query<{ change_id: string; payload: NormalizedChange }>(
+    `SELECT change_id, payload
+     FROM normalized_changes
+     WHERE change_id = ANY($1::text[])`,
+    [changeIds],
+  );
+  const byId = new Map(rows.rows.map((row) => [row.change_id, row.payload]));
+  return changeIds.map((id) => byId.get(id)).filter((c): c is NormalizedChange => !!c);
+}
+
 export interface InsertChangeResult {
   inserted: boolean;
 }

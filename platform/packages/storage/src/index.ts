@@ -58,6 +58,7 @@ export {
 } from "./bundles.js";
 
 export {
+  findNormalizedChangesByIds,
   insertNormalizedChange,
   listNormalizedChanges,
   type InsertChangeResult,

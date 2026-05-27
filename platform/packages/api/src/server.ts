@@ -21,10 +21,17 @@ import http from "node:http";
 import { randomBytes, randomUUID } from "node:crypto";
 import { ServiceBusClient } from "@azure/service-bus";
 import { rootLogger } from "@kavachiq/platform";
+import { blastRadius, planning } from "@kavachiq/core";
 import {
+  appendAuditRecord,
+  findLatestBlastRadiusResultForIncident,
+  findLatestRecoveryPlanForIncident,
   findIncidentById,
+  findNormalizedChangesByIds,
   insertOnboardedTenant,
   insertPendingOnboarding,
+  insertBlastRadiusResult,
+  insertRecoveryPlan,
   listIncidents,
   listNormalizedChanges,
   loadTenantByMicrosoftId,
@@ -113,6 +120,10 @@ function intParam(params: URLSearchParams, key: string, defaultVal: number, max:
 const RE_INCIDENTS = /^\/tenants\/([^/]+)\/incidents(?:\/([^/]+))?$/;
 // /tenants/<uuid>/changes
 const RE_CHANGES = /^\/tenants\/([^/]+)\/changes$/;
+// /tenants/<uuid>/incidents/<id>/blast-radius[/latest]
+const RE_BLAST_RADIUS = /^\/tenants\/([^/]+)\/incidents\/([^/]+)\/blast-radius(?:\/latest)?$/;
+// /tenants/<uuid>/incidents/<id>/plans[/latest]
+const RE_PLANS = /^\/tenants\/([^/]+)\/incidents\/([^/]+)\/plans(?:\/latest)?$/;
 // /resolve-tenant?microsoftTenantId=<uuid>
 const RE_RESOLVE_TENANT = /^\/resolve-tenant$/;
 
@@ -269,6 +280,129 @@ async function handleRequest(
   }
 
   // ── Tenant routes ────────────────────────────────────────────────────
+  if (method === "GET" || method === "POST") {
+    const mBlast = RE_BLAST_RADIUS.exec(path);
+    if (mBlast) {
+      const tenantId = mBlast[1]!;
+      const incidentId = mBlast[2]!;
+      const force = qs.get("force") === "true";
+      try {
+        const result = await withTenantContext(tenantId, async (client) => {
+          const existing = await findLatestBlastRadiusResultForIncident(client, incidentId);
+          if (method === "GET" || (existing && !force)) {
+            return { data: existing, created: false };
+          }
+
+          const incident = await findIncidentById(client, incidentId);
+          if (!incident) return null;
+          const changes = await findNormalizedChangesByIds(client, incident.rootChangeIds);
+          if (changes.length !== incident.rootChangeIds.length) {
+            throw new Error(
+              `cannot generate blast radius: expected ${incident.rootChangeIds.length} root changes, found ${changes.length}`,
+            );
+          }
+
+          const computed = blastRadius.computeCanonicalBlastRadius(incident, changes);
+          await insertBlastRadiusResult(client, computed);
+          await appendAuditRecord(client, {
+            auditRecordId: `aud_${randomUUID()}`,
+            tenantId,
+            eventType: "blast-radius-computed",
+            actor: systemActor(),
+            entityType: "incident",
+            entityId: incidentId,
+            action: "computed-blast-radius",
+            detail: {
+              resultId: computed.resultId,
+              totalImpactedObjects: computed.totalImpactedObjects,
+            },
+            timestamp: new Date().toISOString(),
+            schemaVersion: 1,
+          });
+          return { data: computed, created: true };
+        });
+        if (result === null || !result.data) { notFound(res); return; }
+        json(res, result.created ? 201 : 200, result);
+      } catch (err) {
+        log.error("api: blast-radius route failed", { err });
+        serverError(res, err);
+      }
+      return;
+    }
+
+    const mPlan = RE_PLANS.exec(path);
+    if (mPlan) {
+      const tenantId = mPlan[1]!;
+      const incidentId = mPlan[2]!;
+      const force = qs.get("force") === "true";
+      try {
+        const result = await withTenantContext(tenantId, async (client) => {
+          const existing = await findLatestRecoveryPlanForIncident(client, incidentId);
+          if (method === "GET" || (existing && !force)) {
+            return { data: existing, created: false };
+          }
+
+          const incident = await findIncidentById(client, incidentId);
+          if (!incident) return null;
+
+          let latestBlastRadius = await findLatestBlastRadiusResultForIncident(client, incidentId);
+          if (!latestBlastRadius) {
+            const changes = await findNormalizedChangesByIds(client, incident.rootChangeIds);
+            if (changes.length !== incident.rootChangeIds.length) {
+              throw new Error(
+                `cannot generate plan: expected ${incident.rootChangeIds.length} root changes, found ${changes.length}`,
+              );
+            }
+            latestBlastRadius = blastRadius.computeCanonicalBlastRadius(incident, changes);
+            await insertBlastRadiusResult(client, latestBlastRadius);
+            await appendAuditRecord(client, {
+              auditRecordId: `aud_${randomUUID()}`,
+              tenantId,
+              eventType: "blast-radius-computed",
+              actor: systemActor(),
+              entityType: "incident",
+              entityId: incidentId,
+              action: "computed-blast-radius",
+              detail: {
+                resultId: latestBlastRadius.resultId,
+                totalImpactedObjects: latestBlastRadius.totalImpactedObjects,
+              },
+              timestamp: new Date().toISOString(),
+              schemaVersion: 1,
+            });
+          }
+
+          const version = existing && force ? existing.version + 1 : 1;
+          const plan = planning.generateCanonicalRecoveryPlan(latestBlastRadius, { version });
+          await insertRecoveryPlan(client, plan);
+          await appendAuditRecord(client, {
+            auditRecordId: `aud_${randomUUID()}`,
+            tenantId,
+            eventType: "plan-generated",
+            actor: systemActor(),
+            entityType: "incident",
+            entityId: incidentId,
+            action: "generated-recovery-plan",
+            detail: {
+              planId: plan.planId,
+              version: plan.version,
+              steps: plan.steps.length,
+            },
+            timestamp: new Date().toISOString(),
+            schemaVersion: 1,
+          });
+          return { data: plan, created: true };
+        });
+        if (result === null || !result.data) { notFound(res); return; }
+        json(res, result.created ? 201 : 200, result);
+      } catch (err) {
+        log.error("api: plans route failed", { err });
+        serverError(res, err);
+      }
+      return;
+    }
+  }
+
   if (method === "GET") {
     const mInc = RE_INCIDENTS.exec(path);
     if (mInc) {
@@ -390,6 +524,16 @@ async function enqueuePollTenant(tenantId: string, log: typeof rootLogger): Prom
     await sender.close().catch(() => undefined);
     await sb.close().catch(() => undefined);
   }
+}
+
+function systemActor() {
+  return {
+    type: "kavachiq" as const,
+    id: "api",
+    displayName: "KavachIQ API",
+    agentIdentified: false,
+    sessionId: null,
+  };
 }
 
 // ─── Factory ───────────────────────────────────────────────────────────────
