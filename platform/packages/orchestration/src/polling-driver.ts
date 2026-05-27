@@ -6,6 +6,8 @@
  *   2. Load tenant credentials (RLS-scoped) + polling state
  *   3. Mint Graph token via ClientSecretCredential
  *   4. Fetch /auditLogs/directoryAudits since polling_state.last_event_observed_at
+ *      minus a small overlap window, because Graph audit events can become
+ *      visible after newer timestamps have already been observed.
  *   5. If events: archive raw JSON to Blob (one batch Blob)
  *   6. INSERT raw_events rows (idempotent on (tenant, microsoft_event_id))
  *   7. Build NormalizedChange[] via @kavachiq/core normalizers (per-event class)
@@ -53,6 +55,7 @@ import {
 
 const PROCESS_EVENTS_QUEUE = "process-events";
 const DEFAULT_POLL_LOOKBACK_HOURS = 24;
+const DEFAULT_CURSOR_OVERLAP_SECONDS = 10 * 60;
 
 export interface PollTenantBatchOptions {
   tenantId: string;
@@ -62,6 +65,8 @@ export interface PollTenantBatchOptions {
   initialLookbackHours?: number;
   /** Graph page size. Default 250 (Graph max). */
   pageSize?: number;
+  /** Re-read this many seconds before the stored cursor. Default 10 minutes. */
+  cursorOverlapSeconds?: number;
   /** Service Bus connection string. */
   serviceBusConnectionString: string;
   logger?: Logger;
@@ -98,16 +103,21 @@ export async function pollTenantBatch(
       // Secretless: platform credentials come from env, not per-tenant storage.
       const { microsoftTenantId } = await loadTenantMicrosoftId(client);
       const state = await getPollingState(client);
-      const cursor =
-        state?.lastEventObservedAt ??
-        new Date(
-          Date.now() -
-            (opts.initialLookbackHours ?? DEFAULT_POLL_LOOKBACK_HOURS) * 3600 * 1000,
-        ).toISOString();
+      const previousCursor = state?.lastEventObservedAt ?? null;
+      const cursor = previousCursor
+        ? subtractSeconds(
+            previousCursor,
+            opts.cursorOverlapSeconds ?? DEFAULT_CURSOR_OVERLAP_SECONDS,
+          )
+        : new Date(
+            Date.now() -
+              (opts.initialLookbackHours ?? DEFAULT_POLL_LOOKBACK_HOURS) * 3600 * 1000,
+          ).toISOString();
 
       log.info("polling-driver: fetching", {
         tenantId: opts.tenantId,
         cursor,
+        previousCursor,
         pageSize: opts.pageSize ?? 250,
       });
 
@@ -122,7 +132,7 @@ export async function pollTenantBatch(
         log.info("polling-driver: no new events", { tenantId: opts.tenantId });
         await recordPollSuccess(client, {
           completedAt: new Date().toISOString(),
-          lastEventObservedAt: state?.lastEventObservedAt ?? null,
+          lastEventObservedAt: previousCursor,
         });
         return {
           observedAnyEvents: false,
@@ -130,7 +140,7 @@ export async function pollTenantBatch(
           insertedCount: 0,
           enqueuedNormalizedCount: 0,
           hasMorePages: false,
-          newCursor: state?.lastEventObservedAt ?? null,
+          newCursor: previousCursor,
         };
       }
 
@@ -179,19 +189,20 @@ export async function pollTenantBatch(
         enqueuedNormalizedCount = normalized.length;
       }
 
+      const newCursor = maxIso(previousCursor, fetched.lastEventObservedAt);
       result = {
         observedAnyEvents: true,
         fetchedCount: fetched.events.length,
         insertedCount,
         enqueuedNormalizedCount,
         hasMorePages: fetched.hasMorePages,
-        newCursor: fetched.lastEventObservedAt,
+        newCursor,
       };
 
       // 7. Mark success; advance cursor.
       await recordPollSuccess(client, {
         completedAt: new Date().toISOString(),
-        lastEventObservedAt: fetched.lastEventObservedAt,
+        lastEventObservedAt: newCursor,
       });
 
       log.info("polling-driver: complete", {
@@ -220,6 +231,16 @@ function deriveRawEventId(tenantId: string, microsoftEventId: string): string {
   h.update(":");
   h.update(microsoftEventId);
   return `raw_${h.digest("hex").slice(0, 32)}`;
+}
+
+function subtractSeconds(iso: string, seconds: number): string {
+  return new Date(new Date(iso).getTime() - seconds * 1000).toISOString();
+}
+
+function maxIso(a: string | null, b: string | null): string | null {
+  if (!a) return b;
+  if (!b) return a;
+  return a > b ? a : b;
 }
 
 /**
