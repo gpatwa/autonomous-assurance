@@ -74,7 +74,20 @@ else
   API_KEY=$(openssl rand -hex 32)
   az keyvault secret set --vault-name "$KV" --name api-key --value "$API_KEY" -o none
   echo "  api-key: generated and stored in Key Vault"
-  echo "  !! Update KAVACHIQ_API_KEY in the console .env.local: ${API_KEY}"
+  echo "  !! Update KAVACHIQ_API_KEY in the console from Key Vault secret 'api-key'"
+fi
+
+if az keyvault secret show --vault-name "$KV" --name recovery-approval-signing-secret &>/dev/null; then
+  RECOVERY_APPROVAL_SIGNING_SECRET=$(az keyvault secret show \
+    --vault-name "$KV" --name recovery-approval-signing-secret --query value -o tsv)
+  echo "  recovery-approval-signing-secret: loaded from Key Vault"
+else
+  RECOVERY_APPROVAL_SIGNING_SECRET=$(openssl rand -hex 32)
+  az keyvault secret set \
+    --vault-name "$KV" \
+    --name recovery-approval-signing-secret \
+    --value "$RECOVERY_APPROVAL_SIGNING_SECRET" -o none
+  echo "  recovery-approval-signing-secret: generated and stored in Key Vault"
 fi
 
 # KavachIQ platform Entra app credentials (used by polling-worker for Graph).
@@ -108,6 +121,7 @@ az deployment group create \
     postgresAdminPassword="$PG_PASSWORD" \
     apiImage="${ACR_SERVER}/api:${TAG}" \
     apiKey="$API_KEY" \
+    recoveryApprovalSigningSecret="$RECOVERY_APPROVAL_SIGNING_SECRET" \
     apiDatabaseUrl="$DATABASE_URL" \
     pipelineWorkerImage="${ACR_SERVER}/pipeline-worker:${TAG}" \
     consoleUrl="$CONSOLE_URL" \

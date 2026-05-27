@@ -44,6 +44,10 @@ param apiImage string = ''
 @secure()
 param apiKey string = ''
 
+@description('HMAC signing secret used by the API to mint approval records.')
+@secure()
+param recoveryApprovalSigningSecret string = ''
+
 @description('Postgres URL with sslmode=require for the api server. Required if apiImage is set.')
 @secure()
 param apiDatabaseUrl string = ''
@@ -189,6 +193,7 @@ module api 'modules/container-app-api.bicep' = if (!empty(apiImage)) {
     uamiId: uami.outputs.id
     image: apiImage
     apiKey: apiKey
+    recoveryApprovalSigningSecret: recoveryApprovalSigningSecret
     databaseUrl: apiDatabaseUrl
     appInsightsConnectionString: appInsights.outputs.connectionString
     consoleUrl: consoleUrl

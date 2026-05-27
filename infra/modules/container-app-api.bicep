@@ -25,6 +25,10 @@ param image string
 @secure()
 param apiKey string
 
+@description('HMAC signing secret used to create recovery approval signatures.')
+@secure()
+param recoveryApprovalSigningSecret string
+
 @description('Postgres URL with sslmode=require.')
 @secure()
 param databaseUrl string
@@ -74,6 +78,10 @@ resource app 'Microsoft.App/containerApps@2024-03-01' = {
           value: apiKey
         }
         {
+          name: 'recovery-approval-signing-secret'
+          value: recoveryApprovalSigningSecret
+        }
+        {
           name: 'database-url'
           value: databaseUrl
         }
@@ -112,6 +120,10 @@ resource app 'Microsoft.App/containerApps@2024-03-01' = {
             {
               name: 'API_KEY'
               secretRef: 'api-key'
+            }
+            {
+              name: 'RECOVERY_APPROVAL_SIGNING_SECRET'
+              secretRef: 'recovery-approval-signing-secret'
             }
             {
               name: 'DATABASE_URL'
