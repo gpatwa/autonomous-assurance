@@ -222,6 +222,20 @@ export async function findApprovalRecord(
   return result.rows[0]?.payload ?? null;
 }
 
+export async function listApprovalRecordsForIncident(
+  client: PoolClient,
+  incidentId: string,
+): Promise<ApprovalRecord[]> {
+  const result = await client.query<{ payload: ApprovalRecord }>(
+    `SELECT payload
+     FROM approval_records
+     WHERE incident_id = $1
+     ORDER BY approved_at ASC`,
+    [incidentId],
+  );
+  return result.rows.map((row) => row.payload);
+}
+
 export async function invalidateApprovalRecord(
   client: PoolClient,
   approvalId: string,
@@ -339,6 +353,20 @@ export async function findActionInstance(
   return result.rows[0]?.payload ?? null;
 }
 
+export async function listActionInstancesForIncident(
+  client: PoolClient,
+  incidentId: string,
+): Promise<ActionInstance[]> {
+  const result = await client.query<{ payload: ActionInstance }>(
+    `SELECT payload
+     FROM action_instances
+     WHERE incident_id = $1
+     ORDER BY created_at ASC`,
+    [incidentId],
+  );
+  return result.rows.map((row) => row.payload);
+}
+
 export async function insertValidationRecord(
   client: PoolClient,
   validation: ValidationRecord,
@@ -442,20 +470,7 @@ export async function listAuditRecordsForEntity(
   entityType: string,
   entityId: string,
 ): Promise<AuditRecord[]> {
-  const result = await client.query<{
-    audit_record_id: string;
-    tenant_id: string;
-    event_type: AuditRecord["eventType"];
-    actor: AuditRecord["actor"];
-    entity_type: string;
-    entity_id: string;
-    action: string;
-    detail: Record<string, unknown>;
-    previous_hash: string;
-    record_hash: string;
-    timestamp: string;
-    schema_version: number;
-  }>(
+  const result = await client.query<AuditRecordRow>(
     `SELECT audit_record_id, tenant_id::text, event_type, actor, entity_type,
             entity_id, action, detail, previous_hash, record_hash,
             timestamp::text, schema_version
@@ -465,7 +480,43 @@ export async function listAuditRecordsForEntity(
     [entityType, entityId],
   );
 
-  return result.rows.map((row) => ({
+  return result.rows.map(toAuditRecord);
+}
+
+export async function listAuditRecordsForIncident(
+  client: PoolClient,
+  incidentId: string,
+): Promise<AuditRecord[]> {
+  const result = await client.query<AuditRecordRow>(
+    `SELECT audit_record_id, tenant_id::text, event_type, actor, entity_type,
+            entity_id, action, detail, previous_hash, record_hash,
+            timestamp::text, schema_version
+     FROM audit_records
+     WHERE entity_id = $1 OR detail->>'incidentId' = $1
+     ORDER BY timestamp ASC, created_at ASC`,
+    [incidentId],
+  );
+
+  return result.rows.map(toAuditRecord);
+}
+
+interface AuditRecordRow {
+  audit_record_id: string;
+  tenant_id: string;
+  event_type: AuditRecord["eventType"];
+  actor: AuditRecord["actor"];
+  entity_type: string;
+  entity_id: string;
+  action: string;
+  detail: Record<string, unknown>;
+  previous_hash: string;
+  record_hash: string;
+  timestamp: string;
+  schema_version: number;
+}
+
+function toAuditRecord(row: AuditRecordRow): AuditRecord {
+  return {
     auditRecordId: row.audit_record_id,
     tenantId: row.tenant_id,
     eventType: row.event_type,
@@ -478,7 +529,7 @@ export async function listAuditRecordsForEntity(
     recordHash: row.record_hash,
     timestamp: row.timestamp,
     schemaVersion: row.schema_version,
-  }));
+  };
 }
 
 async function assertTenantContext(

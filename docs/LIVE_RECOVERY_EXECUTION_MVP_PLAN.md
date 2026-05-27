@@ -32,7 +32,10 @@ Current implementation progress:
 
 - Persistence, canonical demo-tenant harness, blast-radius generation, plan generation, planning APIs, approval API, and group-member rollback execution package are implemented.
 - The operator bridge `platform/scripts/execute-approved-recovery.ts` now connects an approved plan step to SP-Execute Graph writes, validation persistence, plan update, and audit records.
-- Evidence-pack export and the auth-gated console execution view remain pending before prospect demo readiness.
+- Authenticated evidence-pack export is implemented at
+  `GET /tenants/:tenantId/incidents/:incidentId/evidence-pack`.
+- The auth-gated console execution view remains pending before a polished
+  prospect demo.
 
 ---
 

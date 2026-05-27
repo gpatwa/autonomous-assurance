@@ -33,8 +33,12 @@ import {
   insertApprovalRecord,
   insertBlastRadiusResult,
   insertRecoveryPlan,
+  listActionInstancesForIncident,
+  listApprovalRecordsForIncident,
+  listAuditRecordsForIncident,
   listIncidents,
   listNormalizedChanges,
+  listValidationRecordsForIncident,
   loadTenantByMicrosoftId,
   redeemPendingOnboarding,
   updateRecoveryPlan,
@@ -126,6 +130,8 @@ const RE_CHANGES = /^\/tenants\/([^/]+)\/changes$/;
 const RE_BLAST_RADIUS = /^\/tenants\/([^/]+)\/incidents\/([^/]+)\/blast-radius(?:\/latest)?$/;
 // /tenants/<uuid>/incidents/<id>/plans[/latest]
 const RE_PLANS = /^\/tenants\/([^/]+)\/incidents\/([^/]+)\/plans(?:\/latest)?$/;
+// /tenants/<uuid>/incidents/<id>/evidence-pack
+const RE_EVIDENCE_PACK = /^\/tenants\/([^/]+)\/incidents\/([^/]+)\/evidence-pack$/;
 // /tenants/<uuid>/incidents/<id>/plans/latest/steps/<stepId>/approve
 const RE_APPROVE_STEP = /^\/tenants\/([^/]+)\/incidents\/([^/]+)\/plans\/latest\/steps\/([^/]+)\/approve$/;
 // /resolve-tenant?microsoftTenantId=<uuid>
@@ -389,6 +395,72 @@ async function handleRequest(
           return;
         }
         log.error("api: approve step failed", { err });
+        serverError(res, err);
+      }
+      return;
+    }
+  }
+
+  if (method === "GET") {
+    const mEvidence = RE_EVIDENCE_PACK.exec(path);
+    if (mEvidence) {
+      const tenantId = mEvidence[1]!;
+      const incidentId = mEvidence[2]!;
+      try {
+        const result = await withTenantContext(tenantId, async (client) => {
+          const incident = await findIncidentById(client, incidentId);
+          if (!incident) return null;
+          const rootChanges = await findNormalizedChangesByIds(client, incident.rootChangeIds);
+          const [
+            blastRadiusResult,
+            recoveryPlan,
+            approvals,
+            actionInstances,
+            validationRecords,
+            auditRecords,
+          ] = await Promise.all([
+            findLatestBlastRadiusResultForIncident(client, incidentId),
+            findLatestRecoveryPlanForIncident(client, incidentId),
+            listApprovalRecordsForIncident(client, incidentId),
+            listActionInstancesForIncident(client, incidentId),
+            listValidationRecordsForIncident(client, incidentId),
+            listAuditRecordsForIncident(client, incidentId),
+          ]);
+
+          return {
+            schemaVersion: 1,
+            generatedAt: new Date().toISOString(),
+            tenantId,
+            incidentId,
+            scope: "live-recovery-mvp",
+            dataProtection: {
+              businessDocumentContentIncluded: false,
+              rawEventPayloadsIncluded: false,
+            },
+            executionBoundary: {
+              systemExecuted: ["entra-group-member-removal"],
+              manualOrRecommendationOnly: [
+                "conditional-access-validation",
+                "sharepoint-access-review",
+                "exchange-delegation-review",
+                "teams-membership-review",
+                "sap-entitlement-review",
+              ],
+            },
+            incident,
+            rootChanges,
+            blastRadiusResult,
+            recoveryPlan,
+            approvals,
+            actionInstances,
+            validationRecords,
+            auditRecords,
+          };
+        });
+        if (!result) { notFound(res); return; }
+        json(res, 200, { data: result });
+      } catch (err) {
+        log.error("api: evidence pack route failed", { err });
         serverError(res, err);
       }
       return;
