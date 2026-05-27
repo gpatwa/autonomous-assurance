@@ -250,7 +250,7 @@ async function runScript(args: Args, log: Logger): Promise<CanonicalDemoTenantRe
     if (args.dryRun.apply) {
       const executeCreds = loadSpCredentials("execute");
       const executeGraph = new GraphTransport({ tokenProvider: tokenProviderFor(executeCreds) });
-      operations.push(...(await triggerIncident(executeGraph, triggerBase, log)));
+      operations.push(...(await triggerIncident(readGraph, executeGraph, triggerBase, log)));
       after = await discoverState(readGraph);
     } else {
       operations.push(...planTriggerOperations(triggerBase));
@@ -507,12 +507,13 @@ async function resetToBaseline(
 }
 
 async function triggerIncident(
+  readGraph: GraphTransport,
   executeGraph: GraphTransport,
   before: DemoTenantState,
   log: Logger,
 ): Promise<DemoOperation[]> {
   const groupId = requireGroupId(before);
-  const users = await findCanonicalUsers(executeGraph);
+  const users = await findCanonicalUsers(readGraph);
   const bySeq = new Map(users.map((user) => [user.seq, user]));
   const operations: DemoOperation[] = [];
 
