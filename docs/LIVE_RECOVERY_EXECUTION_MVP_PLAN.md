@@ -1,6 +1,6 @@
 # Live End-to-End Recovery Execution MVP Plan
 
-**Status:** Execution plan  
+**Status:** Implementation in progress
 **Date:** 2026-05-26  
 **Scope:** CANONICAL-001, privileged Entra group membership expansion by agent  
 **Audience:** Engineering, founder, prospect-demo preparation  
@@ -27,6 +27,12 @@ The MVP proves the wedge without overclaim:
 - **System-assisted execution only for Entra group member removal.**
 - **Downstream Microsoft 365 surfaces remain recommendation, validation, or manual-confirmation steps.**
 - **No autonomous rollback. Every write requires explicit operator approval.**
+
+Current implementation progress:
+
+- Persistence, canonical demo-tenant harness, blast-radius generation, plan generation, planning APIs, approval API, and group-member rollback execution package are implemented.
+- The operator bridge `platform/scripts/execute-approved-recovery.ts` now connects an approved plan step to SP-Execute Graph writes, validation persistence, plan update, and audit records.
+- Evidence-pack export and the auth-gated console execution view remain pending before prospect demo readiness.
 
 ---
 
@@ -312,4 +318,3 @@ Start with storage. The execution service should not write to Microsoft Graph un
 - each sub-action attempted,
 - validation outcome,
 - and the hash-chained audit trail.
-

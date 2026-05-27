@@ -11,6 +11,7 @@ Orchestration scripts use the local `scripts/lib/runbook.ts` pattern:
 |--------|---------|----|---------|
 | `setup-test-tenant.ts` | Tenant summary / idempotent population + SP-Read/Execute/Setup verification (dry-run default) | WI-01/02/03 | `npm run setup-test-tenant -- --mode summary \| setup [--apply] [--output PATH]` |
 | `canonical-demo-tenant.ts` | Live recovery MVP harness: verify baseline, reset fixture state, trigger CANONICAL-001 with SP-Execute provenance (dry-run default) | Live MVP | `npm run canonical-demo-tenant -- --mode verify \| reset \| trigger \| cycle [--apply] [--output PATH]` |
+| `execute-approved-recovery.ts` | Live recovery MVP executor: load the latest approved plan step, execute the Entra group rollback, persist validation and audit records (dry-run default) | Live MVP | `npm run execute-approved-recovery -- --tenant-id UUID --incident-id ID [--step-id ID] [--apply] [--output PATH]` |
 | `fetch-audit-events.ts` | Fetch `/auditLogs/directoryAudits` for a window; write raw JSON | WI-05 | `npm run fetch-audit-events -- --start ISO --end ISO [--output PATH]` |
 | `run-audit-completeness-spike.ts` | WI-05 orchestration: mutation checklist → confirmation → propagation wait → fetch → 4-class completeness analysis → JSON matrix + markdown summary | WI-05 | `npm run audit-completeness-spike -- --output-dir PATH [--confirm-mutations] [--wait-minutes N]` |
 | `test-member-removal.ts` | Graph remove-member spike: reliability / idempotency / timing / rate-limit | WI-06 | `npm run test-member-removal -- --mode MODE --group-id ID (--members-file PATH \| --member-id ID) [--apply] [--output PATH]` |
@@ -23,12 +24,50 @@ usage errors exit `2`; other errors exit `1`. See
 All log lines go to **stderr** as JSON objects. `fetch-audit-events`
 writes event JSON to **stdout** when `--output` is omitted — pipe-safe.
 
+## Live recovery execution (`execute-approved-recovery.ts`)
+
+This is the first MVP bridge from approval to live Microsoft Graph write.
+It loads the latest recovery plan for an incident, selects the approved
+system rollback step, verifies the approval signature and expiry, creates an
+`ActionInstance`, and removes only the incident-added members from the target
+Entra group.
+
+Dry-run is default and does not persist records or call Graph DELETE. Use it
+to confirm the selected step and action payload before a demo:
+
+```bash
+npm run execute-approved-recovery -- \
+  --tenant-id 00000000-0000-0000-0000-000000000000 \
+  --incident-id inc_123 \
+  --output ./live-mvp/execution-dry-run.json
+```
+
+Apply mode persists the action instance, performs SP-Execute DELETE calls,
+writes a validation record, updates the recovery plan step, and appends audit
+events:
+
+```bash
+npm run execute-approved-recovery -- \
+  --tenant-id 00000000-0000-0000-0000-000000000000 \
+  --incident-id inc_123 \
+  --apply \
+  --output ./live-mvp/execution-applied.json
+```
+
+Required env:
+
+- `DATABASE_URL`
+- `RECOVERY_APPROVAL_SIGNING_SECRET`
+- `SP_EXECUTE_TENANT_ID`, `SP_EXECUTE_CLIENT_ID`, plus
+  `SP_EXECUTE_CERTIFICATE_PATH` or `SP_EXECUTE_CLIENT_SECRET`
+
 ## Files
 
 | File | Purpose | Trust boundary |
 |------|---------|----------------|
 | `setup-test-tenant.ts` | WI-01 / WI-02 / WI-03 helper | SP-Read for existence checks + /organization probe. SP-Execute probe: token acquisition only. SP-Setup (new) for writes, behind `--apply` only. |
 | `canonical-demo-tenant.ts` | Live recovery demo harness for CANONICAL-001 | SP-Read for discovery. SP-Setup for reset writes. SP-Execute for incident-trigger writes. Dry-run default. |
+| `execute-approved-recovery.ts` | Live recovery execution bridge for an approved CANONICAL-001 rollback step | Database reads/writes through tenant RLS. SP-Execute performs the approved group-member DELETE calls only when `--apply` is present. Dry-run default. |
 | `fetch-audit-events.ts` | WI-05 fetch | SP-Read only; read-only |
 | `run-audit-completeness-spike.ts` | WI-05 orchestrator | SP-Read only; read-only. Interactive/confirm-mutations; propagation wait; analyze |
 | `test-member-removal.ts` | WI-06 script | SP-Execute only; the ONLY script that issues DELETEs. Dry-run default. |
