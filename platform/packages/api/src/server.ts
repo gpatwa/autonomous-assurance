@@ -18,7 +18,7 @@
  */
 
 import http from "node:http";
-import { randomBytes, randomUUID } from "node:crypto";
+import { createHmac, randomBytes, randomUUID } from "node:crypto";
 import { ServiceBusClient } from "@azure/service-bus";
 import { rootLogger } from "@kavachiq/platform";
 import { blastRadius, planning } from "@kavachiq/core";
@@ -30,12 +30,14 @@ import {
   findNormalizedChangesByIds,
   insertOnboardedTenant,
   insertPendingOnboarding,
+  insertApprovalRecord,
   insertBlastRadiusResult,
   insertRecoveryPlan,
   listIncidents,
   listNormalizedChanges,
   loadTenantByMicrosoftId,
   redeemPendingOnboarding,
+  updateRecoveryPlan,
   updateIncidentStatus,
   type IncidentStatus,
   withAdminContext,
@@ -124,6 +126,8 @@ const RE_CHANGES = /^\/tenants\/([^/]+)\/changes$/;
 const RE_BLAST_RADIUS = /^\/tenants\/([^/]+)\/incidents\/([^/]+)\/blast-radius(?:\/latest)?$/;
 // /tenants/<uuid>/incidents/<id>/plans[/latest]
 const RE_PLANS = /^\/tenants\/([^/]+)\/incidents\/([^/]+)\/plans(?:\/latest)?$/;
+// /tenants/<uuid>/incidents/<id>/plans/latest/steps/<stepId>/approve
+const RE_APPROVE_STEP = /^\/tenants\/([^/]+)\/incidents\/([^/]+)\/plans\/latest\/steps\/([^/]+)\/approve$/;
 // /resolve-tenant?microsoftTenantId=<uuid>
 const RE_RESOLVE_TENANT = /^\/resolve-tenant$/;
 
@@ -280,6 +284,117 @@ async function handleRequest(
   }
 
   // ── Tenant routes ────────────────────────────────────────────────────
+  if (method === "POST") {
+    const mApprove = RE_APPROVE_STEP.exec(path);
+    if (mApprove) {
+      const tenantId = mApprove[1]!;
+      const incidentId = mApprove[2]!;
+      const stepId = mApprove[3]!;
+      let body: { approvedBy?: string; expiresInMinutes?: number };
+      try { body = await readJson(req); } catch { badRequest(res, "invalid JSON body"); return; }
+      const approvedBy = (body.approvedBy ?? "").trim();
+      if (!approvedBy) { badRequest(res, "approvedBy is required"); return; }
+      const expiresInMinutes = clampApprovalMinutes(body.expiresInMinutes);
+      try {
+        const result = await withTenantContext(tenantId, async (client) => {
+          const plan = await findLatestRecoveryPlanForIncident(client, incidentId);
+          if (!plan) return null;
+          const step = plan.steps.find((s) => s.stepId === stepId);
+          if (!step) return null;
+          if (!step.approvalRequired) {
+            throw new Error("step does not require approval");
+          }
+          if (step.approvalId) {
+            throw new Error("step is already approved");
+          }
+
+          const approvedAt = new Date();
+          const expiresAt = new Date(approvedAt.getTime() + expiresInMinutes * 60_000);
+          const approvalId = `apr_${randomUUID()}`;
+          const signature = signApproval({
+            approvalId,
+            tenantId,
+            incidentId,
+            planId: plan.planId,
+            planVersion: plan.version,
+            stepId,
+            approvedBy,
+            approvedAt: approvedAt.toISOString(),
+            expiresAt: expiresAt.toISOString(),
+            stateHashAtApproval: step.currentStateAtPlan.stateHash,
+            targetObjectId: step.targetObjectId,
+            targetState: step.targetState.state,
+          });
+          const approval = {
+            approvalId,
+            tenantId,
+            incidentId,
+            planId: plan.planId,
+            planVersion: plan.version,
+            stepId,
+            approvedBy,
+            approvedAt: approvedAt.toISOString(),
+            expiresAt: expiresAt.toISOString(),
+            stateHashAtApproval: step.currentStateAtPlan.stateHash,
+            targetObjectId: step.targetObjectId,
+            targetState: step.targetState.state,
+            signature,
+            invalidated: false,
+            invalidatedReason: null,
+            schemaVersion: 1,
+          };
+          await insertApprovalRecord(client, approval);
+
+          const updatedPlan = {
+            ...plan,
+            steps: plan.steps.map((s) =>
+              s.stepId === stepId
+                ? { ...s, approvalId, status: "ready" as const }
+                : s,
+            ),
+          };
+          await updateRecoveryPlan(client, updatedPlan);
+          await appendAuditRecord(client, {
+            auditRecordId: `aud_${randomUUID()}`,
+            tenantId,
+            eventType: "step-approved",
+            actor: {
+              type: "user",
+              id: approvedBy,
+              displayName: approvedBy,
+              agentIdentified: false,
+              sessionId: null,
+            },
+            entityType: "recovery-step",
+            entityId: stepId,
+            action: "approved",
+            detail: {
+              approvalId,
+              incidentId,
+              planId: plan.planId,
+              planVersion: plan.version,
+              expiresAt: approval.expiresAt,
+            },
+            timestamp: new Date().toISOString(),
+            schemaVersion: 1,
+          });
+          return { approval, plan: updatedPlan };
+        });
+        if (!result) { notFound(res); return; }
+        json(res, 201, { data: result });
+      } catch (err) {
+        const message = err instanceof Error ? err.message : String(err);
+        if (/does not require approval|already approved/.test(message)) {
+          badRequest(res, message);
+          return;
+        }
+        log.error("api: approve step failed", { err });
+        serverError(res, err);
+      }
+      return;
+    }
+  }
+
   if (method === "GET" || method === "POST") {
     const mBlast = RE_BLAST_RADIUS.exec(path);
     if (mBlast) {
@@ -534,6 +649,31 @@ function systemActor() {
     agentIdentified: false,
     sessionId: null,
   };
+}
+
+function clampApprovalMinutes(raw: number | undefined): number {
+  if (raw === undefined) return 30;
+  if (!Number.isFinite(raw) || raw <= 0) return 30;
+  return Math.min(Math.floor(raw), 120);
+}
+
+function signApproval(payload: Record<string, unknown>): string {
+  const secret = process.env.RECOVERY_APPROVAL_SIGNING_SECRET;
+  if (!secret) {
+    throw new Error("RECOVERY_APPROVAL_SIGNING_SECRET is required to approve recovery steps");
+  }
+  return createHmac("sha256", secret).update(stableStringify(payload)).digest("hex");
+}
+
+function stableStringify(value: unknown): string {
+  if (value === null || typeof value !== "object") return JSON.stringify(value);
+  if (Array.isArray(value)) return `[${value.map((item) => stableStringify(item)).join(",")}]`;
+  const record = value as Record<string, unknown>;
+  return `{${Object.keys(record)
+    .filter((key) => record[key] !== undefined)
+    .sort()
+    .map((key) => `${JSON.stringify(key)}:${stableStringify(record[key])}`)
+    .join(",")}}`;
 }
 
 // ─── Factory ───────────────────────────────────────────────────────────────
