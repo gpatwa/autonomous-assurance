@@ -10,6 +10,7 @@ Orchestration scripts use the local `scripts/lib/runbook.ts` pattern:
 | Script | Purpose | WI | Command |
 |--------|---------|----|---------|
 | `setup-test-tenant.ts` | Tenant summary / idempotent population + SP-Read/Execute/Setup verification (dry-run default) | WI-01/02/03 | `npm run setup-test-tenant -- --mode summary \| setup [--apply] [--output PATH]` |
+| `canonical-demo-tenant.ts` | Live recovery MVP harness: verify baseline, reset fixture state, trigger CANONICAL-001 with SP-Execute provenance (dry-run default) | Live MVP | `npm run canonical-demo-tenant -- --mode verify \| reset \| trigger \| cycle [--apply] [--output PATH]` |
 | `fetch-audit-events.ts` | Fetch `/auditLogs/directoryAudits` for a window; write raw JSON | WI-05 | `npm run fetch-audit-events -- --start ISO --end ISO [--output PATH]` |
 | `run-audit-completeness-spike.ts` | WI-05 orchestration: mutation checklist → confirmation → propagation wait → fetch → 4-class completeness analysis → JSON matrix + markdown summary | WI-05 | `npm run audit-completeness-spike -- --output-dir PATH [--confirm-mutations] [--wait-minutes N]` |
 | `test-member-removal.ts` | Graph remove-member spike: reliability / idempotency / timing / rate-limit | WI-06 | `npm run test-member-removal -- --mode MODE --group-id ID (--members-file PATH \| --member-id ID) [--apply] [--output PATH]` |
@@ -27,6 +28,7 @@ writes event JSON to **stdout** when `--output` is omitted — pipe-safe.
 | File | Purpose | Trust boundary |
 |------|---------|----------------|
 | `setup-test-tenant.ts` | WI-01 / WI-02 / WI-03 helper | SP-Read for existence checks + /organization probe. SP-Execute probe: token acquisition only. SP-Setup (new) for writes, behind `--apply` only. |
+| `canonical-demo-tenant.ts` | Live recovery demo harness for CANONICAL-001 | SP-Read for discovery. SP-Setup for reset writes. SP-Execute for incident-trigger writes. Dry-run default. |
 | `fetch-audit-events.ts` | WI-05 fetch | SP-Read only; read-only |
 | `run-audit-completeness-spike.ts` | WI-05 orchestrator | SP-Read only; read-only. Interactive/confirm-mutations; propagation wait; analyze |
 | `test-member-removal.ts` | WI-06 script | SP-Execute only; the ONLY script that issues DELETEs. Dry-run default. |
