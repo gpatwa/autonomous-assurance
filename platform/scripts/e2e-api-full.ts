@@ -64,7 +64,8 @@ const canonicalIncident = JSON.parse(
 ) as Incident;
 const INCIDENT_ID = "inc_" + randomUUID().replace(/-/g, "");
 const BUNDLE_ID = "bnd_e2e_full_" + randomUUID().replace(/-/g, "");
-const seededIncident: Incident = {
+type IncidentWithBundleId = Incident & { bundleId: string };
+const seededIncident: IncidentWithBundleId = {
   ...canonicalIncident,
   incidentId: INCIDENT_ID,
   tenantId: TENANT_ID,

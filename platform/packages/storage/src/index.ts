@@ -113,3 +113,26 @@ export {
   type ArchiveRawEventsArgs,
   type ArchiveRawEventsResult,
 } from "./blob.js";
+
+export {
+  appendAuditRecord,
+  findActionInstance,
+  findApprovalRecord,
+  findBlastRadiusResultById,
+  findLatestBlastRadiusResultForIncident,
+  findLatestRecoveryPlanForIncident,
+  findRecoveryPlan,
+  insertActionInstance,
+  insertApprovalRecord,
+  insertBlastRadiusResult,
+  insertRecoveryPlan,
+  insertValidationRecord,
+  invalidateApprovalRecord,
+  listAuditRecordsForEntity,
+  listValidationRecordsForIncident,
+  stableStringify,
+  updateActionInstance,
+  updateRecoveryPlan,
+  type AppendAuditRecordArgs,
+  type InsertRecoveryEntityResult,
+} from "./recovery.js";
