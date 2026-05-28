@@ -12,6 +12,7 @@ Orchestration scripts use the local `scripts/lib/runbook.ts` pattern:
 | `setup-test-tenant.ts` | Tenant summary / idempotent population + SP-Read/Execute/Setup verification (dry-run default) | WI-01/02/03 | `npm run setup-test-tenant -- --mode summary \| setup [--apply] [--output PATH]` |
 | `canonical-demo-tenant.ts` | Live recovery MVP harness: verify baseline, reset fixture state, trigger CANONICAL-001 with SP-Execute provenance (dry-run default) | Live MVP | `npm run canonical-demo-tenant -- --mode verify \| reset \| trigger \| cycle [--apply] [--output PATH]` |
 | `execute-approved-recovery.ts` | Live recovery MVP executor: load the latest approved plan step, execute the Entra group rollback, persist validation and audit records (dry-run default) | Live MVP | `npm run execute-approved-recovery -- --tenant-id UUID --incident-id ID [--step-id ID] [--apply] [--output PATH]` |
+| `live-demo-readiness.ts` | Full live demo gate: reset, trigger, poll, plan, approve, execute, validate, evidence export | Live MVP | `npm run live-demo-readiness -- --apply [--runs 3] [--api-url URL] [--output PATH]` |
 | `fetch-audit-events.ts` | Fetch `/auditLogs/directoryAudits` for a window; write raw JSON | WI-05 | `npm run fetch-audit-events -- --start ISO --end ISO [--output PATH]` |
 | `run-audit-completeness-spike.ts` | WI-05 orchestration: mutation checklist → confirmation → propagation wait → fetch → 4-class completeness analysis → JSON matrix + markdown summary | WI-05 | `npm run audit-completeness-spike -- --output-dir PATH [--confirm-mutations] [--wait-minutes N]` |
 | `test-member-removal.ts` | Graph remove-member spike: reliability / idempotency / timing / rate-limit | WI-06 | `npm run test-member-removal -- --mode MODE --group-id ID (--members-file PATH \| --member-id ID) [--apply] [--output PATH]` |
@@ -60,6 +61,25 @@ Required env:
 - `RECOVERY_APPROVAL_SIGNING_SECRET`
 - `SP_EXECUTE_TENANT_ID`, `SP_EXECUTE_CLIENT_ID`, plus
   `SP_EXECUTE_CERTIFICATE_PATH` or `SP_EXECUTE_CLIENT_SECRET`
+
+## Live demo readiness gate (`live-demo-readiness.ts`)
+
+Runs the prospect-demo path end to end against the configured Azure-backed
+platform and canonical Microsoft 365 demo tenant. It is intentionally
+`--apply` only because the readiness gate is meaningful only when the Graph
+write path actually runs.
+
+```bash
+npm run live-demo-readiness -- \
+  --apply \
+  --runs 3 \
+  --api-url https://ca-api-dev.nicesand-85e14f44.centralus.azurecontainerapps.io \
+  --output ../artifacts/live-mvp/readiness-summary.json
+```
+
+The script writes per-run artifacts under `artifacts/live-mvp/`, including
+the trigger result, poll result, blast radius, recovery plan, approval,
+execution result, post-recovery verification, and evidence pack.
 
 ## Files
 
