@@ -46,6 +46,106 @@ export interface ConsoleChange {
   observedAt: string;
 }
 
+export interface ConsoleRecoveryStep {
+  stepId: string;
+  order: number;
+  tier: number;
+  actionType: string;
+  targetObjectId: string;
+  targetObjectType: string;
+  targetObjectName: string;
+  executionMode: "system" | "manual" | string;
+  approvalRequired: boolean;
+  status: string;
+  rationale: string;
+  dependencyChain: string;
+  approvalId: string | null;
+  actionInstanceId: string | null;
+  validationRecordId: string | null;
+}
+
+export interface ConsoleRecoveryPlan {
+  planId: string;
+  tenantId: string;
+  incidentId: string;
+  version: number;
+  status: string;
+  generatedAt: string;
+  steps: ConsoleRecoveryStep[];
+}
+
+export interface ConsoleApprovalRecord {
+  approvalId: string;
+  stepId: string;
+  approvedBy: string;
+  approvedAt: string;
+  expiresAt: string;
+  invalidated: boolean;
+  invalidatedReason: string | null;
+}
+
+export interface ConsoleSubAction {
+  subActionId: string;
+  memberUPN: string;
+  status: string;
+  attempts: Array<{
+    attemptNumber: number;
+    httpStatus: number | null;
+    outcome: string;
+    graphCorrelationId: string | null;
+  }>;
+}
+
+export interface ConsoleActionInstance {
+  instanceId: string;
+  stepId: string;
+  targetObjectName: string;
+  status: string;
+  membersToRemove: Array<{ memberId: string; memberUPN: string }>;
+  subActions: ConsoleSubAction[];
+  circuitBroken: boolean;
+  createdAt: string;
+  startedAt: string | null;
+  completedAt: string | null;
+  postExecutionState: { state: { memberCount?: number; memberIds?: string[] } } | null;
+}
+
+export interface ConsoleValidationRecord {
+  validationId: string;
+  stepId: string;
+  objectId: string;
+  result: "match" | "mismatch" | "pending-propagation" | "unknown";
+  validatedAt: string;
+  revalidateAt: string | null;
+}
+
+export interface ConsoleAuditRecord {
+  auditRecordId: string;
+  eventType: string;
+  entityType: string;
+  entityId: string;
+  action: string;
+  timestamp: string;
+}
+
+export interface ConsoleEvidencePack {
+  schemaVersion: number;
+  generatedAt: string;
+  tenantId: string;
+  incidentId: string;
+  dataProtection: {
+    businessDocumentContentIncluded: boolean;
+    rawEventPayloadsIncluded: boolean;
+  };
+  rootChanges: ConsoleChange[];
+  blastRadiusResult: { totalImpactedObjects: number } | null;
+  recoveryPlan: ConsoleRecoveryPlan | null;
+  approvals: ConsoleApprovalRecord[];
+  actionInstances: ConsoleActionInstance[];
+  validationRecords: ConsoleValidationRecord[];
+  auditRecords: ConsoleAuditRecord[];
+}
+
 export interface ListResult<T> {
   data: T[];
   meta: { total: number; limit: number; offset: number };
@@ -169,4 +269,11 @@ export async function listChanges(
   if (opts.changeType) qs.set("changeType", opts.changeType);
   const q = qs.toString() ? `?${qs}` : "";
   return apiFetch(`/tenants/${tenantId}/changes${q}`);
+}
+
+export async function getEvidencePack(
+  tenantId: string,
+  incidentId: string,
+): Promise<{ data: ConsoleEvidencePack }> {
+  return apiFetch(`/tenants/${tenantId}/incidents/${incidentId}/evidence-pack`);
 }
