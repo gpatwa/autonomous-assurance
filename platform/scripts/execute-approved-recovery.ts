@@ -167,10 +167,12 @@ async function run(args: Args, log: Logger): Promise<ExecuteApprovedRecoveryResu
     };
   }
 
+  const graph = new ExecuteGraphClient();
+  await assertPlanStillSafeToExecute(action, graph);
+
   log.info("persisting action instance", { instanceId: action.instanceId, stepId: step.stepId });
   await withTenantContext(args.tenantId, (client) => insertActionInstance(client, action));
 
-  const graph = new ExecuteGraphClient();
   const executed = await executeGroupMemberRemovalAction(action, graph, { sleep });
   const validated = await waitForPostExecutionValidation(executed, graph, log);
   const validation = buildValidationRecord(validated, step);
@@ -223,6 +225,25 @@ async function run(args: Args, log: Logger): Promise<ExecuteApprovedRecoveryResu
     validation,
     persisted: true,
   };
+}
+
+async function assertPlanStillSafeToExecute(
+  action: ActionInstance,
+  graph: GroupMemberRemovalGraphClient,
+): Promise<void> {
+  const expectedAfterRollback = readNumber(
+    action.expectedPostState.state.expectedMemberCountAfterRollback,
+  );
+  if (expectedAfterRollback === null) return;
+
+  const expectedAtPlan = expectedAfterRollback + action.membersToRemove.length;
+  const currentMembers = await graph.listGroupMembers(action.targetObjectId);
+  if (currentMembers.length > expectedAtPlan) {
+    throw new Error(
+      `stale-plan: ${action.targetObjectName} has ${currentMembers.length} members; ` +
+        `approved plan expected no more than ${expectedAtPlan}. Regenerate the recovery plan.`,
+    );
+  }
 }
 
 async function loadPlanAndStep(args: Args): Promise<{ plan: RecoveryPlan; step: RecoveryStep }> {
@@ -393,6 +414,10 @@ function updatePlanWithExecution(
 function readMemberIds(snapshot: ActionInstance["postExecutionState"]): string[] {
   const ids = snapshot?.state.memberIds;
   return Array.isArray(ids) ? ids.filter((id): id is string => typeof id === "string") : [];
+}
+
+function readNumber(value: unknown): number | null {
+  return typeof value === "number" && Number.isFinite(value) ? value : null;
 }
 
 function findRemainingTargetMembers(action: ActionInstance) {
