@@ -13,6 +13,7 @@ Orchestration scripts use the local `scripts/lib/runbook.ts` pattern:
 | `canonical-demo-tenant.ts` | Live recovery MVP harness: verify baseline, reset fixture state, trigger CANONICAL-001 with SP-Execute provenance (dry-run default) | Live MVP | `npm run canonical-demo-tenant -- --mode verify \| reset \| trigger \| cycle [--apply] [--output PATH]` |
 | `execute-approved-recovery.ts` | Live recovery MVP executor: load the latest approved plan step, execute the Entra group rollback, persist validation and audit records (dry-run default) | Live MVP | `npm run execute-approved-recovery -- --tenant-id UUID --incident-id ID [--step-id ID] [--apply] [--output PATH]` |
 | `live-demo-readiness.ts` | Full live demo gate: reset, trigger, poll, plan, approve, execute, validate, evidence export | Live MVP | `npm run live-demo-readiness -- --apply [--runs 3] [--api-url URL] [--output PATH]` |
+| `live-demo-safety-checks.ts` | Prospect-demo safety checks: stale-plan fail-closed and already-absent idempotency scenarios | Live MVP | `npm run live-demo-safety-checks -- --apply [--mode all] [--api-url URL] [--output PATH]` |
 | `fetch-audit-events.ts` | Fetch `/auditLogs/directoryAudits` for a window; write raw JSON | WI-05 | `npm run fetch-audit-events -- --start ISO --end ISO [--output PATH]` |
 | `run-audit-completeness-spike.ts` | WI-05 orchestration: mutation checklist → confirmation → propagation wait → fetch → 4-class completeness analysis → JSON matrix + markdown summary | WI-05 | `npm run audit-completeness-spike -- --output-dir PATH [--confirm-mutations] [--wait-minutes N]` |
 | `test-member-removal.ts` | Graph remove-member spike: reliability / idempotency / timing / rate-limit | WI-06 | `npm run test-member-removal -- --mode MODE --group-id ID (--members-file PATH \| --member-id ID) [--apply] [--output PATH]` |
@@ -73,6 +74,7 @@ write path actually runs.
 npm run live-demo-readiness -- \
   --apply \
   --runs 3 \
+  --poll-attempts 24 \
   --api-url https://ca-api-dev.nicesand-85e14f44.centralus.azurecontainerapps.io \
   --output ../artifacts/live-mvp/readiness-summary.json
 ```
@@ -80,6 +82,26 @@ npm run live-demo-readiness -- \
 The script writes per-run artifacts under `artifacts/live-mvp/`, including
 the trigger result, poll result, blast radius, recovery plan, approval,
 execution result, post-recovery verification, and evidence pack.
+
+## Live demo safety checks (`live-demo-safety-checks.ts`)
+
+Runs the two prospect-demo negative/proof paths that should not be done live
+on a customer call:
+
+```bash
+npm run live-demo-safety-checks -- \
+  --apply \
+  --mode all \
+  --poll-attempts 24 \
+  --api-url https://ca-api-dev.nicesand-85e14f44.centralus.azurecontainerapps.io \
+  --output ../artifacts/live-mvp/safety-checks-summary.json
+```
+
+`stale-plan` creates and approves a real plan, adds one unexpected member to
+the target group, and asserts `execute-approved-recovery` fails closed before
+persisting an action instance. `idempotency` creates and approves a real plan,
+pre-removes three planned incident members, and asserts execution completes
+with `already-absent` sub-actions and validation `match`.
 
 ## Files
 

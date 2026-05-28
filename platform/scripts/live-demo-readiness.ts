@@ -73,7 +73,7 @@ function parseArgs(argv: string[]): Args {
     runs: 1,
     output: "../artifacts/live-mvp/readiness-summary.json",
     apiUrl: null,
-    pollAttempts: 12,
+    pollAttempts: 24,
     pollDelayMs: 15_000,
   };
 

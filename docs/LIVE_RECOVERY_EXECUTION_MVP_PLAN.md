@@ -37,6 +37,20 @@ Current implementation progress:
 - The auth-gated console incident view now shows live recovery execution
   evidence when an evidence pack exists.
 - `platform/scripts/live-demo-readiness.ts` runs the repeatable live gate.
+- `platform/scripts/live-demo-safety-checks.ts` validates the stale-plan
+  fail-closed path and already-absent idempotency path.
+
+Latest prospect-demo validation, completed on 2026-05-28:
+
+- Safety checks: stale-plan incident `inc_ae3d7905f192e7539395dba2e5a5848e`
+  blocked execution with zero persisted action instances; idempotency incident
+  `inc_522c3217e56143db044e135ad6227344` completed with 3
+  `already-absent` sub-actions, 9 removals, validation `match`, and post
+  member count 4.
+- Happy-path readiness: incident `inc_d5bc4a82b4124da038f464870fdcc547`
+  completed with 12 root changes, 22 impacted objects, 8 plan steps,
+  validation `match`, and post member count 4.
+- Fallback screenshot: `artifacts/live-mvp/prospect-demo-console-evidence.png`.
 
 ---
 
@@ -274,7 +288,7 @@ Acceptance criteria:
 
 Before using this with prospects, require a repeatable green run.
 
-Readiness script (`npm run live-demo-readiness -- --apply --runs 3 --api-url https://ca-api-dev.nicesand-85e14f44.centralus.azurecontainerapps.io`):
+Readiness script (`npm run live-demo-readiness -- --apply --runs 3 --poll-attempts 24 --api-url https://ca-api-dev.nicesand-85e14f44.centralus.azurecontainerapps.io`):
 
 1. Reset tenant to baseline.
 2. Trigger agent incident.
@@ -296,6 +310,17 @@ Ship criteria:
 - One idempotency run handles already-removed members.
 - Logs and evidence pack reviewed.
 - Demo script updated to match what is truly live.
+
+Safety-check script:
+
+```bash
+npm run live-demo-safety-checks -- \
+  --apply \
+  --mode all \
+  --poll-attempts 24 \
+  --api-url https://ca-api-dev.nicesand-85e14f44.centralus.azurecontainerapps.io \
+  --output ../artifacts/live-mvp/safety-checks-summary.json
+```
 
 ---
 

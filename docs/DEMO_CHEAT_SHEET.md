@@ -13,7 +13,8 @@ Run this every time. The whole point is to make the live-demo failure modes (sta
 **T-30 min — technical readiness**
 
 - [ ] `SITE_URL=https://agents.kavachiq.com npm run verify:seo` → expect `✅ PASS (16/16)`. Anything less = production drift; pause the demo until reconciled (see `AGENTS_SUBDOMAIN_DEPLOY_RUNBOOK.md` § Drift detection).
-- [ ] From `platform/`, run `npm run live-demo-readiness -- --apply --runs 1 --api-url https://ca-api-dev.nicesand-85e14f44.centralus.azurecontainerapps.io --output ../artifacts/live-mvp/readiness-summary.json`. Expect validation `match`, post-recovery group member count `4`, and an evidence pack artifact.
+- [ ] From `platform/`, run `npm run live-demo-readiness -- --apply --runs 1 --poll-attempts 24 --api-url https://ca-api-dev.nicesand-85e14f44.centralus.azurecontainerapps.io --output ../artifacts/live-mvp/readiness-summary.json`. Expect validation `match`, post-recovery group member count `4`, and an evidence pack artifact.
+- [ ] After code or configuration changes, run `npm run live-demo-safety-checks -- --apply --mode all --poll-attempts 24 --api-url https://ca-api-dev.nicesand-85e14f44.centralus.azurecontainerapps.io --output ../artifacts/live-mvp/safety-checks-summary.json`. Expect stale-plan blocked with zero action instances and idempotency completed with `already-absent` sub-actions.
 - [ ] Hard-refresh `https://agents.kavachiq.com` (Cmd-Shift-R) and `https://agents.kavachiq.com/demo` to confirm the *current* deployed build serves cleanly — first-load CDN warming counts.
 - [ ] Click through `/demo` end-to-end: Overview → Blast Radius (drill into Finance-Confidential) → Recovery Plan (expand step 1) → Resolution. The verify script can't catch interactive regressions; only your eyes can.
 - [ ] Open `/console/incidents`, select the latest CANONICAL-001 incident, and confirm Recovery execution shows approval, completed execution, validation `match`, and evidence boundaries.
@@ -34,6 +35,7 @@ Run this every time. The whole point is to make the live-demo failure modes (sta
 **If something fails live**
 
 - [ ] If the live site times out or 5xxs: switch to the recorded `/demo` walkthrough screen-capture (keep one in `~/demos/`).
+- [ ] If the console is slow: use `artifacts/live-mvp/prospect-demo-console-evidence.png` as the recovery-evidence screenshot backup.
 - [ ] If `/demo` interaction breaks mid-call: continue verbally with the talking points (§5 below), promise a tailored walkthrough, close the call early — don't fight a broken UI on stage.
 - [ ] After the call: file the failure against the repo with the timestamp + failing tab; investigate before the next demo.
 

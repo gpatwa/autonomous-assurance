@@ -16,6 +16,7 @@
     "canonical-demo-tenant": "tsx scripts/canonical-demo-tenant.ts",
     "execute-approved-recovery": "tsx scripts/execute-approved-recovery.ts",
     "live-demo-readiness": "tsx scripts/live-demo-readiness.ts",
+    "live-demo-safety-checks": "tsx scripts/live-demo-safety-checks.ts",
     "fetch-audit-events": "tsx scripts/fetch-audit-events.ts",
     "test-member-removal": "tsx scripts/test-member-removal.ts",
     "audit-completeness-spike": "tsx scripts/run-audit-completeness-spike.ts",
