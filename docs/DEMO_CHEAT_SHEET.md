@@ -13,8 +13,10 @@ Run this every time. The whole point is to make the live-demo failure modes (sta
 **T-30 min — technical readiness**
 
 - [ ] `SITE_URL=https://agents.kavachiq.com npm run verify:seo` → expect `✅ PASS (16/16)`. Anything less = production drift; pause the demo until reconciled (see `AGENTS_SUBDOMAIN_DEPLOY_RUNBOOK.md` § Drift detection).
+- [ ] From `platform/`, run `npm run live-demo-readiness -- --apply --runs 1 --api-url https://ca-api-dev.nicesand-85e14f44.centralus.azurecontainerapps.io --output ../artifacts/live-mvp/readiness-summary.json`. Expect validation `match`, post-recovery group member count `4`, and an evidence pack artifact.
 - [ ] Hard-refresh `https://agents.kavachiq.com` (Cmd-Shift-R) and `https://agents.kavachiq.com/demo` to confirm the *current* deployed build serves cleanly — first-load CDN warming counts.
 - [ ] Click through `/demo` end-to-end: Overview → Blast Radius (drill into Finance-Confidential) → Recovery Plan (expand step 1) → Resolution. The verify script can't catch interactive regressions; only your eyes can.
+- [ ] Open `/console/incidents`, select the latest CANONICAL-001 incident, and confirm Recovery execution shows approval, completed execution, validation `match`, and evidence boundaries.
 - [ ] On the homepage, scroll through every section so the IntersectionObservers fire before sharing the screen. Some animations don't show on first load if you jump straight to a section.
 
 **T-5 min — presenter setup**
@@ -59,12 +61,13 @@ KavachIQ is **Agentic Incident Recovery** — operator-approved, dependency-orde
 4. **Recovery gap** — "Everyone detects. No one undoes." (30s)
 5. **Live walkthrough** — 4-stage animation cycles: alert → map → propose → approve & validate (30s)
 6. **Incident cards** — EchoLeak, Copilot Studio AIjacking, Entra Agent ID overreach, Replit (30s)
-7. **Open `/demo`** — switch to operator console
+7. **Open `/demo`** — switch to the safe interactive walkthrough
 8. **Overview tab** — incident context, 12 users, 5 systems
 9. **Blast Radius tab** — click into Conditional Access or SharePoint detail
 10. **Recovery Plan tab** — expand step 1 to show dependency chain
 11. **Resolution tab** — trusted state restored, evidence pack preserved
-12. **Back to site CTA** — offer tailored walkthrough
+12. **Open `/console/incidents`** — show the latest live incident's recovery execution evidence
+13. **Back to site CTA** — offer tailored walkthrough
 
 ---
 
@@ -88,6 +91,8 @@ KavachIQ is **Agentic Incident Recovery** — operator-approved, dependency-orde
 **Recovery Plan tab (`/demo`)** — expand step 1 (Entra group rollback). Shows dependency chain, linked objects, approval requirement, expected result. This is where identity-first sequencing becomes obvious.
 
 **Resolution tab (`/demo`)** — trusted state confirmed, evidence pack preserved. This is the confidence close.
+
+**Live console incident (`/console/incidents/:id`)** — show the generated plan, operator approval, 12 removed users, validation `match`, post-recovery member count `4`, and evidence boundaries from the actual Azure-backed run.
 
 ---
 

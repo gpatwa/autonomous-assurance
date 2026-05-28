@@ -58,6 +58,14 @@ Scroll to the live walkthrough section.
 
 Point to: the animation; let it cycle once.
 
+### Live console proof (45 seconds)
+
+Open `/console/incidents` and select the latest CANONICAL-001 incident.
+
+"This is the Azure-backed live run. The incident has 12 root changes from the agent service principal. Blast radius and the recovery plan were generated from platform data. Step one was explicitly approved, executed against Microsoft Graph, and validated back to the 4-member baseline. The evidence pack records the incident, plan, approval, execution, validation, and audit trail without including business document content."
+
+Point to: Recovery execution → approval → execution → validation `match` → evidence boundaries.
+
 ### Incident proof (15 seconds)
 
 Scroll to the incident cards.

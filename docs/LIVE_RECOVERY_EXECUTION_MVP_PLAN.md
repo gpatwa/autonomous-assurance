@@ -34,8 +34,9 @@ Current implementation progress:
 - The operator bridge `platform/scripts/execute-approved-recovery.ts` now connects an approved plan step to SP-Execute Graph writes, validation persistence, plan update, and audit records.
 - Authenticated evidence-pack export is implemented at
   `GET /tenants/:tenantId/incidents/:incidentId/evidence-pack`.
-- The auth-gated console execution view remains pending before a polished
-  prospect demo.
+- The auth-gated console incident view now shows live recovery execution
+  evidence when an evidence pack exists.
+- `platform/scripts/live-demo-readiness.ts` runs the repeatable live gate.
 
 ---
 
@@ -273,7 +274,7 @@ Acceptance criteria:
 
 Before using this with prospects, require a repeatable green run.
 
-Readiness script:
+Readiness script (`npm run live-demo-readiness -- --apply --runs 3 --api-url https://ca-api-dev.nicesand-85e14f44.centralus.azurecontainerapps.io`):
 
 1. Reset tenant to baseline.
 2. Trigger agent incident.
@@ -290,7 +291,8 @@ Readiness script:
 Ship criteria:
 
 - Three consecutive successful demo runs.
-- One stale-plan run blocks execution.
+- One stale-plan run blocks execution when unexpected target-group membership
+  appears before write execution.
 - One idempotency run handles already-removed members.
 - Logs and evidence pack reviewed.
 - Demo script updated to match what is truly live.
