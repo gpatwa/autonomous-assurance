@@ -9,6 +9,7 @@ on:
       - "marketing/**"
       - "public/**"
       - "scripts/sync-cloudflare-marketing.ts"
+      - "scripts/verify-marketing.ts"
       - "package.json"
       - "package-lock.json"
       - "wrangler.toml"
