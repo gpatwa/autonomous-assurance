@@ -4,7 +4,11 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
+    "dev:marketing": "next dev marketing",
     "build": "next build",
+    "build:marketing": "next build marketing",
+    "sync:cloudflare": "tsx scripts/sync-cloudflare-marketing.ts",
+    "deploy:marketing": "npm run build:marketing && npx wrangler pages deploy marketing/out --project-name kavachiq-agents-marketing",
     "start": "next start",
     "lint": "eslint",
     "verify:staging": "tsx scripts/verify-staging.ts",

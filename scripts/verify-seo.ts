@@ -262,3 +262,5 @@ main().catch((err) => {
   console.error("verify-seo failed:", err);
   process.exit(2);
 });
+
+export {};

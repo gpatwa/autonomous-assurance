@@ -1,0 +1,57 @@
+name: Deploy marketing site
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "src/**"
+      - "functions/**"
+      - "marketing/**"
+      - "public/**"
+      - "scripts/sync-cloudflare-marketing.ts"
+      - "package.json"
+      - "package-lock.json"
+      - "wrangler.toml"
+      - ".github/workflows/deploy-marketing.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: marketing-production
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      NEXT_PUBLIC_SITE_ORIGIN: https://agents.kavachiq.com
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Validate code
+        run: |
+          npm run lint
+          npx tsc --noEmit -p tsconfig.json
+
+      - name: Reconcile Cloudflare Pages and DNS
+        run: npm run sync:cloudflare
+
+      - name: Build and deploy
+        run: npm run deploy:marketing
+
+      - name: Verify public SEO contract
+        run: npm run verify:seo

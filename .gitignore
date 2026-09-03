@@ -15,7 +15,10 @@
 
 # next.js
 /.next/
+/marketing/.next/
 /out/
+/marketing/out/
+/.wrangler/
 
 # production
 /build

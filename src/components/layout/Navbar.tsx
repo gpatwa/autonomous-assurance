@@ -27,10 +27,13 @@ const navLinks: NavLink[] = [
 export default function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const pathname = usePathname();
+  const marketingOnly = process.env.NEXT_PUBLIC_MARKETING_ONLY === "true";
   const isProtectedConsolePath = pathname.startsWith("/console") && pathname !== "/console/sign-in";
-  const consoleCta = isProtectedConsolePath
-    ? { href: "/console/incidents", label: "Console" }
-    : { href: "/console/sign-in", label: "Sign In" };
+  const consoleCta = marketingOnly
+    ? null
+    : isProtectedConsolePath
+      ? { href: "/console/incidents", label: "Console" }
+      : { href: "/console/sign-in", label: "Sign In" };
 
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 border-b border-border-primary bg-bg-primary/80 backdrop-blur-xl">
@@ -65,9 +68,11 @@ export default function Navbar() {
 
           {/* Desktop CTA */}
           <div className="hidden lg:flex items-center gap-3">
-            <Button variant="ghost" size="sm" href={consoleCta.href}>
-              {consoleCta.label}
-            </Button>
+            {consoleCta && (
+              <Button variant="ghost" size="sm" href={consoleCta.href}>
+                {consoleCta.label}
+              </Button>
+            )}
             <Button variant="primary" size="sm" href="#request-demo">
               Request a Demo
             </Button>
@@ -122,14 +127,16 @@ export default function Navbar() {
               );
             })}
             <div className="pt-2 space-y-2">
-              <Button
-                variant="secondary"
-                size="sm"
-                href={consoleCta.href}
-                className="w-full"
-              >
-                {consoleCta.label}
-              </Button>
+              {consoleCta && (
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  href={consoleCta.href}
+                  className="w-full"
+                >
+                  {consoleCta.label}
+                </Button>
+              )}
               <Button
                 variant="primary"
                 size="sm"

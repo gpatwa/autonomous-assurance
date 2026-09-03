@@ -38,7 +38,7 @@ The brand parent (`KavachIQ`) is preserved in JSON-LD publisher metadata. This s
 - **v2.0.0 just shipped:** [release](https://github.com/gpatwa/autonomous-assurance/releases/tag/v2.0.0). Full repositioning to **Agentic Incident Recovery** wedge.
 - **Branch state:** `main` is at merge commit `cd00f54`. The 16-commit history of the launch is preserved (no squash).
 - **Pre-handoff PR:** [PR #1](https://github.com/gpatwa/autonomous-assurance/pull/1) (merged). Read the PR description for the narrative arc.
-- **Live site:** `https://agents.kavachiq.com` (Azure-hosted, see `docs/AGENTS_SUBDOMAIN_DEPLOY_RUNBOOK.md`).
+- **Live site:** `https://agents.kavachiq.com` (public marketing on Cloudflare Pages; protected console/platform runtime remains separate, see `docs/CLOUDFLARE_MARKETING_DEPLOY_RUNBOOK.md`).
 - **Build status:** `next build` produces 19 routes cleanly. `tsc --noEmit` clean. `eslint` clean.
 
 ---

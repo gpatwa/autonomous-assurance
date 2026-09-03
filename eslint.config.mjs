@@ -9,7 +9,9 @@ const eslintConfig = defineConfig([
   globalIgnores([
     // Default ignores of eslint-config-next:
     ".next/**",
+    "marketing/.next/**",
     "out/**",
+    "marketing/out/**",
     "build/**",
     "next-env.d.ts",
     // The product platform is a separate workspace with its own lifecycle.

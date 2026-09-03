@@ -23,7 +23,8 @@ This repository contains the public product site for the agents subdomain. It is
 - Tailwind CSS
 - Framer Motion
 - NextAuth for auth-gated console routes
-- Azure Linux App Service for `agents.kavachiq.com`
+- Cloudflare Pages for the public marketing routes at `agents.kavachiq.com`
+- Azure Container Apps for the separate platform runtime
 
 ## Quick Start
 
@@ -58,13 +59,22 @@ STAGING_URL=https://staging.kavachiq.com npm run verify:staging
 
 ## Deploy
 
-The agents subdomain is deployed to Azure App Service as a Next.js standalone zip artifact. The production app setting is:
+The public marketing site is deployed to Cloudflare Pages as a static Next.js export. The production origin is:
 
 ```bash
 NEXT_PUBLIC_SITE_ORIGIN=https://agents.kavachiq.com
 ```
 
-See [docs/AGENTS_SUBDOMAIN_DEPLOY_RUNBOOK.md](docs/AGENTS_SUBDOMAIN_DEPLOY_RUNBOOK.md) for the full Azure + Cloudflare deploy, rollback, and verification procedure.
+Build and publish it with:
+
+```bash
+CLOUDFLARE_API_TOKEN=<token-with-pages-and-dns-edit> npm run sync:cloudflare
+CLOUDFLARE_API_TOKEN=<token-with-pages-and-dns-edit> npm run deploy:marketing
+```
+
+The sync step creates the Pages project and custom-domain binding when needed, and reconciles `agents.kavachiq.com` to the Pages hostname. The `/api/demo-request` endpoint is a Cloudflare Pages Function and requires the `RESEND_API_KEY` Pages secret. The protected `/console` routes and product platform runtime remain outside this static marketing deployment. See [docs/CLOUDFLARE_MARKETING_DEPLOY_RUNBOOK.md](docs/CLOUDFLARE_MARKETING_DEPLOY_RUNBOOK.md) for setup, DNS, secrets, and verification.
+
+Pushes to `main` run the same checks, Cloudflare reconciliation, deploy, and SEO verification through `.github/workflows/deploy-marketing.yml`. Configure the `CLOUDFLARE_API_TOKEN` GitHub Actions secret once; it must include Pages Edit and DNS Edit for the `kavachiq.com` zone.
 
 ## Repo Map
 
