@@ -86,6 +86,7 @@ curl -I https://agents.kavachiq.com/
 
 ```bash
 SITE_URL=https://agents.kavachiq.com npm run verify:seo
+MARKETING_URL=https://agents.kavachiq.com npm run verify:marketing
 curl -fsS https://agents.kavachiq.com/robots.txt
 curl -fsS https://agents.kavachiq.com/sitemap.xml
 curl -fsS https://agents.kavachiq.com/google84fde4d05129ce2e.html

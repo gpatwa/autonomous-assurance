@@ -51,6 +51,12 @@ Production SEO contract:
 SITE_URL=https://agents.kavachiq.com npm run verify:seo
 ```
 
+Rendered-site smoke test:
+
+```bash
+MARKETING_URL=https://agents.kavachiq.com npm run verify:marketing
+```
+
 Staging audit:
 
 ```bash

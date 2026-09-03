@@ -56,3 +56,9 @@ jobs:
 
       - name: Verify public SEO contract
         run: npm run verify:seo
+
+      - name: Install Playwright browser
+        run: npx playwright install --with-deps chromium
+
+      - name: Verify rendered marketing site
+        run: npm run verify:marketing

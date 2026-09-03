@@ -13,6 +13,7 @@
     "lint": "eslint",
     "verify:staging": "tsx scripts/verify-staging.ts",
     "verify:seo": "tsx scripts/verify-seo.ts",
+    "verify:marketing": "tsx scripts/verify-marketing.ts",
     "test:e2e": "playwright test --project=unauthenticated --project=console",
     "test:e2e:unauthed": "playwright test --project=unauthenticated",
     "test:e2e:setup": "playwright test --project=setup --headed"
