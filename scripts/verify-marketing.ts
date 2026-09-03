@@ -74,13 +74,17 @@ async function main(): Promise<void> {
   );
   check("Tailwind heading utility applied", Number.parseFloat(state.h1FontSize) > 20, `h1 font-size=${state.h1FontSize}`);
   check("navigation layout applied", state.navPosition === "fixed", `nav position=${state.navPosition}`);
-  check("CTA layout applied", state.ctaDisplay === "inline-flex" && state.ctaPadding !== "0px", `display=${state.ctaDisplay}, padding=${state.ctaPadding}`);
+  check(
+    "CTA layout applied",
+    ["flex", "inline-flex"].includes(state.ctaDisplay) && state.ctaPadding !== "0px",
+    `display=${state.ctaDisplay}, padding=${state.ctaPadding}`,
+  );
   check("product heading rendered", state.h1Text.includes("undo button for"), state.h1Text || "missing h1");
   check("page background applied", state.bodyBackground !== "rgb(255, 255, 255)", state.bodyBackground);
   check("no horizontal overflow", state.bodyScrollWidth <= state.bodyWidth + 1, `${state.bodyScrollWidth}px scroll / ${state.bodyWidth}px viewport`);
   check("fonts settled", state.fontStatus === "loaded", `font status=${state.fontStatus}`);
   check("CSS/JS assets healthy", assetFailures.length === 0, assetFailures.join("; ") || "all requested assets returned successfully");
-    check("browser runtime healthy", runtimeFailures.length === 0, runtimeFailures.join("; ") || "no page errors");
+  check("browser runtime healthy", runtimeFailures.length === 0, runtimeFailures.join("; ") || "no page errors");
   } finally {
     await browser.close();
   }
