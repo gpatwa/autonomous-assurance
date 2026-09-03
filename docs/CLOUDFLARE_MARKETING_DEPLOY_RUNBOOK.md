@@ -16,7 +16,7 @@ The existing Cloudflare Pages project `kavachiq-marketing` belongs to the parent
 ## Prerequisites
 
 ```bash
-node -v                 # Node 20 LTS
+node -v                 # Node 20+ locally; CI uses Node 22 for Wrangler
 npx wrangler whoami
 ```
 

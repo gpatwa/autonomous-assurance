@@ -28,7 +28,7 @@ This repository contains the public product site for the agents subdomain. It is
 
 ## Quick Start
 
-Use Node 20 to match the Azure runtime.
+Use Node 20 for local development. The Cloudflare deployment workflow uses Node 22 for its current Wrangler release.
 
 ```bash
 npm install
