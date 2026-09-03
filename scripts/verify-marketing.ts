@@ -54,6 +54,7 @@ async function main(): Promise<void> {
     return {
       stylesheetCount: document.querySelectorAll('link[rel="stylesheet"]').length,
       loadedStylesheetCount: document.styleSheets.length,
+      faviconHref: document.querySelector('link[rel~="icon"]')?.getAttribute("href") ?? "",
       bodyBackground: getComputedStyle(body).backgroundColor,
       bodyWidth: body.clientWidth,
       bodyScrollWidth: body.scrollWidth,
@@ -71,6 +72,16 @@ async function main(): Promise<void> {
     "stylesheet loaded",
     state.stylesheetCount > 0 && state.loadedStylesheetCount >= state.stylesheetCount,
     `${state.loadedStylesheetCount}/${state.stylesheetCount} stylesheets`,
+  );
+  const faviconResponse = state.faviconHref
+    ? await page.request.get(new URL(state.faviconHref, `${targetUrl}/`).toString())
+    : null;
+  check(
+    "favicon available",
+    Boolean(faviconResponse?.ok() && faviconResponse.headers()["content-type"]?.includes("image/svg+xml")),
+    state.faviconHref
+      ? `${state.faviconHref} (HTTP ${faviconResponse?.status() ?? "no response"})`
+      : "no icon link in document",
   );
   check("Tailwind heading utility applied", Number.parseFloat(state.h1FontSize) > 20, `h1 font-size=${state.h1FontSize}`);
   check("navigation layout applied", state.navPosition === "fixed", `nav position=${state.navPosition}`);

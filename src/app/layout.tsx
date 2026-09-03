@@ -34,6 +34,11 @@ export const metadata: Metadata = {
   description:
     "The undo button for AI-agent incidents. KavachIQ attributes every change to the agent's session and guides operators through approval-gated, dependency-ordered reversal — built first for Microsoft 365.",
   applicationName: SITE_NAME,
+  icons: {
+    icon: "/favicon.svg",
+    shortcut: "/favicon.svg",
+    apple: "/favicon.svg",
+  },
   alternates: {
     canonical: "/",
   },
