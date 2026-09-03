@@ -8,7 +8,7 @@
     "build": "next build",
     "build:marketing": "next build marketing",
     "sync:cloudflare": "tsx scripts/sync-cloudflare-marketing.ts",
-    "deploy:marketing": "npm run build:marketing && npx wrangler pages deploy marketing/out --project-name kavachiq-agents-marketing",
+    "deploy:marketing": "npm run build:marketing && npx --yes wrangler@4.129.0 pages deploy marketing/out --project-name kavachiq-agents-marketing",
     "start": "next start",
     "lint": "eslint",
     "verify:staging": "tsx scripts/verify-staging.ts",
